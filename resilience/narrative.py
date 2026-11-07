@@ -92,7 +92,7 @@ def template_story(f: dict) -> dict:
     }
 
 
-_NUM = re.compile(r"\d[\d,]*\.?\d*")
+_NUM = re.compile(r"\d+(?:,\d{3})*(?:\.\d+)?")
 
 
 def numbers_ok(story: dict, f: dict) -> bool:

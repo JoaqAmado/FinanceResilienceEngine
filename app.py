@@ -26,6 +26,7 @@ from resilience import (
     grey_zone_note,
     load_monthly,
 )
+from resilience import llm
 from resilience.narrative import facts, template_story
 from resilience.portfolio import build_all
 
@@ -273,13 +274,20 @@ with tab_live:
               {"half-year spending": apply_shock(r, judge_shock.with_(spending_basis="S6")),
                "starting in January": jan}, lad, g.target_buffer, g.shortfall, g.months_to_target, N,
               plan_basis=", ".join(active))
-    story = template_story(f)
+    use_ai = st.toggle("Write this summary with Gemini", key="t_ai", disabled=not llm.available(),
+                       help="Rewords the computed numbers only; falls back to the template if a number doesn't match"
+                       if llm.available() else "Set GEMINI_API_KEY to enable. The template works offline.")
+    story, source = None, "template (offline)"
+    if use_ai and llm.available():
+        with st.spinner("Asking Gemini to reword the numbers…"):
+            story, source = llm.gemini_story(f)
+    story = story or template_story(f)
     with st.container(border=True):
         st.markdown(f"**{story['headline']}**")
         st.write(story["what_changed"])
         for step in story["plan_steps"]:
             st.write("• " + step)
-        st.caption(f"Reality check: {story['reality_check']}. {story['caveat']}")
+        st.caption(f"Reality check: {story['reality_check']}. {story['caveat']} · Summary: {source}")
 
 # =========================================================== PORTFOLIO
 with tab_port:
