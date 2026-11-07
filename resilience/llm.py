@@ -19,7 +19,7 @@ from pathlib import Path
 
 from .narrative import numbers_ok
 
-PROMPT_VERSION = "v1"
+PROMPT_VERSION = "v2"
 DEFAULT_MODEL = "gemini-3.5-flash-lite"  # stable per ai.google.dev model list (Nov 2026); override with GEMINI_MODEL
 CACHE = Path(__file__).resolve().parent.parent / ".cache" / "gemini_story.json"
 KEYS = ("headline", "what_changed", "reality_check", "plan_steps", "caveat")
@@ -35,16 +35,20 @@ SCHEMA = {
     "required": list(KEYS),
 }
 SYSTEM = (
-    "You are a Tangerine bank financial coach writing for one customer. You receive JSON facts that a "
-    "deterministic engine already computed. Rewrite them as a warm, plain-English summary of about 90 words "
-    "in total. Use ONLY numbers that appear in the facts, copied exactly as written. Never calculate, round, "
-    "or invent a number, product or promise. Keep the judges' runway as the main number and call the other "
-    "figures 'reality checks'. Mention Tangerine features only by these names: Savings Goal, Automatic "
-    "Savings Program, Line of Credit. Return JSON with keys headline, what_changed, reality_check, "
-    "plan_steps (2 or 3 short strings), caveat."
+    "You are a Tangerine bank financial coach talking to one customer. You receive JSON facts that a "
+    "deterministic engine already computed. Rewrite them as a warm, specific summary of about 90 words. Rules: "
+    "(1) headline: one sentence that states the customer's runway EXACTLY as given in judge_runway and whether "
+    "they make the target_months test. Say 'your runway', never 'judges'. "
+    "(2) what_changed: the income after the shock, the spending, and the buffer, using the given dollar figures. "
+    "(3) reality_check: one sentence comparing the 'reality' figures to the runway. "
+    "(4) plan_steps: 2 or 3 steps. The first is the backup step from ladder_step with its dollar amount from "
+    "ladder_saving (or the cash_or_credit amount); the second is the savings goal with goal_target and goal_gap "
+    "(and goal_months if present). Name Tangerine features only as: Savings Goal, Automatic Savings Program, "
+    "Line of Credit. No generic advice: every step must contain a dollar amount or a number of months from the facts. "
+    "(5) caveat: one short sentence that the runway uses the track's official formula. "
+    "Use ONLY numbers that appear in the facts, copied exactly as written. Never calculate, round or invent a "
+    "number. Plain English, no underscores, no markdown."
 )
-
-
 def _dotenv_value(name: str) -> str | None:
     env = Path(__file__).resolve().parent.parent / ".env"
     if not env.exists():
@@ -95,6 +99,11 @@ def _save_cache(cache: dict) -> None:
 def valid_story(story: object, f: dict) -> bool:
     if not isinstance(story, dict) or any(k not in story for k in KEYS):
         return False
+    runway_number = str(f.get("judge_runway", "")).split(" ")[0]
+    if runway_number and runway_number != "no" and runway_number not in str(story["headline"]):
+        return False  # the headline must carry the judges' runway
+    if "_" in " ".join(str(v) for v in story.values()):
+        return False
     if not isinstance(story["plan_steps"], list) or not all(isinstance(s, str) for s in story["plan_steps"]):
         return False
     return numbers_ok(story, f)
@@ -110,27 +119,32 @@ def gemini_story(f: dict, timeout_s: float = 12.0) -> tuple[dict | None, str]:
     cache = _load_cache()
     if fp in cache:
         return cache[fp], f"Gemini ({model}), cached"
-    try:
-        from google import genai
-        from google.genai import types
+    from google import genai
+    from google.genai import types
 
-        client = genai.Client(api_key=key, http_options=types.HttpOptions(timeout=int(timeout_s * 1000)))
-        resp = client.models.generate_content(
-            model=model,
-            contents=json.dumps(f, default=str),
-            config=types.GenerateContentConfig(
-                system_instruction=SYSTEM,
-                response_mime_type="application/json",
-                response_json_schema=SCHEMA,
-                temperature=0.3,
-                max_output_tokens=600,
-            ),
-        )
-        story = json.loads(resp.text)
-    except Exception as e:  # network, quota, bad JSON: never break the demo
-        return None, f"Gemini unavailable ({type(e).__name__}): template used"
+    story, last_err = None, None
+    for attempt in range(2):  # one retry for transient server errors
+        try:
+            client = genai.Client(api_key=key, http_options=types.HttpOptions(timeout=int(timeout_s * 1000)))
+            resp = client.models.generate_content(
+                model=model,
+                contents=json.dumps(f, default=str),
+                config=types.GenerateContentConfig(
+                    system_instruction=SYSTEM,
+                    response_mime_type="application/json",
+                    response_json_schema=SCHEMA,
+                    temperature=0.3,
+                    max_output_tokens=600,
+                ),
+            )
+            story = json.loads(resp.text)
+            break
+        except Exception as e:  # network, quota, bad JSON: never break the demo
+            last_err = e
+    if story is None:
+        return None, f"Gemini unavailable ({type(last_err).__name__}): template used"
     if not valid_story(story, f):
-        return None, "Gemini output used a number not in the facts: template used"
+        return None, "Gemini output failed the checks (number or headline): template used"
     cache[fp] = story
     _save_cache(cache)
     return story, f"Gemini ({model})"

@@ -8,7 +8,7 @@ from resilience.narrative import numbers_ok
 
 FACTS = {"account_id": 98952, "judge_runway": "4.2 months", "income_after": "$2,153", "goal_target": "$12,722",
          "target_months": "6", "reality": {"pension kept": "23.4 months"}}
-GOOD = {"headline": "Account 98952 has 4.2 months of runway.", "what_changed": "Income drops to $2,153.",
+GOOD = {"headline": "Your runway is 4.2 months, short of the 6-month test.", "what_changed": "Income drops to $2,153.",
         "reality_check": "Keeping the pension gives 23.4 months.", "plan_steps": ["Save toward $12,722."],
         "caveat": "Judges' formula."}
 
@@ -67,7 +67,15 @@ def test_invented_number_falls_back(keyed, monkeypatch):
     Client, _ = _fake_client(dict(GOOD, plan_steps=["Cut $999 a month."]))
     monkeypatch.setattr(genai, "Client", Client)
     story, status = llm.gemini_story(FACTS)
-    assert story is None and "not in the facts" in status
+    assert story is None and "failed the checks" in status
+
+
+def test_headline_without_runway_falls_back(keyed, monkeypatch):
+    from google import genai
+    Client, _ = _fake_client(dict(GOOD, headline="Reviewing your financial runway"))
+    monkeypatch.setattr(genai, "Client", Client)
+    story, status = llm.gemini_story(FACTS)
+    assert story is None and "failed the checks" in status
 
 
 def test_api_error_falls_back(keyed, monkeypatch):
