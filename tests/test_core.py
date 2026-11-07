@@ -201,3 +201,148 @@ def test_cli_treats_income_zero_as_a_real_twist():
     out = subprocess.run([sys.executable, "-m", "resilience", "20143", "--income", "0"],
                          capture_output=True, text=True, check=True).stdout
     assert "Custom twist" in out and "income $0" in out
+
+
+# ------------------------------------------ reality checks, flags, ladder, goals
+
+from resilience.core import (  # noqa: E402
+    account_flags,
+    backup_ladder,
+    build_metrics,
+    calendar_path,
+    grey_zone_note,
+    portfolio_calendar_path,
+)
+
+
+def test_reality_toggles_off_reproduce_the_judges_numbers():
+    r = row(Pn=1000.0, S6=5000.0, H_SO=900.0, H=0.0)
+    judge = apply_shock(r, LAID_OFF_EI)
+    same = apply_shock(r, LAID_OFF_EI.with_(name="x"))
+    assert judge == same and judge.income_after == pytest.approx(0.55 * 5000)
+
+
+def test_pension_aware_keeps_the_pension():
+    r = row(I=5000.0, Pn=2000.0)
+    res = apply_shock(r, LAID_OFF_EI.with_(pension_aware=True))
+    assert res.income_after == pytest.approx(0.55 * 3000 + 2000)
+
+
+def test_waiting_week_costs_one_week_of_ei_and_only_on_job_loss():
+    r = row(I=5200.0)
+    res = apply_shock(r, LAID_OFF_EI.with_(waiting_week=True))
+    assert res.one_off == pytest.approx(0.55 * 5200 * 12 / 52)
+    assert apply_shock(r, FURNACE.with_(waiting_week=True)).one_off == pytest.approx(r["S"])
+
+
+def test_s6_basis_and_bills_fallback():
+    r = row(S6=4500.0, H=0.0, H_SO=800.0)
+    assert apply_shock(r, LAID_OFF_EI.with_(spending_basis="S6")).spending_after == pytest.approx(4500)
+    assert apply_shock(row(H=0.0), LAID_OFF_EI.with_(spending_basis="S6")).spending_after == pytest.approx(4000)
+    bills = DOUBLE_WHAMMY.with_(bills_fallback=True)
+    assert apply_shock(r, bills).spending_after == pytest.approx(4000 + 0.15 * 800)
+    assert apply_shock(r, DOUBLE_WHAMMY).spending_after == pytest.approx(4000)
+
+
+def test_ladder_stops_counting_at_first_sufficient_rung():
+    r = row(B=6000.0, flexible_median=2000.0, bank_fees_median=10.0)
+    lad = backup_ladder(r, LAID_OFF_EI, target_months=6)  # needs a 250 cut: 10 + 10% of 2000 = 210 < 250
+    assert lad.first_sufficient == 2 and lad.rungs[2].reaches_target and not lad.rungs[1].reaches_target
+    assert "25%" in lad.verdict
+
+
+def test_ladder_needs_credit_when_cuts_cannot_reach_target():
+    lad = backup_ladder(row(B=600.0, flexible_median=0.0), LAID_OFF_EI, target_months=6)
+    assert lad.first_sufficient is None and lad.cash_or_credit_needed > 0
+    assert "credit" in lad.verdict
+
+
+def test_ei_proof_goal_is_exactly_the_buffer_that_passes():
+    r = row(B=1000.0)
+    g = goal_plan(r, 6, target_kind="ei_proof")  # 6 x (4000 - 2750) = 7500
+    assert g.target_buffer == pytest.approx(7500)
+    assert apply_shock(row(B=7500.0), LAID_OFF_EI).survives(6)
+
+
+def test_grey_zone_note():
+    assert "82%" in grey_zone_note(runway(7000, 0, 1000, 0))  # 7.0 months
+    assert grey_zone_note(runway(13000, 0, 1000, 0)) is None
+
+
+# --- against the real data: every number in research/IDEATION.md that the app shows
+
+@pytest.fixture(scope="module")
+def full():
+    return build_metrics()
+
+
+@needs_data
+@pytest.mark.parametrize("acct, ei55, pension, s6, jan, cap", [
+    (98952, 4.2, 23.4, 4.6, 5.3, 4.2),   # retiree: fails the judges' twist, fine once the pension is kept
+    (88269, 11.3, 11.3, 4.6, 0.9, 11.3),  # looks safe on the judges' rule, isn't (median-month trap)
+    (77743, 4.8, 4.8, 0.7, 0.6, 1.2),
+    (20331, 5.1, 5.1, 3.2, 5.2, 2.4),
+    (20143, 2.2, 2.2, 2.3, 3.2, 1.3),
+])
+def test_rehearsal_accounts(full, acct, ei55, pension, s6, jan, cap):
+    r = full.loc[acct]
+    assert apply_shock(r, LAID_OFF_EI).months == ei55
+    assert apply_shock(r, LAID_OFF_EI.with_(pension_aware=True)).months == pension
+    assert apply_shock(r, LAID_OFF_EI.with_(spending_basis="S6")).months == s6
+    assert calendar_path(r, LAID_OFF_EI) == jan
+    assert apply_shock(r, LAID_OFF_EI_CAPPED).months == cap
+
+
+@needs_data
+def test_flip_cases(full):
+    assert not apply_shock(full.loc[98952], LAID_OFF_EI).survives(6)
+    assert apply_shock(full.loc[98952], LAID_OFF_EI.with_(pension_aware=True)).survives(6)
+    assert apply_shock(full.loc[88269], LAID_OFF_EI).survives(6)
+    assert not apply_shock(full.loc[88269], LAID_OFF_EI.with_(spending_basis="S6")).survives(6)
+
+
+@needs_data
+def test_portfolio_reality_counts(full):
+    fails = lambda s: int((portfolio_runway(full, s) < 6).sum())  # noqa: E731
+    assert fails(LAID_OFF_EI.with_(spending_basis="S6")) == 2361
+    assert fails(LAID_OFF_EI.with_(pension_aware=True)) == 1569
+    assert fails(LAID_OFF_EI_CAPPED.with_(waiting_week=True)) == 2335
+    judge = portfolio_runway(full, LAID_OFF_EI)
+    s6 = portfolio_runway(full, LAID_OFF_EI.with_(spending_basis="S6"))
+    assert int(((judge >= 6) & (s6 < 6)).sum()) == 783 and int(((judge < 6) & (s6 >= 6)).sum()) == 0
+    band = (judge >= 6) & (judge < 8)
+    assert round(float((s6[band] < 6).mean()), 3) == 0.819
+
+
+@needs_data
+def test_vector_and_single_calendar_paths_agree(full):
+    vec = portfolio_calendar_path(full, LAID_OFF_EI)
+    for acct in full.sample(60, random_state=1).index:
+        assert calendar_path(full.loc[acct], LAID_OFF_EI) == vec[acct]
+
+
+@needs_data
+def test_pre_loan_overdraft_and_flags(full):
+    lo = full[full.loan_status.notna()]
+    bad = lo.loan_status.isin(["B", "D"])
+    assert int((lo.pre_loan_negative & bad).sum()) == 27 and int((lo.pre_loan_negative & ~bad).sum()) == 0
+    codes = [c for c, _ in account_flags(full.loc[98952])]
+    assert "pension" in codes
+    assert any(c == "overdrawn" for c, _ in account_flags(full.loc[32078]))
+
+
+@needs_data
+def test_ei_proof_goal_portfolio(full):
+    t = pd.Series({a: goal_plan(full.loc[a], 6, target_kind="ei_proof").target_buffer for a in full.index})
+    assert round(t.median()) == 18049 and round(float((full.B >= t).mean()), 3) == 0.645
+
+
+@needs_data
+def test_portfolio_tables_match_engine(full):
+    from resilience.portfolio import build_all
+    t = build_all(full)
+    h = t["headlines"].iloc[0]
+    assert (h.fail_6mo_ei55, h.fail_6mo_ei55_cap2026, h.fail_6mo_ei55_S6) == (1578, 2304, 2361)
+    bands = t["income_bands"].set_index("income_band")
+    assert bands.loc["< $2.5k", "fail_6mo_ei55_pct"] == 4.8 and bands.loc[">= $20k", "fail_6mo_ei55_cap2026_pct"] == 99.8
+    assert int(t["s6_calibration"]["accounts"].sum()) == int((t["accounts"].runway_ei55 >= 6).sum())
