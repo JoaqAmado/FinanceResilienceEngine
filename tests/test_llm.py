@@ -104,3 +104,22 @@ def test_template_story_passes_its_own_guard_on_real_accounts():
             f = facts(acct, r, shock, judge, {"starting in January": calendar_path(r, shock)},
                       backup_ladder(r, shock, 6), g.target_buffer, g.shortfall, g.months_to_target, 6)
             assert numbers_ok(template_story(f), f), (acct, shock.name)
+
+
+def test_retry_recovers_from_one_bad_output(keyed, monkeypatch):
+    from google import genai
+    outputs = [dict(GOOD, headline="Reviewing your financial runway"), GOOD]
+
+    class Models:
+        calls = 0
+
+        def generate_content(self, model, contents, config):
+            Models.calls += 1
+            return _Resp(json.dumps(outputs[min(Models.calls - 1, 1)]))
+
+    class Client:
+        def __init__(self, *a, **k):
+            self.models = Models()
+    monkeypatch.setattr(genai, "Client", Client)
+    story, status = llm.gemini_story(FACTS)
+    assert story == GOOD and Models.calls == 2

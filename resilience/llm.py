@@ -19,7 +19,7 @@ from pathlib import Path
 
 from .narrative import numbers_ok
 
-PROMPT_VERSION = "v2"
+PROMPT_VERSION = "v3"
 DEFAULT_MODEL = "gemini-3.5-flash-lite"  # stable per ai.google.dev model list (Nov 2026); override with GEMINI_MODEL
 CACHE = Path(__file__).resolve().parent.parent / ".cache" / "gemini_story.json"
 KEYS = ("headline", "what_changed", "reality_check", "plan_steps", "caveat")
@@ -47,7 +47,8 @@ SYSTEM = (
     "Line of Credit. No generic advice: every step must contain a dollar amount or a number of months from the facts. "
     "(5) caveat: one short sentence that the runway uses the track's official formula. "
     "Use ONLY numbers that appear in the facts, copied exactly as written. Never calculate, round or invent a "
-    "number. Plain English, no underscores, no markdown."
+    "number. Plain English, no underscores, no markdown. Never mention field names such as target_months or "
+    "judge_runway: say 'the 6-month test' (with the actual number of months)."
 )
 def _dotenv_value(name: str) -> str | None:
     env = Path(__file__).resolve().parent.parent / ".env"
@@ -122,8 +123,8 @@ def gemini_story(f: dict, timeout_s: float = 12.0) -> tuple[dict | None, str]:
     from google import genai
     from google.genai import types
 
-    story, last_err = None, None
-    for attempt in range(2):  # one retry for transient server errors
+    story, last_err, failed_checks = None, None, False
+    for attempt in range(3):  # retry transient server errors and outputs that fail the checks
         try:
             client = genai.Client(api_key=key, http_options=types.HttpOptions(timeout=int(timeout_s * 1000)))
             resp = client.models.generate_content(
@@ -133,18 +134,22 @@ def gemini_story(f: dict, timeout_s: float = 12.0) -> tuple[dict | None, str]:
                     system_instruction=SYSTEM,
                     response_mime_type="application/json",
                     response_json_schema=SCHEMA,
-                    temperature=0.3,
+                    temperature=0.1,
                     max_output_tokens=600,
                 ),
             )
-            story = json.loads(resp.text)
-            break
+            candidate = json.loads(resp.text)
         except Exception as e:  # network, quota, bad JSON: never break the demo
             last_err = e
+            continue
+        if valid_story(candidate, f):
+            story = candidate
+            break
+        failed_checks = True
     if story is None:
+        if failed_checks:
+            return None, "Gemini output failed the checks (number or headline): template used"
         return None, f"Gemini unavailable ({type(last_err).__name__}): template used"
-    if not valid_story(story, f):
-        return None, "Gemini output failed the checks (number or headline): template used"
     cache[fp] = story
     _save_cache(cache)
     return story, f"Gemini ({model})"
