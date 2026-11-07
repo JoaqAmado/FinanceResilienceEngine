@@ -346,3 +346,44 @@ def test_portfolio_tables_match_engine(full):
     bands = t["income_bands"].set_index("income_band")
     assert bands.loc["< $2.5k", "fail_6mo_ei55_pct"] == 4.8 and bands.loc[">= $20k", "fail_6mo_ei55_cap2026_pct"] == 99.8
     assert int(t["s6_calibration"]["accounts"].sum()) == int((t["accounts"].runway_ei55 >= 6).sum())
+
+
+# ------------------------------------------- regressions from the second review
+
+def test_cli_income_cap_alone_keeps_plan_consistent_with_runway():
+    import subprocess, sys
+    if not (DATA_DIR / "monthly_summary.csv").exists():
+        pytest.skip("track data not present")
+    out = subprocess.run([sys.executable, "-m", "resilience", "20143", "--income-cap", "1500"],
+                         capture_output=True, text=True, check=True).stdout
+    assert "DEPLETED" in out and "Survives without changes" not in out
+
+
+@needs_data
+def test_ei_proof_goal_agrees_with_rounded_verdict(full):
+    g = goal_plan(full.loc[21271], 6, target_kind="ei_proof")
+    assert apply_shock(full.loc[21271], LAID_OFF_EI).survives(6) and g.shortfall == 0
+    mismatch = 0
+    for a in full.index:
+        r = full.loc[a]
+        mismatch += (goal_plan(r, 6, target_kind="ei_proof").shortfall == 0) != apply_shock(r, LAID_OFF_EI).survives(6)
+    assert mismatch == 0
+
+
+def test_grey_zone_only_for_the_plain_ei_twist():
+    res = runway(7000, 0, 1000, 0)
+    assert grey_zone_note(res, LAID_OFF_EI.with_(name="Laid off: EI 55%")) is not None
+    assert grey_zone_note(res, FURNACE) is None and grey_zone_note(res, DOUBLE_WHAMMY) is None
+
+
+def test_ladder_pool_excludes_cut_already_in_shock():
+    r = row(I=5000.0, S=6000.0, B=6000.0, flexible_median=2000.0, bank_fees_median=10.0)
+    lad = backup_ladder(r, Shock(income_multiplier=0.55, flexible_cut_pct=1.0), target_months=6)
+    assert all("non-fixed" not in x.step for x in lad.rungs)
+
+
+@needs_data
+def test_ladder_overdrawn_verdict_and_no_zero_rungs(full):
+    assert backup_ladder(full.loc[32078], LAID_OFF_EI).verdict.startswith("Already overdrawn")
+    lad = backup_ladder(full.loc[24791], LAID_OFF_EI)
+    assert all(x.monthly_saving > 0 for x in lad.rungs)

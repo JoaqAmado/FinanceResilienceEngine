@@ -93,7 +93,7 @@ def main() -> None:
         print(f"   {s.name}: runway {months_text(res)} -> {verdict} {N:g} months"
               f"  (income {money(res.income_after)}, spending {money(res.spending_after)},"
               f" buffer left {money(res.buffer_left)})")
-        note = grey_zone_note(res)
+        note = grey_zone_note(res, s)
         if note:
             print(f"     ~ {note}")
         checks = [("typical half-year spending", s.with_(spending_basis="S6"))]
@@ -108,8 +108,8 @@ def main() -> None:
         print(f"     reality: {reality}; starting in January {path_text(calendar_path(r, s))}")
 
     def plan_shock(s: Shock) -> Shock:
-        cap = EI_2026_MAX_MONTHLY if args.cap else s.income_cap_monthly
-        return s.with_(income_cap_monthly=cap if s.is_job_loss else None, waiting_week=args.waiting_week,
+        cap = EI_2026_MAX_MONTHLY if (args.cap and s.is_job_loss) else s.income_cap_monthly
+        return s.with_(income_cap_monthly=cap, waiting_week=args.waiting_week,
                        pension_aware=args.pension_aware, bills_fallback=args.bills_fallback)
 
     print("3. Make a plan" + (" (with your reality options)" if (args.cap or args.waiting_week

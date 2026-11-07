@@ -366,18 +366,23 @@ def goal_plan(row: pd.Series, target_months: float = 6.0, save_share: float = 1.
 
     target_kind:
       "months_of_S"  target = target_months x S (the conventional benchmark)
-      "ei_proof"     target = the buffer that passes `shock` for target_months under the
-                     judges' formula: one-off + target_months x max(spending - income, 0)
+      "ei_proof"     target = one-off + target_months x max(spending - income, 0) under `shock`.
+                     "Already there" means exactly that the judges' (rounded) runway under
+                     `shock` reaches target_months, so the goal never contradicts the verdict.
     save_share: share of the normal-times surplus (I - S) the customer commits.
     """
     if target_kind == "months_of_S":
         target = target_months * row["S"]
+        shortfall = max(target - row["B"], 0.0)
     elif target_kind == "ei_proof":
         income, addons, one_off, base = shock_terms(row, shock)
         target = float(one_off + target_months * max(base + addons - income, 0.0))
+        if apply_shock(row, shock).survives(target_months):
+            shortfall = 0.0
+        else:  # rounding can pass a buffer a hair under target; failing means something is missing
+            shortfall = max(target - row["B"], 0.01)
     else:
         raise ValueError(f"unknown target_kind {target_kind!r}")
-    shortfall = max(target - row["B"], 0.0)
     surplus = row["I"] - row["S"]
     saving = save_share * surplus
     if shortfall == 0:
@@ -450,11 +455,14 @@ class Ladder:
     rungs: tuple[Rung, ...] = field(default_factory=tuple)
     first_sufficient: int | None = None   # index into rungs
     cash_or_credit_needed: float = 0.0    # if no rung reaches the target
+    overdrawn: bool = False               # the buffer was negative before any shock
 
     @property
     def verdict(self) -> str:
         if self.already_safe:
             return "Survives without changes"
+        if self.overdrawn:
+            return "Already overdrawn: clear the debt with cash or credit first"
         if self.buffer_wiped:
             return "Buffer wiped by the one-off: needs cash or credit first"
         if self.first_sufficient is not None:
@@ -476,10 +484,11 @@ def backup_ladder(row: pd.Series, shock: Shock, target_months: float = 6.0) -> L
         return Ladder(target_months, shocked, True, False)
     if shocked.buffer_left <= 0:
         cash = -shocked.buffer_left + target_months * max(shocked.gap, 0.0) + 0.01
-        return Ladder(target_months, shocked, False, True, cash_or_credit_needed=math.ceil(cash * 100) / 100)
+        return Ladder(target_months, shocked, False, True, cash_or_credit_needed=math.ceil(cash * 100) / 100,
+                      overdrawn=bool(row["B"] <= 0))
 
     fees = float(_get(row, "bank_fees_median"))
-    nf = float(_get(row, "flexible_median"))
+    nf = float((1.0 - shock.flexible_cut_pct) * _get(row, "flexible_median"))
     so = min(float(_get(row, "so_other")), float(_get(row, "transfers_out_other_median")))
     loan = min(float(_get(row, "P")), float(_get(row, "loan_payments_median")))
     steps = [
@@ -490,9 +499,9 @@ def backup_ladder(row: pd.Series, shock: Shock, target_months: float = 6.0) -> L
         ("+ defer the running loan payment", fees + 0.25 * nf + so + loan),
         ("+ cut non-fixed spending 50%", fees + 0.50 * nf + so + loan),
     ]
-    rungs, first, prev = [], None, None
+    rungs, first, prev = [], None, 0.0
     for name, saving in steps:
-        if prev is not None and saving <= prev:  # this account has nothing to cut at this step
+        if saving <= prev:  # this account has nothing (more) to cut at this step
             continue
         prev = saving
         res = runway(shocked.buffer_left + shocked.one_off, shocked.one_off,
@@ -517,7 +526,10 @@ def backup_ladder(row: pd.Series, shock: Shock, target_months: float = 6.0) -> L
 GREY_ZONE = ((6.0, 8.0, 0.819), (8.0, 10.0, 0.423), (10.0, 12.0, 0.231))
 
 
-def grey_zone_note(result: RunwayResult) -> str | None:
+def grey_zone_note(result: RunwayResult, shock: Shock | None = None) -> str | None:
+    """Only for the judges' plain EI 55% job loss, the twist the calibration was measured on."""
+    if shock is not None and shock.with_(name=LAID_OFF_EI.name) != LAID_OFF_EI:
+        return None
     if result.no_shortfall or result.months is None:
         return None
     for lo, hi, share in GREY_ZONE:

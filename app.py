@@ -209,7 +209,7 @@ with tab_live:
             st.error(f"RUNS OUT IN {judge.months:.1f} MONTHS (needs {N})", icon="🛑")
         st.caption(f"income after {money(judge.income_after)}/mo · spending after {money(judge.spending_after)}/mo · "
                    f"gap {money(max(judge.gap, 0))}/mo · buffer left {money(judge.buffer_left)}")
-        note = grey_zone_note(judge)
+        note = grey_zone_note(judge, judge_shock)
         if note:
             st.info(note, icon="🌫️")
     with R:
