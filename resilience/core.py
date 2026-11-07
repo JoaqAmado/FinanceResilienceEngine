@@ -165,6 +165,8 @@ class Shock:
     pension_aware       a job loss does not cut pension income (Pn is kept in full).
     spending_basis      "S" (judges: median month) or "S6" (typical half-year per month).
     bills_fallback      use max(H, household-bills standing orders) when H misses them.
+    job_loss            True when the income drop is a layoff on EI (enables the EI cap, waiting
+                        week and pension checks). A pay cut or reduced hours is NOT a job loss.
     """
 
     income_multiplier: float = 1.0
@@ -178,6 +180,7 @@ class Shock:
     pension_aware: bool = False
     spending_basis: str = "S"
     bills_fallback: bool = False
+    job_loss: bool = False
     name: str = "custom"
 
     def with_(self, **changes) -> "Shock":
@@ -186,7 +189,7 @@ class Shock:
 
     @property
     def is_job_loss(self) -> bool:
-        return self.income_multiplier < 1.0
+        return self.job_loss and self.income_multiplier < 1.0
 
 
 # Canadian reality check (opt-in; the judges' formula has no cap).
@@ -199,11 +202,11 @@ EI_2026_MAX_MONTHLY = EI_2026_MAX_WEEKLY * 52 / 12  # 3,159.00
 WEEKS_PER_MONTH = 52 / 12
 
 BASELINE = Shock(name="Baseline (no shock)")
-LAID_OFF_EI = Shock(income_multiplier=0.55, name="Laid off: EI at 55% of usual income")
-LAID_OFF_EI_CAPPED = Shock(income_multiplier=0.55, income_cap_monthly=EI_2026_MAX_MONTHLY,
+LAID_OFF_EI = Shock(income_multiplier=0.55, job_loss=True, name="Laid off: EI at 55% of usual income")
+LAID_OFF_EI_CAPPED = Shock(income_multiplier=0.55, income_cap_monthly=EI_2026_MAX_MONTHLY, job_loss=True,
                            name="Laid off: EI at 55%, capped at the 2026 maximum ($729/week)")
 FURNACE = Shock(one_off_multiple_of_S=1.0, name="Furnace dies: repair = 1 month of typical spending")
-DOUBLE_WHAMMY = Shock(income_multiplier=0.55, bills_increase_pct=0.15,
+DOUBLE_WHAMMY = Shock(income_multiplier=0.55, bills_increase_pct=0.15, job_loss=True,
                       name="Job loss (EI 55%) + household bills +15%")
 README_TWISTS = (LAID_OFF_EI, FURNACE, DOUBLE_WHAMMY)
 
@@ -539,6 +542,21 @@ def grey_zone_note(result: RunwayResult, shock: Shock | None = None) -> str | No
     return None
 
 
+def loan_in_trouble(row) -> bool:
+    """Loan status B (defaulted) or D (running, client in debt)."""
+    return str(_get(row, "loan_status", "")) in DEFAULTED_LOAN_STATUSES
+
+
+def credit_advice(row, amount: float) -> str:
+    """What to say about a cash/credit hole, without pushing credit on a borrower in trouble."""
+    amt = f"${amount:,.0f}"
+    if loan_in_trouble(row):
+        return (f"The remaining hole is {amt}. With a loan already in arrears or default, no new credit: "
+                "start the EI claim on day one, ask for a hardship deferral on the loan, and run the spending steps.")
+    return (f"Line up {amt} of credit before the shock: a Tangerine Line of Credit is easiest to arrange "
+            "while still employed, subject to approval.")
+
+
 def account_flags(row: pd.Series) -> list[tuple[str, str]]:
     """(code, plain-English note) for anything a judge or customer should know first."""
     f: list[tuple[str, str]] = []
@@ -566,6 +584,9 @@ def account_flags(row: pd.Series) -> list[tuple[str, str]]:
             f.append(("minor_owner", f"Owner is {age:.0f}: under 18."))
     if _get(row, "Pn") > 0:
         f.append(("pension", "Receives a pension: a job loss should not cut it (try the pension-aware view)."))
+    if loan_in_trouble(row):
+        f.append(("loan_trouble", f"Loan status {_get(row, 'loan_status', '')} (in arrears or defaulted): don't add new "
+                  "credit; lead with an EI claim, a hardship deferral on the loan, and the spending steps."))
     if bool(_get(row, "pre_loan_negative", False)):
         f.append(("pre_loan_overdraft",
                   "Overdrawn before taking the loan: in this data every such borrower (27 of 27) defaulted."))

@@ -63,3 +63,87 @@ def test_cap_does_not_touch_a_non_job_loss_twist(at):
     at.run()
     runways = [m.value for m in at.metric if m.label in ("Runway", "Runway with selected checks")]
     assert runways[0] == runways[1] == "1.3 mo"
+
+
+# ------------------------------------------------ regressions from mock judging
+
+def _fresh():
+    app = st_testing.AppTest.from_file(str(Path(__file__).resolve().parent.parent / "app.py"), default_timeout=120)
+    app.run()
+    return app
+
+
+def _runway(app):
+    return [m.value for m in app.metric if m.label == "Runway"][0]
+
+
+def _story_headline(app):
+    return [m.value for m in app.markdown if m.value.startswith("**Account ")][0]
+
+
+@needs_data
+def test_custom_starts_from_no_shock():
+    app = _fresh()
+    app.session_state["acct"] = 72845
+    app.radio(key="preset").set_value("Custom").run()
+    app.radio(key="oneoff_mode").set_value("$ amount").run()
+    app.number_input(key="oneoff_amt").set_value(6000.0).run()
+    assert not app.exception
+    assert _runway(app) == "No shortfall (120+)"  # a $6,000 repair alone; income is NOT still at EI 55%
+
+
+@needs_data
+def test_furnace_one_off_survives_toggling_the_mode():
+    app = _fresh()
+    app.session_state["acct"] = 36427
+    app.radio(key="preset").set_value("Furnace dies: 1× spending").run()
+    before = _runway(app)
+    app.radio(key="oneoff_mode").set_value("$ amount").run()
+    app.radio(key="oneoff_mode").set_value("× typical spending").run()
+    assert before == "3.6 mo" and _runway(app) == "3.6 mo"
+
+
+@needs_data
+def test_label_follows_the_levers_not_the_card():
+    app = _fresh()
+    app.session_state["acct"] = 91609
+    app.slider(key="income_pct").set_value(100).run()
+    app.number_input(key="extra").set_value(400.0).run()
+    head = _story_headline(app)
+    assert "Laid off" not in head and "+$400/mo" in head
+
+
+@needs_data
+def test_new_account_resets_levers_to_the_card():
+    app = _fresh()
+    app.session_state["acct"] = 82232
+    app.number_input(key="extra").set_value(250.0).run()
+    app.number_input(key="acct").set_value(40462).run()
+    assert app.session_state["extra"] == 0.0
+
+
+@needs_data
+def test_overdrawn_and_loan_in_default_messages():
+    app = _fresh()
+    app.number_input(key="acct").set_value(75489).run()
+    errors = " ".join(e.value for e in app.error)
+    assert "ALREADY OVERDRAWN" in errors and "one-off ($0)" not in errors
+    text = " ".join(m.value for m in app.markdown)
+    assert "Line of Credit" not in text and "no new credit" in text
+
+
+@needs_data
+def test_pay_cut_is_not_an_ei_job_loss():
+    app = _fresh()
+    app.session_state["acct"] = 79750
+    app.radio(key="preset").set_value("Custom").run()
+    app.slider(key="income_pct").set_value(70).run()
+    assert not app.session_state["job_loss"]
+    assert [t for t in app.toggle if t.key == "t_cap"][0].disabled
+
+
+@needs_data
+def test_portfolio_labels_are_integers():
+    app = _fresh()
+    labels = " ".join(m.label for m in app.metric)
+    assert "1,578 of 4,500" in labels and ".0" not in labels.replace("4,500", "")

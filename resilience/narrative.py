@@ -9,7 +9,7 @@ from __future__ import annotations
 import math
 import re
 
-from .core import Ladder, RunwayResult, Shock
+from .core import Ladder, RunwayResult, Shock, loan_in_trouble
 
 
 def _m(x: float) -> str:
@@ -34,6 +34,11 @@ def facts(account_id: int, row, shock: Shock, judge: RunwayResult, reality: dict
         "spending_after": _m(judge.spending_after),
         "monthly_gap": _m(max(judge.gap, 0.0)),
         "buffer_left": _m(judge.buffer_left),
+        "buffer_before": _m(float(row["B"])),
+        "one_off": _m(judge.one_off) if judge.one_off else None,
+        "income_changed": shock.income_multiplier != 1.0 or shock.income_cap_monthly is not None,
+        "already_overdrawn": bool(row["B"] <= 0),
+        "loan_in_trouble": loan_in_trouble(row),
         "goal_target": _m(goal_target),
         "goal_gap": _m(goal_gap),
         "goal_months": None if goal_months is None else f"{goal_months:g}",
@@ -60,17 +65,30 @@ def template_story(f: dict) -> dict:
     """Deterministic story: headline, what changed, plan steps, caveat."""
     headline = (f"Account {f['account_id']}: {f['judge_runway']} of runway after "
                 f"\"{f['shock']}\", so it {f['judge_verdict']} the {f['target_months']}-month test.")
-    if f["judge_runway"].startswith("no shortfall"):
-        what = f"Income after the shock ({f['income_after']}/mo) still covers spending ({f['spending_after']}/mo)."
+    income_words = "Income falls to" if f.get("income_changed") else "Income stays at"
+    if f.get("already_overdrawn"):
+        what = (f"The buffer is already {f['buffer_before']} before any shock, so runway is {f['judge_runway']}; "
+                f"{income_words.lower()} {f['income_after']}/mo against {f['spending_after']}/mo of spending.")
+    elif f["judge_runway"].startswith("no shortfall"):
+        what = f"{income_words} {f['income_after']}/mo, which still covers spending of {f['spending_after']}/mo."
+        if f.get("one_off"):
+            what += f" The {f['one_off']} one-off leaves {f['buffer_left']} in the buffer."
     else:
-        what = (f"Income falls to {f['income_after']}/mo against {f['spending_after']}/mo of spending: "
-                f"a {f['monthly_gap']}/mo gap drawn from a {f['buffer_left']} buffer.")
+        what = f"{income_words} {f['income_after']}/mo against {f['spending_after']}/mo of spending"
+        if f.get("one_off"):
+            what += f", and the {f['one_off']} one-off leaves {f['buffer_left']} in the buffer"
+        else:
+            what += f": a {f['monthly_gap']}/mo gap drawn from a {f['buffer_left']} buffer"
+        what += "."
     reality = "; ".join(f"{k}: {v}" for k, v in f["reality"].items())
     steps = []
     if f.get("plan_basis"):
         steps.append(f"The plan below also assumes: {f['plan_basis']}.")
     if f["ladder_step"]:
         steps.append(f"If it hits: {f['ladder_step']} (together {f['ladder_saving']}/mo).")
+    elif f["cash_or_credit"] and f.get("loan_in_trouble"):
+        steps.append(f"If it hits: the remaining hole is {f['cash_or_credit']}. The loan is already in arrears or "
+                     "default, so no new credit: start the EI claim on day one and ask for a hardship deferral.")
     elif f["cash_or_credit"]:
         steps.append(f"If it hits: cuts alone aren't enough. Line up {f['cash_or_credit']} of credit while still employed.")
     else:

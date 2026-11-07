@@ -350,11 +350,14 @@ def test_portfolio_tables_match_engine(full):
 
 # ------------------------------------------- regressions from the second review
 
-def test_cli_income_cap_alone_keeps_plan_consistent_with_runway():
+def test_cli_income_cap_needs_a_job_loss_and_keeps_plan_consistent():
     import subprocess, sys
     if not (DATA_DIR / "monthly_summary.csv").exists():
         pytest.skip("track data not present")
-    out = subprocess.run([sys.executable, "-m", "resilience", "20143", "--income-cap", "1500"],
+    refused = subprocess.run([sys.executable, "-m", "resilience", "20143", "--income-cap", "1500"],
+                             capture_output=True, text=True)
+    assert refused.returncode != 0 and "--cap" in refused.stderr
+    out = subprocess.run([sys.executable, "-m", "resilience", "20143", "--income", "0.55", "--income-cap", "1500"],
                          capture_output=True, text=True, check=True).stdout
     assert "DEPLETED" in out and "Survives without changes" not in out
 
@@ -387,3 +390,21 @@ def test_ladder_overdrawn_verdict_and_no_zero_rungs(full):
     assert backup_ladder(full.loc[32078], LAID_OFF_EI).verdict.startswith("Already overdrawn")
     lad = backup_ladder(full.loc[24791], LAID_OFF_EI)
     assert all(x.monthly_saving > 0 for x in lad.rungs)
+
+
+def test_cli_rejects_percent_style_inputs_and_misused_cap():
+    import subprocess, sys
+    if not (DATA_DIR / "monthly_summary.csv").exists():
+        pytest.skip("track data not present")
+    run = lambda *a: subprocess.run([sys.executable, "-m", "resilience", *a], capture_output=True, text=True)  # noqa: E731
+    assert run("30111", "--income", "55").returncode != 0
+    assert run("30111", "--bills", "15").returncode != 0
+    assert run("36427", "--one-off-x-s", "1", "--income-cap", "3159").returncode != 0
+    assert run("30111", "--income", "0.55").returncode == 0
+
+
+def test_job_loss_flag_controls_ei_checks():
+    pay_cut = Shock(income_multiplier=0.7)
+    assert not pay_cut.is_job_loss
+    assert apply_shock(row(), pay_cut.with_(waiting_week=True)).one_off == 0
+    assert LAID_OFF_EI.is_job_loss and DOUBLE_WHAMMY.is_job_loss and not FURNACE.is_job_loss

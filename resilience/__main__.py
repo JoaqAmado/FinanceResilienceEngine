@@ -18,6 +18,7 @@ from .core import (
     Shock,
     account_flags,
     apply_shock,
+    credit_advice,
     backup_ladder,
     build_metrics,
     calendar_path,
@@ -42,7 +43,7 @@ def job_loss_version(shock: Shock) -> Shock:
     """The EI-proof goal is always sized on a job loss, even when the twist is a one-off."""
     if shock.is_job_loss:
         return shock
-    return shock.with_(income_multiplier=0.55, one_off_cost=0.0, one_off_multiple_of_S=0.0,
+    return shock.with_(income_multiplier=0.55, one_off_cost=0.0, one_off_multiple_of_S=0.0, job_loss=True,
                        name="Laid off: EI at 55%")
 
 
@@ -56,11 +57,20 @@ def main() -> None:
     ap.add_argument("--one-off", type=float, help="one-off cost (CAD)")
     ap.add_argument("--one-off-x-s", type=float, help="one-off cost as a multiple of S")
     ap.add_argument("--target", type=float, default=6.0, help="months the customer must survive")
+    ap.add_argument("--pay-cut", action="store_true",
+                    help="the --income drop is a pay cut or reduced hours, not a layoff on EI")
     ap.add_argument("--cap", action="store_true", help=f"plans use the 2026 EI cap (${EI_2026_MAX_MONTHLY:,.0f}/mo)")
     ap.add_argument("--waiting-week", action="store_true", help="plans include one unpaid EI week")
     ap.add_argument("--pension-aware", action="store_true", help="plans keep pension income on a job loss")
     ap.add_argument("--bills-fallback", action="store_true", help="plans count household bills paid by standing order")
     args = ap.parse_args()
+    # fail loudly on inputs that would print a confident but wrong runway
+    if args.income is not None and not 0 <= args.income <= 2:
+        ap.error(f"--income {args.income:g} looks like a percent; pass a fraction, e.g. 0.55 for EI at 55%")
+    if args.bills is not None and not 0 <= args.bills <= 1:
+        ap.error(f"--bills {args.bills:g} looks like a percent; pass a fraction, e.g. 0.15 for +15%")
+    if args.income_cap is not None and (args.income_cap < 0 or args.income is None or args.income >= 1 or args.pay_cut):
+        ap.error("--income-cap only applies to a job loss (--income below 1). For the 2026 EI cap use --cap")
 
     metrics = build_metrics()
     if args.account_id not in metrics.index:
@@ -81,10 +91,12 @@ def main() -> None:
     shocks = list(README_TWISTS)
     custom = (args.income, args.income_cap, args.bills, args.extra, args.one_off, args.one_off_x_s)
     if any(v is not None for v in custom):  # 0 is a real value (e.g. --income 0)
-        shocks = [Shock(income_multiplier=args.income if args.income is not None else 1.0,
+        income = args.income if args.income is not None else 1.0
+        shocks = [Shock(income_multiplier=income,
                         income_cap_monthly=args.income_cap, bills_increase_pct=args.bills or 0.0,
                         extra_monthly_cost=args.extra or 0.0, one_off_cost=args.one_off or 0.0,
-                        one_off_multiple_of_S=args.one_off_x_s or 0.0, name="Custom twist")]
+                        one_off_multiple_of_S=args.one_off_x_s or 0.0,
+                        job_loss=income < 1 and not args.pay_cut, name="Custom twist")]
 
     print("2. Take a shock (judges' formula first, then reality checks)")
     for s in shocks:
@@ -131,8 +143,7 @@ def main() -> None:
                 mark = "OK" if rung.reaches_target else "  "
                 print(f"     {mark} {rung.step}: save {money(rung.monthly_saving)}/mo -> {months_text(rung.result)}")
         if lad.cash_or_credit_needed:
-            print(f"     needs {money(lad.cash_or_credit_needed)} of cash or credit lined up"
-                  " (e.g. a line of credit arranged while still employed)")
+            print(f"     {credit_advice(r, lad.cash_or_credit_needed)}")
 
 
 if __name__ == "__main__":

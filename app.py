@@ -19,6 +19,7 @@ from resilience import (
     Shock,
     account_flags,
     apply_shock,
+    credit_advice,
     backup_ladder,
     build_metrics,
     calendar_path,
@@ -36,12 +37,15 @@ ORANGE, SLATE, GREY = "#F47920", "#334155", "#94A3B8"
 st.markdown("<style>[data-testid='stMetricValue']{font-size:1.65rem}</style>", unsafe_allow_html=True)
 REHEARSAL = {20331: "lender red flag", 20143: "high earner", 88269: "looks safe, isn't",
              98952: "retiree", 77743: "furnace wipes buffer"}
+_X = "× typical spending"
 PRESETS = {
-    "Laid off: EI 55%": dict(income_pct=55, bills_pct=0, extra=0.0, oneoff_mode="× typical spending", oneoff_x=0.0, oneoff_amt=0.0),
-    "Furnace dies: 1× spending": dict(income_pct=100, bills_pct=0, extra=0.0, oneoff_mode="× typical spending", oneoff_x=1.0, oneoff_amt=0.0),
-    "Job loss + bills +15%": dict(income_pct=55, bills_pct=15, extra=0.0, oneoff_mode="× typical spending", oneoff_x=0.0, oneoff_amt=0.0),
-    "Custom": None,
+    "Laid off: EI 55%": dict(income_pct=55, bills_pct=0, extra=0.0, oneoff_mode=_X, oneoff_x=0.0, oneoff_amt=0.0, job_loss=True),
+    "Furnace dies: 1× spending": dict(income_pct=100, bills_pct=0, extra=0.0, oneoff_mode=_X, oneoff_x=1.0, oneoff_amt=0.0, job_loss=False),
+    "Job loss + bills +15%": dict(income_pct=55, bills_pct=15, extra=0.0, oneoff_mode=_X, oneoff_x=0.0, oneoff_amt=0.0, job_loss=True),
+    # Custom starts from no shock at all, like the CLI: only the levers you set change anything
+    "Custom": dict(income_pct=100, bills_pct=0, extra=0.0, oneoff_mode=_X, oneoff_x=0.0, oneoff_amt=0.0, job_loss=False),
 }
+LEVERS = tuple(PRESETS["Custom"])
 
 
 # ------------------------------------------------------------------ data
@@ -66,7 +70,9 @@ def money(x: float) -> str:
 
 
 def rw_text(res) -> str:
-    return "No shortfall (120+)" if res.no_shortfall else f"{res.months:.1f} mo"
+    if res.no_shortfall:
+        return "No shortfall (120+)"
+    return "120.0 mo (cap)" if res.months >= 120 else f"{res.months:.1f} mo"
 
 
 def path_text(x: float) -> str:
@@ -84,14 +90,32 @@ ss.setdefault("target", 6)
 
 
 def apply_preset() -> None:
-    p = PRESETS.get(ss.preset)
-    if p:
-        for k, v in p.items():
-            ss[k] = v
+    for k, v in PRESETS[ss.preset].items():
+        ss[k] = v
 
 
 def pick(acct: int) -> None:
     ss.acct = acct
+    apply_preset()  # a new customer starts from the selected card's own values
+
+
+def twist_label() -> str:
+    """The card's name only while every lever still matches it; otherwise say what is applied."""
+    p = PRESETS[ss.preset]
+    if ss.preset != "Custom" and all(ss[k] == p[k] for k in LEVERS):
+        return ss.preset
+    parts = []
+    if ss.income_pct != 100:
+        parts.append(f"{'job loss, EI' if ss.job_loss else 'income kept'} {ss.income_pct}%")
+    if ss.bills_pct:
+        parts.append(f"bills +{ss.bills_pct}%")
+    if ss.extra:
+        parts.append(f"+${ss.extra:,.0f}/mo")
+    if ss.oneoff_mode == _X and ss.oneoff_x:
+        parts.append(f"one-off {ss.oneoff_x:g}× spending")
+    if ss.oneoff_mode != _X and ss.oneoff_amt:
+        parts.append(f"one-off ${ss.oneoff_amt:,.0f}")
+    return "Custom: " + (", ".join(parts) if parts else "no shock")
 
 
 m = metrics()
@@ -109,13 +133,13 @@ tab_live, tab_port, tab_method = st.tabs(["Live twist", "Portfolio discoveries",
 with tab_live:
     c_id, c_pick = st.columns([1, 3])
     with c_id:
-        acct = st.number_input("account_id", min_value=int(m.index.min()), max_value=int(m.index.max()),
-                               step=1, key="acct")
+        acct = st.number_input("account_id", min_value=1, max_value=999_999, step=1, key="acct",
+                               on_change=apply_preset)
     with c_pick:
         st.write("Rehearsal accounts")
         cols = st.columns(len(REHEARSAL))
         for c, (a, why) in zip(cols, REHEARSAL.items()):
-            c.button(f"{a} · {why}", on_click=pick, args=(a,), use_container_width=True)
+            c.button(f"{a} · {why}", on_click=pick, args=(a,), width="stretch")
 
     if acct not in m.index:
         st.error(f"account_id {acct} is not in the data. IDs run {m.index.min()} to {m.index.max()} with gaps.")
@@ -151,28 +175,33 @@ with tab_live:
     fig.add_scatter(x=h.month, y=h.month_end_balance, name="Month-end balance", line=dict(color=ORANGE, width=3))
     fig.update_layout(height=260, margin=dict(l=0, r=0, t=10, b=0), barmode="relative",
                       legend=dict(orientation="h", y=1.15), yaxis_title="CAD")
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig)
 
     # ---------------------------------------------------------- 2. take a shock
     st.subheader("2 · Take a shock")
-    st.radio("Twist card", list(PRESETS), key="preset", horizontal=True, on_change=apply_preset)
+    c_card, c_reset = st.columns([5, 1])
+    c_card.radio("Twist card", list(PRESETS), key="preset", horizontal=True, on_change=apply_preset)
+    c_reset.button("↺ Reset card", on_click=apply_preset, help="Put every lever back to the selected card's values",
+                   width="stretch")
     s1, s2, s3, s4 = st.columns(4)
-    s1.slider("Income kept (%)", 0, 100, key="income_pct", help="EI pays 55% of usual income")
+    with s1:
+        st.slider("Income kept (%)", 0, 100, key="income_pct", help="EI pays 55% of usual income")
+        st.checkbox("This is a job loss on EI", key="job_loss", disabled=ss.income_pct >= 100,
+                    help="Off = a pay cut or reduced hours: no EI cap, waiting week or pension checks")
     s2.slider("Household bills up (%)", 0, 50, key="bills_pct")
-    s3.number_input("Extra monthly cost ($)", min_value=0.0, step=100.0, key="extra")
+    s3.number_input("Extra monthly cost ($)", min_value=0.0, step=100.0, key="extra",
+                    help="Rent up $X/mo goes here; H is $0 on 1,225 accounts")
     with s4:
-        st.radio("One-off cost", ["× typical spending", "$ amount"], key="oneoff_mode", horizontal=True)
-        if ss.oneoff_mode == "× typical spending":
-            st.slider("× S", 0.0, 3.0, step=0.25, key="oneoff_x")
-        else:
-            st.number_input("One-off ($)", min_value=0.0, step=500.0, key="oneoff_amt")
+        st.radio("One-off cost", [_X, "$ amount"], key="oneoff_mode", horizontal=True)
+        by_x = ss.oneoff_mode == _X
+        st.slider("× S (typical spending)", 0.0, 3.0, step=0.25, key="oneoff_x", disabled=not by_x)
+        st.number_input("One-off ($)", min_value=0.0, step=500.0, key="oneoff_amt", disabled=by_x)
     N = st.slider("Must survive (months)", 1, 12, key="target")
 
-    by_x = ss.oneoff_mode == "× typical spending"
     judge_shock = Shock(income_multiplier=ss.income_pct / 100, bills_increase_pct=ss.bills_pct / 100,
                         extra_monthly_cost=ss.extra, one_off_cost=0.0 if by_x else ss.oneoff_amt,
                         one_off_multiple_of_S=ss.oneoff_x if by_x else 0.0,
-                        name=ss.preset if ss.preset != "Custom" else "Custom twist")
+                        job_loss=bool(ss.job_loss) and ss.income_pct < 100, name=twist_label())
 
     st.markdown("**Reality checks** (our assumptions; the judges' number never changes)")
     t = st.columns(5)
@@ -203,12 +232,15 @@ with tab_live:
         st.metric("Runway", rw_text(judge))
         if judge.survives(N):
             st.success(f"SURVIVES {N} MONTHS", icon="✅")
+        elif r.B <= 0:
+            st.error(f"ALREADY OVERDRAWN: the buffer was {money(r.B)} before any shock, so runway is 0", icon="🛑")
         elif judge.buffer_left <= 0:
             st.error(f"BUFFER GONE: the one-off ({money(judge.one_off)}) is more than the buffer", icon="🛑")
         else:
             st.error(f"RUNS OUT IN {judge.months:.1f} MONTHS (needs {N})", icon="🛑")
-        st.caption(f"income after {money(judge.income_after)}/mo · spending after {money(judge.spending_after)}/mo · "
-                   f"gap {money(max(judge.gap, 0))}/mo · buffer left {money(judge.buffer_left)}")
+        flow = f"gap {money(judge.gap)}/mo" if judge.gap > 0 else f"surplus {money(-judge.gap)}/mo"
+        st.caption(f"twist: {judge_shock.name} · income after {money(judge.income_after)}/mo · "
+                   f"spending after {money(judge.spending_after)}/mo · {flow} · buffer left {money(judge.buffer_left)}")
         note = grey_zone_note(judge, judge_shock)
         if note:
             st.info(note, icon="🌫️")
@@ -228,14 +260,14 @@ with tab_live:
                 rows.append(("Pension kept", apply_shock(r, judge_shock.with_(pension_aware=True))))
         st.dataframe(pd.DataFrame({"each check alone": [n for n, _ in rows],
                                    "runway": [path_text(v) if isinstance(v, float) else rw_text(v) for _, v in rows]}),
-                     hide_index=True, use_container_width=True)
+                     hide_index=True)
 
     # ---------------------------------------------------------- 3. make a plan
     st.subheader("3 · Make a plan")
     st.caption("Plans use the judges' numbers" + (f" plus your reality checks: {', '.join(active)}." if active else "."))
     plan_shock = real_shock
     goal_shock = plan_shock if plan_shock.is_job_loss else plan_shock.with_(
-        income_multiplier=0.55, one_off_cost=0.0, one_off_multiple_of_S=0.0, name="Laid off: EI 55%")
+        income_multiplier=0.55, one_off_cost=0.0, one_off_multiple_of_S=0.0, job_loss=True, name="Laid off: EI 55%")
     g = goal_plan(r, target_months=N, target_kind="ei_proof", shock=goal_shock)
     conv = goal_plan(r, target_months=3)
     lad = backup_ladder(r, plan_shock, target_months=N)
@@ -247,6 +279,9 @@ with tab_live:
                   f"{money(g.shortfall)} to go" if g.shortfall else "already in place", delta_color="off")
         if g.shortfall == 0:
             st.write("Keep it ring-fenced in a separate **Tangerine Savings Account** named *Emergency Fund*.")
+            if g.current_buffer < g.target_buffer:
+                st.caption(f"Within rounding: {money(g.target_buffer - g.current_buffer)} under the exact target; "
+                           f"the judges' runway rounds up to {N} months.")
         elif g.months_to_target:
             st.write(f"Move the normal surplus of **{money(g.monthly_surplus)}/mo** with the **Automatic Savings "
                      f"Program** into a **Savings Goal**: about **{g.months_to_target:g} months**.")
@@ -265,10 +300,9 @@ with tab_live:
                 "saves / mo": [money(x.monthly_saving) for x in lad.rungs[: stop + 1]],
                 "runway": [rw_text(x.result) for x in lad.rungs[: stop + 1]],
                 f"≥ {N} mo": ["✅" if x.reaches_target else "" for x in lad.rungs[: stop + 1]],
-            }), hide_index=True, use_container_width=True)
+            }), hide_index=True)
         if lad.cash_or_credit_needed:
-            st.write(f"Line up **{money(lad.cash_or_credit_needed)}** of credit before the shock "
-                     "(a **Tangerine Line of Credit** is easiest to arrange while still employed).")
+            st.write(credit_advice(r, lad.cash_or_credit_needed))
 
     f = facts(int(acct), r, judge_shock, judge,
               {"half-year spending": apply_shock(r, judge_shock.with_(spending_basis="S6")),
@@ -295,9 +329,9 @@ with tab_port:
     hl = P["headlines"].iloc[0]
     n = int(hl.accounts)
     a, b, c, d = st.columns(4)
-    a.metric(f"Fail 6 months on EI 55%, judges' formula ({hl.fail_6mo_ei55:,} of {n:,})", f"{hl.fail_6mo_ei55 / n:.1%}")
-    b.metric(f"… with the real 2026 EI cap ({hl.fail_6mo_ei55_cap2026:,})", f"{hl.fail_6mo_ei55_cap2026 / n:.1%}")
-    c.metric(f"… on half-year spending ({hl.fail_6mo_ei55_S6:,})", f"{hl.fail_6mo_ei55_S6 / n:.1%}")
+    a.metric(f"Fail 6 months on EI 55%, judges' formula ({int(hl.fail_6mo_ei55):,} of {n:,})", f"{hl.fail_6mo_ei55 / n:.1%}")
+    b.metric(f"… with the real 2026 EI cap ({int(hl.fail_6mo_ei55_cap2026):,})", f"{hl.fail_6mo_ei55_cap2026 / n:.1%}")
+    c.metric(f"… on half-year spending ({int(hl.fail_6mo_ei55_S6):,})", f"{hl.fail_6mo_ei55_S6 / n:.1%}")
     d.metric("Median cut that rescues a failing customer", money(hl.median_min_cut_failing) + "/mo")
 
     st.markdown("#### 1 · The higher the income, the thinner the cushion")
@@ -312,7 +346,7 @@ with tab_port:
                       xaxis=dict(tickmode="array", tickvals=list(ib.income_band),
                                  ticktext=[f"{x}<br><span style='color:{GREY}'>buffer {mth:.1f} mo</span>"
                                            for x, mth in zip(ib.income_band, ib.median_buffer_months)]))
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig)
     st.caption("Monthly money in (I) bands. Under the judges' own EI twist the top band fails 16× as often as the "
                "bottom; under the real 2026 cap almost all of it fails. Spending scales with income; the buffer doesn't.")
 
@@ -325,7 +359,7 @@ with tab_port:
         fig.update_layout(height=320, yaxis_title="% that still fail 6 months", yaxis_range=[0, 100],
                           xaxis_title="Judges' EI runway (months)", margin=dict(l=0, r=0, t=10, b=0))
         fig.update_xaxes(type="category")  # "6-8" etc. are bands, not dates
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig)
         st.caption("Accounts the judges' formula calls safe, re-run on each account's own typical half-year spending. "
                    "Spending peaks in January and June, which a median month never sees.")
     with col2:
@@ -336,7 +370,7 @@ with tab_port:
         fig.update_layout(height=320, yaxis_title="EI-failing accounts", margin=dict(l=0, r=0, t=10, b=0),
                           xaxis_title="Monthly cut needed to get back to 6 months, as % of spending")
         fig.update_xaxes(type="category")
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig)
 
     st.markdown("#### 4 · Overdrawn before the loan → default, every time (in this data)")
     st.dataframe(P["preloan_overdraft"], hide_index=True)
