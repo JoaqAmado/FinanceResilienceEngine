@@ -2,6 +2,17 @@
 
 Sheridan Datathon 2026 · Tangerine track "Resilience Rewired".
 
+## App: Twin Runway
+
+```bash
+.venv/bin/streamlit run app.py
+```
+
+- **Live twist tab:** type any `account_id` or click a rehearsal account, pick a twist card or set the sliders.
+  The judges' number shows first, then reality checks (2026 EI cap, waiting week, pension kept, half-year
+  spending, bills by standing order), then a job-loss-proof goal and a minimum-pain backup ladder. Runs offline.
+- **Portfolio tab:** the four findings, computed by the same engine.
+
 ## Engine (`resilience/`)
 
 Deterministic core: every number comes from `data/` using the judges' definitions
