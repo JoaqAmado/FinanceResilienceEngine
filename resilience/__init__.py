@@ -1,8 +1,10 @@
 from .core import (  # noqa: F401
     BASELINE,
     DOUBLE_WHAMMY,
+    EI_2026_MAX_MONTHLY,
     FURNACE,
     LAID_OFF_EI,
+    LAID_OFF_EI_CAPPED,
     NO_SHORTFALL_LABEL,
     README_TWISTS,
     Shock,

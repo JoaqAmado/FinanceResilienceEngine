@@ -109,8 +109,18 @@ class Shock:
     name: str = "custom"
 
 
+# Canadian reality check (opt-in; the judges' formula has no cap).
+# "This means that you can receive a maximum amount of $729 per week." and
+# "As of January 1, 2026, the maximum yearly insurable earnings amount is $68,900."
+# Source: https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit/benefit-amount.html
+# EI benefits are taxable, so this is a gross amount.
+EI_2026_MAX_WEEKLY = 729.0
+EI_2026_MAX_MONTHLY = EI_2026_MAX_WEEKLY * 52 / 12  # 3,159.00
+
 BASELINE = Shock(name="Baseline (no shock)")
 LAID_OFF_EI = Shock(income_multiplier=0.55, name="Laid off: EI at 55% of usual income")
+LAID_OFF_EI_CAPPED = Shock(income_multiplier=0.55, income_cap_monthly=EI_2026_MAX_MONTHLY,
+                           name="Laid off: EI at 55%, capped at the 2026 maximum ($729/week)")
 FURNACE = Shock(one_off_multiple_of_S=1.0, name="Furnace dies: repair = 1 month of typical spending")
 DOUBLE_WHAMMY = Shock(income_multiplier=0.55, bills_increase_pct=0.15,
                       name="Job loss (EI 55%) + household bills +15%")
@@ -145,7 +155,7 @@ def runway(buffer: float, one_off: float, spending_after: float, income_after: f
         return RunwayResult(0.0, False, buffer_left, gap, income_after, spending_after, one_off)
     if gap <= 0:
         return RunwayResult(None, True, buffer_left, gap, income_after, spending_after, one_off)
-    months = round(min(buffer_left / gap, RUNWAY_CAP_MONTHS), 1)
+    months = float(np.round(min(buffer_left / gap, RUNWAY_CAP_MONTHS), 1))  # same rounding as portfolio_runway
     return RunwayResult(months, False, buffer_left, gap, income_after, spending_after, one_off)
 
 
@@ -200,7 +210,7 @@ def goal_plan(row: pd.Series, target_months: float = 6.0, save_share: float = 1.
     if shortfall == 0:
         months = 0.0
     elif saving > 0:
-        months = round(shortfall / saving, 1)
+        months = math.ceil(shortfall / saving * 10) / 10  # round up: 0.0 only when already there
     else:
         months = None
     return GoalPlan(target, row["B"], shortfall, surplus, months)
@@ -211,23 +221,40 @@ class BackupPlan:
     target_months: float
     shocked: RunwayResult
     monthly_cut_needed: float     # CAD per month of spending to cut (0 if already safe)
-    flexible_pool: float          # median card + cash withdrawals + other transfers out
+    flexible_pool: float          # flexible spending still left to cut after the shock
     cut_share_of_flexible: float | None
     feasible: bool                # cut fits inside the flexible pool
     after_cut: RunwayResult
+    buffer_wiped: bool            # a one-off cost used up the whole buffer
+    cash_needed: float            # when the buffer is wiped: cash (e.g. financing the
+                                  # one-off) needed to get back to target_months after the cut
+    normal_surplus: float         # I - S, to say how fast a wiped buffer rebuilds
 
 
 def backup_plan(row: pd.Series, shock: Shock, target_months: float = 6.0) -> BackupPlan:
-    """Smallest monthly spending cut that keeps runway >= target under the shock."""
+    """Monthly spending cut that brings runway back to >= target under the shock.
+
+    The cut is sized on the unrounded runway, so it can exceed the strict minimum
+    by a few dollars; it never falls short of the target.
+    If a one-off cost wipes the buffer, the published formula gives 0 months
+    whatever the spending, so the plan reports the cash needed instead.
+    """
     shocked = apply_shock(row, shock)
-    pool = float(row["flexible_median"])
-    if shocked.survives(target_months) or shocked.buffer_left <= 0:
-        cut = 0.0
-    else:
+    pool = float((1.0 - shock.flexible_cut_pct) * row["flexible_median"])
+    surplus = float(row["I"] - row["S"])
+    wiped = shocked.buffer_left <= 0
+    cut = 0.0
+    cash = 0.0
+    if wiped:
+        cut = min(max(shocked.gap, 0.0), pool)  # cut what the pool allows, then
+        cash = -shocked.buffer_left + target_months * max(shocked.gap - cut, 0.0) + 0.01
+        cash = math.ceil(cash * 100) / 100       # the rest has to come from cash or credit
+    elif not shocked.survives(target_months):
         allowed_gap = shocked.buffer_left / target_months
         cut = math.ceil((shocked.gap - allowed_gap) * 100) / 100  # round up to the cent
     cut_share = (cut / pool) if pool > 0 else None
-    feasible = shocked.buffer_left > 0 and cut <= pool
-    after = runway(shocked.buffer_left + shocked.one_off, shocked.one_off,
+    feasible = (not wiped) and cut <= pool
+    after = runway(shocked.buffer_left + shocked.one_off + cash, shocked.one_off,
                    shocked.spending_after - cut, shocked.income_after)
-    return BackupPlan(target_months, shocked, cut, pool, cut_share, feasible, after)
+    return BackupPlan(target_months, shocked, cut, pool, cut_share, feasible, after,
+                      wiped, cash, surplus)

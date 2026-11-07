@@ -9,7 +9,9 @@ from resilience.core import (
     DATA_DIR,
     DOUBLE_WHAMMY,
     FURNACE,
+    EI_2026_MAX_MONTHLY,
     LAID_OFF_EI,
+    LAID_OFF_EI_CAPPED,
     NO_SHORTFALL_LABEL,
     Shock,
     apply_shock,
@@ -151,3 +153,51 @@ def test_ei_six_month_failure_count(metrics):
     # independent research recompute (research/tangerine-profile.txt): 1,578 accounts < 6 months
     ei = portfolio_runway(metrics, LAID_OFF_EI)
     assert int((ei < 6).sum()) == 1578
+
+
+def test_ei_2026_cap_is_729_a_week_as_a_month():
+    assert EI_2026_MAX_MONTHLY == pytest.approx(3159.0)
+
+
+@needs_data
+def test_capped_ei_counts(metrics):
+    # with the 2026 cap, more accounts fall under 6 months than under the judges' uncapped formula
+    capped = portfolio_runway(metrics, LAID_OFF_EI_CAPPED)
+    assert int((capped < 6).sum()) == 2304
+    assert int((metrics["I"] * 0.55 > EI_2026_MAX_MONTHLY).sum()) == 2574
+
+
+# ------------------------------------------------- regressions from PR review
+
+def test_goal_plan_never_says_done_while_money_is_missing():
+    g = goal_plan(row(B=23990.0), target_months=6)  # 10 short of 24000, surplus 1000
+    assert g.shortfall == pytest.approx(10.0) and g.months_to_target == 0.1
+
+
+def test_backup_plan_when_one_off_wipes_the_buffer():
+    r = row(B=3000.0, I=5000.0, S=4000.0, flexible_median=1500.0)
+    plan = backup_plan(r, FURNACE, target_months=6)  # one-off 4000 > buffer 3000
+    assert plan.buffer_wiped and not plan.feasible
+    assert plan.cash_needed > 1000  # at least the hole in the buffer
+    assert plan.after_cut.survives(6)
+
+
+def test_backup_pool_excludes_a_cut_already_in_the_shock():
+    shock = Shock(income_multiplier=0.55, flexible_cut_pct=1.0)
+    plan = backup_plan(row(B=1000.0, flexible_median=300.0), shock, target_months=6)
+    assert plan.flexible_pool == 0.0 and not plan.feasible
+
+
+def test_scalar_and_vector_rounding_agree_on_halfway_values():
+    m = pd.DataFrame({"I": [0.0], "F": [0.0], "S": [100.0], "B": [105.0], "H": [0.0],
+                      "P": [0.0], "flexible_median": [0.0]}, index=[1])
+    assert portfolio_runway(m, Shock())[1] == apply_shock(m.loc[1], Shock()).months
+
+
+def test_cli_treats_income_zero_as_a_real_twist():
+    import subprocess, sys
+    if not (DATA_DIR / "monthly_summary.csv").exists():
+        pytest.skip("track data not present")
+    out = subprocess.run([sys.executable, "-m", "resilience", "20143", "--income", "0"],
+                         capture_output=True, text=True, check=True).stdout
+    assert "Custom twist" in out and "income $0" in out
