@@ -25,6 +25,7 @@ from .core import (  # noqa: F401
     credit_advice,
     enrich_metrics,
     goal_plan,
+    goal_shock_for,
     grey_zone_note,
     load_loans,
     load_monthly,

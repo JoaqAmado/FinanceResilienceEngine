@@ -408,3 +408,16 @@ def test_job_loss_flag_controls_ei_checks():
     assert not pay_cut.is_job_loss
     assert apply_shock(row(), pay_cut.with_(waiting_week=True)).one_off == 0
     assert LAID_OFF_EI.is_job_loss and DOUBLE_WHAMMY.is_job_loss and not FURNACE.is_job_loss
+
+
+def test_cap_label_and_cli_income_cap_is_a_reality_check():
+    import subprocess, sys
+    assert runway(1_000_000, 0, 101, 100).label == "120.0 (cap)"
+    if not (DATA_DIR / "monthly_summary.csv").exists():
+        pytest.skip("track data not present")
+    out = subprocess.run([sys.executable, "-m", "resilience", "79750", "--income", "0.55", "--income-cap", "3159"],
+                         capture_output=True, text=True, check=True).stdout
+    assert "runway 3.8 months" in out and "income cap $3,159/mo 3.0 months" in out  # judges' 3.8 stays first
+    bad = lambda *a: subprocess.run([sys.executable, "-m", "resilience", *a], capture_output=True).returncode != 0  # noqa: E731
+    assert bad("30111", "--extra", "nan") and bad("30111", "--target", "0") and bad("30111", "--one-off-x-s", "-1")
+    assert bad("30111", "--pay-cut") and bad("30111", "--income", "0.55", "--cap", "--income-cap", "3000")

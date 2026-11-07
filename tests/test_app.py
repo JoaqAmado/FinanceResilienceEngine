@@ -147,3 +147,32 @@ def test_portfolio_labels_are_integers():
     app = _fresh()
     labels = " ".join(m.label for m in app.metric)
     assert "1,578 of 4,500" in labels and ".0" not in labels.replace("4,500", "")
+
+
+# --------------------------------------------- regressions from the re-verification pass
+
+@needs_data
+def test_pay_cut_goal_is_sized_on_the_deeper_cut():
+    app = _fresh()
+    app.session_state["acct"] = 20401
+    app.radio(key="preset").set_value("Custom").run()
+    app.slider(key="income_pct").set_value(30).run()
+    fund = [m for m in app.metric if m.label.startswith("Job-loss-proof fund")][0]
+    assert _runway(app) == "3.8 mo" and "already in place" not in str(fund.delta)
+
+
+@needs_data
+def test_card_identical_shock_keeps_the_card_name():
+    app = _fresh()
+    app.session_state["acct"] = 20331
+    app.radio(key="oneoff_mode").set_value("$ amount").run()   # $0 one-off: still exactly the EI card
+    assert "Laid off: EI 55%" in _story_headline(app)
+
+
+@needs_data
+def test_no_ei_claim_advice_on_a_non_job_loss_card_for_loan_in_default():
+    app = _fresh()
+    app.number_input(key="acct").set_value(91609).run()
+    app.radio(key="preset").set_value("Furnace dies: 1× spending").run()
+    text = " ".join(m.value for m in app.markdown)
+    assert "no new credit" in text and "EI claim" not in text

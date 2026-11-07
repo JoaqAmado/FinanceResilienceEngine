@@ -24,6 +24,7 @@ from resilience import (
     build_metrics,
     calendar_path,
     goal_plan,
+    goal_shock_for,
     grey_zone_note,
     load_monthly,
 )
@@ -66,6 +67,7 @@ def portfolio() -> dict[str, pd.DataFrame]:
 
 
 def money(x: float) -> str:
+    x = 0.0 if abs(x) < 0.5 else x
     return f"-${-x:,.0f}" if x < 0 else f"${x:,.0f}"
 
 
@@ -99,10 +101,18 @@ def pick(acct: int) -> None:
     apply_preset()  # a new customer starts from the selected card's own values
 
 
+def shock_from(v) -> Shock:
+    """The Shock a set of lever values means (inactive one-off inputs don't count)."""
+    by_x = v["oneoff_mode"] == _X
+    return Shock(income_multiplier=v["income_pct"] / 100, bills_increase_pct=v["bills_pct"] / 100,
+                 extra_monthly_cost=float(v["extra"]), one_off_cost=0.0 if by_x else float(v["oneoff_amt"]),
+                 one_off_multiple_of_S=float(v["oneoff_x"]) if by_x else 0.0,
+                 job_loss=bool(v["job_loss"]) and v["income_pct"] < 100)
+
+
 def twist_label() -> str:
-    """The card's name only while every lever still matches it; otherwise say what is applied."""
-    p = PRESETS[ss.preset]
-    if ss.preset != "Custom" and all(ss[k] == p[k] for k in LEVERS):
+    """The card's name only while the applied shock still equals the card; otherwise say what is applied."""
+    if ss.preset != "Custom" and shock_from(ss) == shock_from(PRESETS[ss.preset]):
         return ss.preset
     parts = []
     if ss.income_pct != 100:
@@ -154,7 +164,7 @@ with tab_live:
     k[1].metric("Spending (S) / mo", money(r.S))
     k[2].metric("Buffer (B)", money(r.B), f"{r.B / r.S:.1f} months of spending" if r.S > 0 else None,
                 delta_color="off")
-    k[3].metric("Runway today (months)", "120+" if base.no_shortfall else f"{base.months:.1f}",
+    k[3].metric("Runway today (months)", "120+" if base.no_shortfall else base.label,
                 "no shortfall" if base.no_shortfall else None, delta_color="off")
     k2 = st.columns(4)
     k2[0].metric("Fixed costs (F) / mo", money(r.F))
@@ -238,7 +248,7 @@ with tab_live:
             st.error(f"BUFFER GONE: the one-off ({money(judge.one_off)}) is more than the buffer", icon="🛑")
         else:
             st.error(f"RUNS OUT IN {judge.months:.1f} MONTHS (needs {N})", icon="🛑")
-        flow = f"gap {money(judge.gap)}/mo" if judge.gap > 0 else f"surplus {money(-judge.gap)}/mo"
+        flow = f"gap {money(judge.gap)}/mo" if judge.gap > 0 else f"surplus {money(abs(judge.gap))}/mo"
         st.caption(f"twist: {judge_shock.name} · income after {money(judge.income_after)}/mo · "
                    f"spending after {money(judge.spending_after)}/mo · {flow} · buffer left {money(judge.buffer_left)}")
         note = grey_zone_note(judge, judge_shock)
@@ -266,8 +276,7 @@ with tab_live:
     st.subheader("3 · Make a plan")
     st.caption("Plans use the judges' numbers" + (f" plus your reality checks: {', '.join(active)}." if active else "."))
     plan_shock = real_shock
-    goal_shock = plan_shock if plan_shock.is_job_loss else plan_shock.with_(
-        income_multiplier=0.55, one_off_cost=0.0, one_off_multiple_of_S=0.0, job_loss=True, name="Laid off: EI 55%")
+    goal_shock = goal_shock_for(plan_shock)
     g = goal_plan(r, target_months=N, target_kind="ei_proof", shock=goal_shock)
     conv = goal_plan(r, target_months=3)
     lad = backup_ladder(r, plan_shock, target_months=N)
@@ -302,7 +311,7 @@ with tab_live:
                 f"≥ {N} mo": ["✅" if x.reaches_target else "" for x in lad.rungs[: stop + 1]],
             }), hide_index=True)
         if lad.cash_or_credit_needed:
-            st.write(credit_advice(r, lad.cash_or_credit_needed))
+            st.write(credit_advice(r, lad.cash_or_credit_needed, job_loss=plan_shock.is_job_loss))
 
     f = facts(int(acct), r, judge_shock, judge,
               {"half-year spending": apply_shock(r, judge_shock.with_(spending_basis="S6")),

@@ -222,10 +222,14 @@ class RunwayResult:
     one_off: float
 
     @property
+    def capped(self) -> bool:
+        return not self.no_shortfall and self.months is not None and self.months >= RUNWAY_CAP_MONTHS
+
+    @property
     def label(self) -> str:
         if self.no_shortfall:
             return NO_SHORTFALL_LABEL
-        return f"{self.months:.1f}"
+        return f"{self.months:.1f} (cap)" if self.capped else f"{self.months:.1f}"
 
     def survives(self, months: float) -> bool:
         return self.no_shortfall or (self.months is not None and self.months >= months)
@@ -529,6 +533,15 @@ def backup_ladder(row: pd.Series, shock: Shock, target_months: float = 6.0) -> L
 GREY_ZONE = ((6.0, 8.0, 0.819), (8.0, 10.0, 0.423), (10.0, 12.0, 0.231))
 
 
+def goal_shock_for(shock: Shock) -> Shock:
+    """The shock a job-loss-proof fund is sized on: the twist itself if it is a job loss, otherwise
+    a job loss on EI 55% (or the twist's deeper income cut, so a 30% pay cut is covered too)."""
+    if shock.is_job_loss:
+        return shock
+    return shock.with_(income_multiplier=min(shock.income_multiplier, 0.55), one_off_cost=0.0,
+                       one_off_multiple_of_S=0.0, job_loss=True, name="Laid off: EI 55%")
+
+
 def grey_zone_note(result: RunwayResult, shock: Shock | None = None) -> str | None:
     """Only for the judges' plain EI 55% job loss, the twist the calibration was measured on."""
     if shock is not None and shock.with_(name=LAID_OFF_EI.name) != LAID_OFF_EI:
@@ -547,12 +560,13 @@ def loan_in_trouble(row) -> bool:
     return str(_get(row, "loan_status", "")) in DEFAULTED_LOAN_STATUSES
 
 
-def credit_advice(row, amount: float) -> str:
+def credit_advice(row, amount: float, job_loss: bool = True) -> str:
     """What to say about a cash/credit hole, without pushing credit on a borrower in trouble."""
     amt = f"${amount:,.0f}"
     if loan_in_trouble(row):
+        first = "start the EI claim on day one, " if job_loss else ""
         return (f"The remaining hole is {amt}. With a loan already in arrears or default, no new credit: "
-                "start the EI claim on day one, ask for a hardship deferral on the loan, and run the spending steps.")
+                f"{first}ask for a hardship deferral on the loan, and run the spending steps.")
     return (f"Line up {amt} of credit before the shock: a Tangerine Line of Credit is easiest to arrange "
             "while still employed, subject to approval.")
 

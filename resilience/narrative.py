@@ -13,11 +13,14 @@ from .core import Ladder, RunwayResult, Shock, loan_in_trouble
 
 
 def _m(x: float) -> str:
+    x = 0.0 if abs(x) < 0.5 else x
     return f"-${-x:,.0f}" if x < 0 else f"${x:,.0f}"
 
 
 def _rw(res: RunwayResult) -> str:
-    return "no shortfall (120+ months)" if res.no_shortfall else f"{res.months:.1f} months"
+    if res.no_shortfall:
+        return "no shortfall (120+ months)"
+    return f"{res.months:.1f} months (the 120-month cap)" if res.capped else f"{res.months:.1f} months"
 
 
 def facts(account_id: int, row, shock: Shock, judge: RunwayResult, reality: dict[str, RunwayResult | float],
@@ -39,6 +42,9 @@ def facts(account_id: int, row, shock: Shock, judge: RunwayResult, reality: dict
         "income_changed": shock.income_multiplier != 1.0 or shock.income_cap_monthly is not None,
         "already_overdrawn": bool(row["B"] <= 0),
         "loan_in_trouble": loan_in_trouble(row),
+        "job_loss": shock.is_job_loss,
+        "goal_rounding_short": (_m(goal_target - float(row["B"]))
+                                if goal_gap == 0 and goal_target - float(row["B"]) >= 0.5 else None),
         "goal_target": _m(goal_target),
         "goal_gap": _m(goal_gap),
         "goal_months": None if goal_months is None else f"{goal_months:g}",
@@ -87,13 +93,17 @@ def template_story(f: dict) -> dict:
     if f["ladder_step"]:
         steps.append(f"If it hits: {f['ladder_step']} (together {f['ladder_saving']}/mo).")
     elif f["cash_or_credit"] and f.get("loan_in_trouble"):
+        first = "start the EI claim on day one and " if f.get("job_loss") else ""
         steps.append(f"If it hits: the remaining hole is {f['cash_or_credit']}. The loan is already in arrears or "
-                     "default, so no new credit: start the EI claim on day one and ask for a hardship deferral.")
+                     f"default, so no new credit: {first}ask for a hardship deferral.")
     elif f["cash_or_credit"]:
         steps.append(f"If it hits: cuts alone aren't enough. Line up {f['cash_or_credit']} of credit while still employed.")
     else:
         steps.append(f"If it hits: {f['ladder_verdict'].lower()}.")
-    if f["goal_gap"] == "$0":
+    if f["goal_gap"] == "$0" and f.get("goal_rounding_short"):
+        steps.append(f"Goal: the {f['goal_target']} job-loss-proof fund is in place within rounding "
+                     f"({f['goal_rounding_short']} under the exact target). Top it up and keep it separate.")
+    elif f["goal_gap"] == "$0":
         steps.append(f"Goal: the {f['goal_target']} job-loss-proof fund is already in place. Keep it in a separate savings account.")
     elif f["goal_months"]:
         steps.append(f"Goal: build a {f['goal_target']} job-loss-proof fund. {f['goal_gap']} to go, "
