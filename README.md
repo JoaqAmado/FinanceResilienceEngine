@@ -10,11 +10,11 @@ The judges' runway comes first, computed exactly as the track brief defines it. 
 | | |
 |---|---|
 | Can't last 6 months on EI at 55% (judges' formula) | **1,578 of 4,500 (35.1%)** |
-| …with the real 2026 EI maximum ($729/week ≈ $3,159/month) | **2,304 (51.2%)** |
-| **The higher the income, the thinner the cushion:** fail rate by monthly income | 4.8% under $2.5k → 75.6% over $20k (99.8% with the 2026 cap). Buffers: 8.9 → 1.6 months of spending |
-| **A typical month isn't a typical half-year:** formula says 6–8 months, but the account fails on its own half-year spending | 81.9% (spending peaks in January and June) |
-| Median monthly cut that gets a failing customer back to 6 months | $2,057 (16% of spending) |
-| Overdrawn before the loan → defaulted | 27 of 27 in this data; none of the 606 repaying borrowers ever went negative |
+| **The more money comes in, the thinner the cushion:** fail rate by monthly money in | 4.8% under $2.5k → 75.6% over $20k. Buffers: 8.9 → 1.6 months of spending |
+| …stress test with the real 2026 EI maximum ($729/week ≈ $3,159/month) | 2,304 (51.2%) |
+| **A typical month isn't a typical half-year:** "safe" on the formula, but under 6 months on the account's own half-year spending | 783 of 2,922 (560, or 1 in 5, with the same window on income too). Spending peaks in January and June |
+| Failing customers who get back to 6 months by cutting a quarter of spending or less | 3 in 4 (1,192 of 1,555 with a positive buffer); only 121 can't cut their way there |
+| Overdrawn before the loan → defaulted | 27 of 27 in this data (none of the 606 repaying borrowers ever went negative), so it's shown as a flag, not a model |
 
 ## Data and limits
 
