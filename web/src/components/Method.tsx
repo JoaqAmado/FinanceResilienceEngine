@@ -94,7 +94,7 @@ export function Method() {
         <p>
           The engine runs in your browser: a TypeScript port of the Python engine (<code>resilience/core.py</code> and{' '}
           <code>narrative.py</code>), so any twist card works live and offline. A parity test checks the port against
-          about 1.26 million outputs exported from the Python engine (every account's runway under 13 shocks, plus
+          the outputs exported from the Python engine (every account's runway under 13 shocks, plus
           plans and stories on a sample of accounts), and every runway, flag, plan step and story string must match
           exactly. The page loads one data file of the 4,500 accounts' inputs at full precision, and
           each account's month history only when it is opened. No keys, no network calls beyond this page's own files.

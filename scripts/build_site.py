@@ -5,6 +5,7 @@
 
 Writes
     <out>/index.html, styles.css, img/   a copy of site/, the landing page
+    <out>/vercel.json                    trailingSlash, so /app redirects to /app/ and the app's relative paths resolve
     <out>/app/                           the web app, built by Vite with a relative base (--base=./), so it runs
                                          from any sub-path; it fetches data/... relative to app/
 
@@ -41,9 +42,16 @@ def vite_command(out: Path) -> list[str]:
     return [npx, "vite", "build", "--base=./", "--outDir", str((out / APP_DIR).resolve()), "--emptyOutDir"]
 
 
-def build_app(out: Path) -> None:
+def check_web_ready() -> None:
+    """Fail before anything is written, so a failed build never leaves a landing page without its app."""
     if not (WEB / "node_modules").is_dir():
         raise SystemExit("web/node_modules is missing: run `npm install` in web/ first")
+    if shutil.which("npx") is None:
+        raise SystemExit("npx not found: install Node 24 / npm 11 to build the web app")
+
+
+def build_app(out: Path) -> None:
+    check_web_ready()
     subprocess.run(vite_command(out), cwd=WEB, check=True)
     for need in ("index.html", "data/accounts.json", "data/portfolio.json"):
         if not (out / APP_DIR / need).is_file():
@@ -56,8 +64,10 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("out_dir", nargs="?", default=str(DEFAULT_OUT),
                         help="output folder (default: site_dist/ in the repo)")
     out = Path(parser.parse_args(argv).out_dir).resolve()
-    if out == ROOT or out.is_relative_to(SITE) or out.is_relative_to(WEB):
-        raise SystemExit(f"refusing to build into {out}: pick a folder outside site/ and web/, such as site_dist/")
+    inside_repo = out.is_relative_to(ROOT) and not out.is_relative_to(DEFAULT_OUT)
+    if ROOT.is_relative_to(out) or inside_repo or out.is_relative_to(SITE) or out.is_relative_to(WEB):
+        raise SystemExit(f"refusing to build into {out}: use site_dist/ or a folder outside the repo")
+    check_web_ready()
     files = copy_site(out)
     build_app(out)
     print(f"landing page: {len(files)} files -> {out}")

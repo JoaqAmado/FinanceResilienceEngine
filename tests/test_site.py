@@ -2,6 +2,7 @@
 text (alt text included) is recomputed here by the engine, the same way tests/test_docs.py pins the docs.
 """
 import importlib.util
+import json
 import re
 from html.parser import HTMLParser
 from pathlib import Path
@@ -143,6 +144,23 @@ def test_page_names_the_links_judges_need(page):
     assert "Built at Sheridan Datathon 2026 · Tangerine track" in page.text
 
 
+def test_social_preview_points_at_an_image_in_site(page):
+    from PIL import Image
+    meta = {a.get("property") or a.get("name"): a.get("content") for tag, a in page.tags if tag == "meta"}
+    base = "https://twin-runway.vercel.app/"
+    assert meta["og:url"] == base and meta["twitter:card"] == "summary_large_image"
+    assert all(meta[k].strip() for k in ("og:title", "og:description", "og:image:alt"))
+    image = meta["og:image"]
+    assert image.startswith(base), image
+    with Image.open(SITE / image[len(base):]) as im:
+        assert im.size == (int(meta["og:image:width"]), int(meta["og:image:height"]))
+
+
+def test_vercel_sends_app_to_its_trailing_slash():
+    # the app is built with --base=./, so at /app (no slash) ./assets and data/ would resolve against the site root
+    assert json.loads((SITE / "vercel.json").read_text(encoding="utf-8"))["trailingSlash"] is True
+
+
 # ------------------------------------------------------------- the figures
 
 @pytest.fixture(scope="module")
@@ -178,6 +196,8 @@ def figures():
     assert int(bh.light) == int(lift.light) and int(bh.list_accounts) == int(lift.list_accounts)
     shared = int(bh.gradient_boosting) - int(bh.gradient_boosting_only)
     assert shared == int(bh.light) - int(bh.light_only)
+    assert int(bh.gradient_boosting_only) == int(bh.light_only)                  # "each catches 9 the other misses"
+    sizes = ev["lift"]["list_pct"]                                               # the lift chart's watch-list sizes
     versus = BM.versus(int(bh.gradient_boosting), int(bh.light), int(bh.gradient_boosting_only), int(bh.light_only))
     pct, went = E.HEADLINE_LIST_PCT, es["went_overdrawn"]
 
@@ -210,9 +230,9 @@ def figures():
         f"{E.WATCH_POINTS} points the apps show it as a warning",
         *(r.label for r in W.RULES),
         # the 2025 evidence
-        f"as it stood at the {es['snapshot']} snapshot, on the {es['accounts']:,} accounts still active in "
-        f"{es['label_year']}. Of those, {went} first went overdrawn in {es['label_year']}, and {es['passed_ei55']} of "
-        f"those {went} had passed the judges' {TARGET}-month test at the snapshot",
+        f"as it stood at the {es['snapshot']} snapshot, on the {es['accounts']:,} accounts rated then and still active "
+        f"in {es['label_year']}. Of those, {went} first went overdrawn in {es['label_year']}, and "
+        f"{es['passed_ei55']} of those {went} had passed the judges' {TARGET}-month test at the snapshot",
         f"On a {pct}% watch-list ({int(lift.list_accounts):,} of {es['accounts']:,} accounts), how many of the {went} "
         f"each ranking catches",
         f"Early-warning light, {len(W.RULES)} rules {int(lift.light)}",
@@ -220,8 +240,9 @@ def figures():
         f"The judges' runway, shortest first {int(lift.ei55_runway)}",
         f"at the {pct}% list it holds {int(lift.light)} against {int(lift.ei55_runway)} and {int(lift.buffer_months)}",
         f"Gradient boosting on {len(BM.FEATURES)} features, trained on {bm.train.label_year}'s outcomes, catches "
-        f"{int(bh.gradient_boosting)} on the same {pct}% watch-list: {versus} the light, not the same accounts "
-        f"({shared} are on both lists)",
+        f"{int(bh.gradient_boosting)} on the same {pct}% watch-list: {versus} the light, but not all the same ones. "
+        f"Both lists catch {shared} of them, and each catches {int(bh.gradient_boosting_only)} the other misses.",
+        f"for watch-lists from {sizes.min()}% to {sizes.max()}% of the accounts",
         f"so both apps keep the {len(W.RULES)} rules anyone can read",
         # how it's built
         f"The judges' numbers match on all {n:,} accounts in Python, TypeScript and SQL (DuckDB).",
@@ -280,10 +301,19 @@ def test_build_copies_the_page_and_builds_the_app_with_a_relative_base(tmp_path)
         assert cmd[cmd.index("--outDir") + 1] == str((out / "app").resolve())
 
 
-@pytest.mark.parametrize("bad", ["site", "site/dist", "web/dist", "."])
+@pytest.mark.parametrize("bad", ["site", "site/dist", "web/dist", ".", "docs", "resilience", ".."])
 def test_build_refuses_to_write_into_the_sources(bad):
     with pytest.raises(SystemExit, match="refusing"):
         _build_site().main([str(ROOT / bad)])
+
+
+def test_build_checks_the_web_app_before_writing_anything(tmp_path):
+    bs = _build_site()
+    bs.WEB = tmp_path / "web"  # no node_modules
+    out = tmp_path / "dist"
+    with pytest.raises(SystemExit, match="node_modules"):
+        bs.main([str(out)])
+    assert not out.exists()
 
 
 def test_site_dist_is_ignored():

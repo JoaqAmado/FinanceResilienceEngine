@@ -2,6 +2,9 @@
 
 Sheridan Datathon 2026 · Tangerine track "Resilience Rewired".
 
+**Live:** [twin-runway.vercel.app](https://twin-runway.vercel.app) (the landing page, with the web app at
+[/app/](https://twin-runway.vercel.app/app/)).
+
 For any of Tangerine's 4,500 accounts: **how many months does this customer last after a shock, and what should they do?**
 The judges' runway comes first, computed exactly as the track brief defines it. Labelled reality checks sit beside it,
 then a goal plan and a backup plan built from the customer's own numbers.
@@ -21,6 +24,7 @@ python3.12 -m venv .venv
 .venv/bin/pytest -rs                      # offline suite; the live Snowflake check is opt-in: .venv/bin/pytest -m live
 .venv/bin/streamlit run app.py            # http://localhost:8501
 (cd web && npm install && npm test && npm run build && npm run preview)   # http://localhost:4173 (npm run dev for :5173)
+.venv/bin/python scripts/build_site.py && .venv/bin/python -m http.server 8000 --directory site_dist   # landing page + app
 ```
 
 On Windows, use `.venv\Scripts\` instead of `.venv/bin/`. The web app's data files are committed, so it runs without Python.

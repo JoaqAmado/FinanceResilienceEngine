@@ -518,7 +518,7 @@ export function Portfolio({ data, onOpen }: Props) {
                 tickFormatter={(v: number) => `${v}%`}
                 tickLine={false}
                 axisLine={false}
-                width={44}
+                width={52}
                 tick={{ fill: COLORS.muted }}
               />
               <Tooltip content={BandTooltip} cursor={{ fill: 'rgba(15,23,42,0.05)' }} isAnimationActive={false} />
@@ -718,7 +718,7 @@ export function Portfolio({ data, onOpen }: Props) {
                   tickFormatter={(v: number) => `${v}%`}
                   tickLine={false}
                   axisLine={false}
-                  width={44}
+                  width={52}
                   tick={{ fill: COLORS.muted }}
                 />
                 <Tooltip

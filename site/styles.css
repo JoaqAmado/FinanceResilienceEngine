@@ -260,6 +260,8 @@ h3 { font-size: 1.2rem; font-weight: 750; }
   margin: 32px 0 0;
 }
 
+.shot-link { display: block; cursor: zoom-in; }
+
 .shot img {
   width: 100%;
   border-radius: var(--radius);
