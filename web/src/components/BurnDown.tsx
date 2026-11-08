@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { usePrefersReducedMotion } from '@number-flow/react';
 import {
   Area,
   CartesianGrid,
@@ -96,7 +97,8 @@ export function BurnDown({ acct, judgeShock, judge, planShock, ladder, target, a
   const wiped = judge.bufferLeft <= 0;
   // the month the judges' balance line crosses $0 (not when the buffer is gone from the start, or at the cap)
   const zeroAt = !wiped && !judge.noShortfall && !judge.capped && judge.months !== null ? judge.months : null;
-  const anim = !dragging;
+  const reduced = usePrefersReducedMotion();
+  const anim = !dragging && !reduced;
   const planNote = ladder.alreadySafe
     ? 'no plan needed: it already survives'
     : ladder.firstSufficient !== null
@@ -251,7 +253,7 @@ export function BurnDown({ acct, judgeShock, judge, planShock, ladder, target, a
                 fill={COLORS.judges}
                 stroke={COLORS.surface}
                 strokeWidth={2}
-                label={{ value: `buffer gone: ${money(judge.bufferLeft)}`, position: 'right', fill: COLORS.ink }}
+                label={{ value: `buffer gone: ${money(judge.bufferLeft)}`, position: 'right', fill: COLORS.ink, offset: 10 }}
               />
             )}
           </ComposedChart>

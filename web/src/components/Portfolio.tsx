@@ -1,4 +1,6 @@
 import { useMemo, useState } from 'react';
+import type { SyntheticEvent } from 'react';
+import { usePrefersReducedMotion } from '@number-flow/react';
 import {
   Bar,
   BarChart,
@@ -183,6 +185,7 @@ function SimpleTooltip({ active, payload, unit }: TooltipContentProps & { unit: 
 }
 
 export function Portfolio({ data, onOpen }: Props) {
+  const reduced = usePrefersReducedMotion();
   const P = data.portfolio;
   const hl = P.headlines;
   const n = hl.accounts;
@@ -192,6 +195,20 @@ export function Portfolio({ data, onOpen }: Props) {
     [rows],
   );
   const [band, setBand] = useState<number | null>(null);
+  const toggleBand = (i: number) => setBand(band === i ? null : i);
+  // a click anywhere in a money-in band's column toggles that band's list. A bar handles its own click, so
+  // the chart skips those; the column comes from where the click landed on the plot, because the hovered
+  // index lags a tap behind on touch screens.
+  const onBandColumn = (_st: unknown, e?: SyntheticEvent) => {
+    if (!e || !(e.target instanceof Element) || e.target.closest('.recharts-bar-rectangle')) return;
+    const plot = e.target.closest('.recharts-wrapper')?.querySelector('.recharts-cartesian-grid');
+    const n = P.income_bands.length;
+    const x = (e.nativeEvent as MouseEvent).clientX;
+    if (!plot || !n || typeof x !== 'number') return;
+    const r = plot.getBoundingClientRect();
+    if (r.width <= 0 || x < r.left || x > r.right) return;
+    toggleBand(Math.min(n - 1, Math.floor(((x - r.left) / r.width) * n)));
+  };
   const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 }>({ key: 'ei', dir: 1 });
 
   const bandRows = useMemo(() => {
@@ -371,6 +388,7 @@ export function Portfolio({ data, onOpen }: Props) {
                   strokeDasharray={x.dash}
                   dot={false}
                   activeDot={{ r: 5, stroke: COLORS.surface, strokeWidth: 2 }}
+                  isAnimationActive={!reduced}
                   animationDuration={500}
                 />
               ))}
@@ -455,8 +473,8 @@ export function Portfolio({ data, onOpen }: Props) {
                 width="auto"
                 tick={{ fill: COLORS.muted }}
               />
-              <Tooltip content={CellTooltip} cursor={{ fill: 'rgba(15,23,42,0.05)' }} isAnimationActive={false} />
-              <Bar dataKey="pct" radius={[4, 4, 0, 0]} maxBarSize={44} animationDuration={500}>
+              <Tooltip content={CellTooltip} cursor={{ fill: COLORS.cursor }} isAnimationActive={false} />
+              <Bar dataKey="pct" radius={[4, 4, 0, 0]} maxBarSize={44} isAnimationActive={!reduced} animationDuration={500}>
                 {bars.map((b) => (
                   <Cell key={b.label} fill={b.compared ? COLORS.accent : COLORS.histIn} />
                 ))}
@@ -524,6 +542,8 @@ export function Portfolio({ data, onOpen }: Props) {
               margin={{ top: 24, right: 8, bottom: 8, left: 0 }}
               barGap={14}
               barCategoryGap="18%"
+              style={{ cursor: 'pointer' }}
+              onClick={onBandColumn}
               title="Share of each monthly money-in band that can't last 6 months"
               desc="Two bars per band: the judges' EI 55% and the real 2026 EI cap. The left and right arrow keys step through the bands."
             >
@@ -538,16 +558,16 @@ export function Portfolio({ data, onOpen }: Props) {
                 width="auto"
                 tick={{ fill: COLORS.muted }}
               />
-              <Tooltip content={BandTooltip} cursor={{ fill: 'rgba(15,23,42,0.05)' }} isAnimationActive={false} />
+              <Tooltip content={BandTooltip} cursor={{ fill: COLORS.cursor }} isAnimationActive={false} />
               <Bar
                 dataKey="fail_6mo_ei55_pct"
                 name="Judges' EI 55%"
                 fill={COLORS.judges}
                 radius={[4, 4, 0, 0]}
                 maxBarSize={28}
+                isAnimationActive={!reduced}
                 animationDuration={500}
-                onClick={(_, i) => setBand(i)}
-                style={{ cursor: 'pointer' }}
+                onClick={(_, i) => toggleBand(i)}
               >
                 {P.income_bands.map((b, i) => (
                   <Cell key={b.income_band} fillOpacity={band === null || band === i ? 1 : 0.35} />
@@ -565,9 +585,9 @@ export function Portfolio({ data, onOpen }: Props) {
                 fill={COLORS.reality}
                 radius={[4, 4, 0, 0]}
                 maxBarSize={28}
+                isAnimationActive={!reduced}
                 animationDuration={500}
-                onClick={(_, i) => setBand(i)}
-                style={{ cursor: 'pointer' }}
+                onClick={(_, i) => toggleBand(i)}
               >
                 {P.income_bands.map((b, i) => (
                   <Cell key={b.income_band} fillOpacity={band === null || band === i ? 1 : 0.35} />
@@ -745,10 +765,10 @@ export function Portfolio({ data, onOpen }: Props) {
                 />
                 <Tooltip
                   content={(p: TooltipContentProps) => <SimpleTooltip {...p} unit="%" />}
-                  cursor={{ fill: 'rgba(15,23,42,0.05)' }}
+                  cursor={{ fill: COLORS.cursor }}
                   isAnimationActive={false}
                 />
-                <Bar dataKey="fail_6mo_on_S6_pct" fill={COLORS.reality} radius={[4, 4, 0, 0]} maxBarSize={28} animationDuration={500}>
+                <Bar dataKey="fail_6mo_on_S6_pct" fill={COLORS.reality} radius={[4, 4, 0, 0]} maxBarSize={28} isAnimationActive={!reduced} animationDuration={500}>
                   <LabelList
                     dataKey="fail_6mo_on_S6_pct"
                     position="top"
@@ -800,10 +820,10 @@ export function Portfolio({ data, onOpen }: Props) {
                 <YAxis tickLine={false} axisLine={false} width="auto" tick={{ fill: COLORS.muted }} />
                 <Tooltip
                   content={(p: TooltipContentProps) => <SimpleTooltip {...p} unit="accounts" />}
-                  cursor={{ fill: 'rgba(15,23,42,0.05)' }}
+                  cursor={{ fill: COLORS.cursor }}
                   isAnimationActive={false}
                 />
-                <Bar dataKey="accounts" fill={COLORS.judges} radius={[4, 4, 0, 0]} maxBarSize={28} animationDuration={500}>
+                <Bar dataKey="accounts" fill={COLORS.judges} radius={[4, 4, 0, 0]} maxBarSize={28} isAnimationActive={!reduced} animationDuration={500}>
                   <LabelList dataKey="accounts" position="top" fill={COLORS.ink2} />
                 </Bar>
               </BarChart>

@@ -3,6 +3,7 @@ import { pyFixed, survives } from '../engine';
 import type { Account, RunwayResult, Shock } from '../engine';
 import { money, rwText } from '../lib/format';
 import s from './JudgesPanel.module.css';
+import { RunwayBar } from './RunwayBar';
 
 interface Props {
   acct: Account;
@@ -11,6 +12,8 @@ interface Props {
   shock: Shock;
   target: number;
   greyNote: string | null;
+  /** a slider is being dragged: the number snaps instead of rolling on every input event */
+  dragging?: boolean;
 }
 
 type Verdict = { kind: 'good' | 'bad'; icon: string; text: string };
@@ -49,7 +52,7 @@ function Formula({ acct, judge }: { acct: Account; judge: RunwayResult }) {
   );
 }
 
-export function JudgesPanel({ acct, judge, baseline, shock, target, greyNote }: Props) {
+export function JudgesPanel({ acct, judge, baseline, shock, target, greyNote, dragging = false }: Props) {
   const v = verdict(acct, judge, target);
   const flow = judge.gap > 0 ? `gap ${money(judge.gap)}/mo` : `surplus ${money(Math.abs(judge.gap))}/mo`;
   const exact = rwText(judge);
@@ -73,6 +76,7 @@ export function JudgesPanel({ acct, judge, baseline, shock, target, greyNote }: 
             <NumberFlow
               className={s.heroNum}
               value={judge.months ?? 0}
+              animated={!dragging}
               locales="en-CA"
               format={{ minimumFractionDigits: 1, maximumFractionDigits: 1 }}
               transformTiming={{ duration: 450, easing: 'ease-out' }}
@@ -91,6 +95,9 @@ export function JudgesPanel({ acct, judge, baseline, shock, target, greyNote }: 
         </span>
         <span>{v.text}</span>
       </div>
+
+      {/* after the verdict, so number and verdict stay above the fold in presenter mode at 1280 x 720 */}
+      <RunwayBar judge={judge} target={target} still={dragging} />
 
       <Formula acct={acct} judge={judge} />
 

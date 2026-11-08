@@ -124,7 +124,7 @@ export function App() {
 
   const openInLive = useCallback((id: number, card?: CardId) => {
     dispatch({ type: 'open', id, card, tab: 'live' });
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
     // keyboard focus follows the account to the live twist (the heading names it; keys 1-4 still pick a card)
     window.setTimeout(() => document.getElementById('customer-title')?.focus({ preventScroll: true }), 0);
   }, []);

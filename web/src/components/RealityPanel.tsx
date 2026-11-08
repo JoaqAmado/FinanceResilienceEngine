@@ -36,7 +36,10 @@ export function RealityPanel({ judge, real, anyOn, activeNames, checks, jan, onT
 
       <div className={s.combined}>
         <span className={s.combinedLabel}>Runway with the selected checks</span>
-        <span className={s.combinedValue}>{rwText(real)}</span>
+        {/* keyed on the engine string so the peach flash replays whenever the value changes */}
+        <span key={rwText(real)} className={`${s.combinedValue} ${s.flash}`}>
+          {rwText(real)}
+        </span>
         <span className="visually-hidden" aria-live="polite">
           Runway with the selected checks: {rwText(real)}
         </span>
@@ -73,7 +76,9 @@ export function RealityPanel({ judge, real, anyOn, activeNames, checks, jan, onT
             </label>
             {c.enabled ? (
               <span className={s.values}>
-                <span className={s.value}>{rwText(c.result)}</span>
+                <span key={rwText(c.result)} className={`${s.value} ${s.flash}`}>
+                  {rwText(c.result)}
+                </span>
                 <Delta v={c.result} judge={judge} />
               </span>
             ) : (

@@ -71,6 +71,7 @@ export function Live({ data, scenario, dispatch, searchRef }: Props) {
           shock={model.judgeShock}
           target={scenario.target}
           greyNote={model.greyNote}
+          dragging={dragging}
         />
       </div>
       <div className={s.reality}>
