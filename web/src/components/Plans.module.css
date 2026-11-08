@@ -1,0 +1,219 @@
+.panel {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.head {
+  display: flex;
+  align-items: baseline;
+  gap: 6px 14px;
+  flex-wrap: wrap;
+}
+
+.headTitle {
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.basis {
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+  gap: 12px;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 14px 16px;
+  display: grid;
+  gap: 8px;
+  align-content: start;
+  min-width: 0;
+}
+
+.eyebrow {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.cardTitle {
+  font-size: 1.05rem;
+  font-weight: 750;
+}
+
+.big {
+  font-size: 2.2rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.progressLabel {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.82rem;
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.progress {
+  height: 14px;
+  border-radius: 999px;
+  background: var(--sunken);
+  border: 1px solid var(--line);
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 999px;
+  transition: width 300ms ease;
+}
+
+.progressFill[data-done='true'] {
+  background: var(--s-plan);
+}
+
+.text {
+  font-size: 0.92rem;
+}
+
+.rounding {
+  font-size: 0.82rem;
+  color: var(--info-ink);
+  background: var(--info-bg);
+  border: 1px solid var(--info-line);
+  border-radius: var(--radius-sm);
+  padding: 0.35rem 0.55rem;
+}
+
+.caption {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.ladder {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0;
+}
+
+.rung {
+  position: relative;
+  display: flex;
+  gap: 10px;
+  padding: 6px 0 6px 0;
+}
+
+.rung:not(:last-child)::before {
+  content: '';
+  position: absolute;
+  left: 0.85rem;
+  top: 2.1rem;
+  bottom: -0.3rem;
+  width: 2px;
+  background: var(--line-strong);
+}
+
+.rung[data-state='lit']:not(:last-child)::before,
+.rung[data-state='hit']:not(:last-child)::before {
+  background: var(--accent);
+}
+
+.rungDot {
+  flex: none;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 0.8rem;
+  font-weight: 800;
+  border: 2px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--muted);
+  transition:
+    background-color 200ms ease,
+    border-color 200ms ease;
+}
+
+.rung[data-state='lit'] .rungDot {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+
+.rung[data-state='hit'] .rungDot {
+  border-color: var(--good-ink);
+  background: var(--good-ink);
+  color: #fff;
+}
+
+.rungStep {
+  font-weight: 650;
+  font-size: 0.9rem;
+  min-width: 0;
+}
+
+.rung[data-state='off'] .rungStep {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.rungMeta {
+  display: block;
+  font-weight: 500;
+  font-size: 0.78rem;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.credit {
+  font-size: 0.88rem;
+  background: var(--warn-bg);
+  border: 1px solid var(--warn-line);
+  color: var(--warn-ink);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.65rem;
+}
+
+.credit[data-trouble='true'] {
+  background: var(--bad-bg);
+  border-color: var(--bad-line);
+  color: var(--bad-ink);
+}
+
+.story {
+  border-left: 4px solid var(--accent);
+}
+
+.storyHead {
+  font-size: 1rem;
+  font-weight: 750;
+  line-height: 1.35;
+}
+
+.steps {
+  margin: 0;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: 4px;
+  font-size: 0.9rem;
+}

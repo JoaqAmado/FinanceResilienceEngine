@@ -1,0 +1,153 @@
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-top: 5px solid var(--s-judges);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 14px 18px 16px;
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.eyebrow {
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.official {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.hero {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+  min-height: 5.2rem;
+}
+
+.heroValue {
+  display: inline-block;
+  font-size: 5rem;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+.heroNum {
+  font-variant-numeric: tabular-nums;
+}
+
+.heroText {
+  font-size: 3.2rem;
+  letter-spacing: -0.02em;
+}
+
+.heroUnit {
+  font-size: 1.15rem;
+  font-weight: 650;
+  color: var(--ink-3);
+}
+
+.badge {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 0.6rem 0.8rem;
+  border-radius: var(--radius-sm);
+  border: 2px solid;
+  font-weight: 800;
+  font-size: 1.05rem;
+  letter-spacing: 0.01em;
+}
+
+.badgeIcon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 1rem;
+}
+
+.good {
+  background: var(--good-bg);
+  border-color: var(--good-line);
+  color: var(--good-ink);
+}
+
+.good .badgeIcon {
+  background: var(--good-ink);
+}
+
+.bad {
+  background: var(--bad-bg);
+  border-color: var(--bad-line);
+  color: var(--bad-ink);
+}
+
+.bad .badgeIcon {
+  background: var(--bad-ink);
+}
+
+.formula {
+  background: var(--sunken);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.7rem;
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.formulaRule {
+  color: var(--ink-3);
+  font-size: 0.8rem;
+}
+
+.formulaNums {
+  overflow-wrap: anywhere;
+}
+
+.caption {
+  color: var(--ink-3);
+  font-size: 0.86rem;
+}
+
+.before {
+  font-size: 0.86rem;
+  color: var(--ink-2);
+}
+
+.grey {
+  background: var(--info-bg);
+  border: 1px solid var(--info-line);
+  color: var(--info-ink);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.7rem;
+  font-size: 0.86rem;
+}
+
+@media (max-width: 767px) {
+  .heroValue {
+    font-size: 3.8rem;
+  }
+
+  .heroText {
+    font-size: 2.4rem;
+  }
+}

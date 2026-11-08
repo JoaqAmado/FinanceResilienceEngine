@@ -1,0 +1,124 @@
+.wrap {
+  display: grid;
+  gap: 8px;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  text-align: left;
+  min-height: 84px;
+  padding: 0.7rem 0.85rem 0.7rem 0.85rem;
+  border: 2px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  transition:
+    border-color 120ms ease,
+    background-color 120ms ease,
+    transform 120ms ease;
+}
+
+.card:hover {
+  border-color: var(--accent-line);
+}
+
+.card:active {
+  transform: translateY(1px);
+}
+
+.card[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.key {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  min-width: 1.5rem;
+  height: 1.5rem;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line-strong);
+  border-bottom-width: 2px;
+  border-radius: 5px;
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--ink-3);
+  background: var(--surface);
+}
+
+.card[aria-pressed='true'] .key {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.title {
+  font-size: 1.05rem;
+  font-weight: 750;
+  padding-right: 2rem;
+}
+
+.detail {
+  font-size: 0.8rem;
+  color: var(--ink-3);
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  font-size: 0.88rem;
+}
+
+.applied {
+  color: var(--ink-2);
+}
+
+.edited {
+  font-size: 0.78rem;
+  font-weight: 650;
+  color: var(--warn-ink);
+  background: var(--warn-bg);
+  border: 1px solid var(--warn-line);
+  border-radius: 999px;
+  padding: 0.05rem 0.55rem;
+}
+
+.reset {
+  margin-left: auto;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  border-radius: var(--radius-sm);
+  min-height: 40px;
+  padding: 0 0.75rem;
+  font-weight: 650;
+  color: var(--ink-2);
+}
+
+.reset:hover {
+  border-color: var(--ink-3);
+}
+
+@media (max-width: 767px) {
+  .cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .card {
+    min-height: 76px;
+  }
+}

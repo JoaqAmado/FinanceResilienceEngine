@@ -1,0 +1,92 @@
+/*
+ * Live twist layout.
+ *   phone:   one column, customer -> card -> judges' number -> levers -> checks -> chart -> plans
+ *   tablet:  two columns
+ *   desktop: account + customer + levers on the left; card, judges' number and checks on the right,
+ *            so the judges' number sits above the fold even at 1280 x 720
+ */
+.live {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    'picker'
+    'customer'
+    'cards'
+    'judges'
+    'levers'
+    'reality'
+    'chart'
+    'plans';
+}
+
+.picker {
+  grid-area: picker;
+  min-width: 0;
+}
+
+.cards {
+  grid-area: cards;
+  min-width: 0;
+}
+
+.customer {
+  grid-area: customer;
+  min-width: 0;
+}
+
+.judges {
+  grid-area: judges;
+  min-width: 0;
+}
+
+.reality {
+  grid-area: reality;
+  min-width: 0;
+}
+
+.levers {
+  grid-area: levers;
+  min-width: 0;
+}
+
+.chart {
+  grid-area: chart;
+  min-width: 0;
+}
+
+.plans {
+  grid-area: plans;
+  min-width: 0;
+}
+
+@media (min-width: 768px) {
+  .live {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas:
+      'picker picker'
+      'cards cards'
+      'judges reality'
+      'customer levers'
+      'chart chart'
+      'plans plans';
+  }
+}
+
+@media (min-width: 1200px) {
+  .live {
+    grid-template-columns: minmax(340px, 400px) minmax(0, 1.15fr) minmax(0, 1fr);
+    grid-template-areas:
+      'picker cards cards'
+      'customer judges reality'
+      'levers chart chart'
+      'levers plans plans';
+    align-items: start;
+  }
+}
+
+@media (min-width: 1700px) {
+  .live {
+    grid-template-columns: minmax(380px, 440px) minmax(0, 1.2fr) minmax(0, 1fr);
+  }
+}

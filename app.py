@@ -28,7 +28,7 @@ from resilience import (
     grey_zone_note,
     load_monthly,
 )
-from resilience import llm
+from resilience import llm, warehouse
 from resilience.narrative import facts, template_story
 from resilience.portfolio import build_all
 
@@ -64,6 +64,16 @@ def monthly() -> pd.DataFrame:
 @st.cache_data(show_spinner="Computing portfolio findings…")
 def portfolio() -> dict[str, pd.DataFrame]:
     return build_all(metrics())
+
+
+@st.cache_data(ttl=3600, show_spinner="Checking the judges' numbers in Snowflake…")
+def snowflake_check(settings_fingerprint: str) -> dict:
+    """Snowflake vs the engine, counts only. Only called when credentials exist; a failure is cached
+    too, so a dead network costs one wait, not one per rerun. The key changes with the credentials."""
+    try:
+        return warehouse.verify(metrics())
+    except Exception as e:
+        return {"error": f"{type(e).__name__}: {warehouse.scrub(str(e))}"}
 
 
 def money(x: float) -> str:
@@ -409,3 +419,23 @@ spending, missing bills, stale accounts) are flagged on the customer card rather
 **Sources.** PKDD'99 Financial dataset (CTU Prague, relational.fel.cvut.cz/dataset/Financial), provided by Tangerine ·
 Government of Canada, EI benefit amount (canada.ca/en/services/benefits/ei/ei-regular-benefit/benefit-amount.html).
 """)
+    with st.expander("Computed in Snowflake"):
+        if warehouse.available():
+            sf = snowflake_check(warehouse.fingerprint())
+            if "error" in sf:
+                st.warning(f"Snowflake check unavailable ({sf['error']}). Every number above comes from the engine "
+                           "and is unaffected.")
+            else:
+                line = (f"Snowflake judges' numbers match the engine on {sf['metrics_matched']:,}/{sf['accounts']:,} "
+                        "accounts")
+                if warehouse.all_match(sf):
+                    st.success(line)
+                else:
+                    st.warning(line)
+                st.caption(f"EI 55% runway in SQL: {sf['runway_matched']:,}/{sf['accounts']:,} match · "
+                           f"PORTFOLIO_SUMMARY: {sf['under_6_months_sql']:,} under 6 months (engine "
+                           f"{sf['under_6_months_engine']:,}). Same SQL as warehouse/sql/, which also runs offline "
+                           "in DuckDB.")
+        else:
+            st.caption("No Snowflake credentials here: the same SQL (warehouse/sql/) runs locally in DuckDB with "
+                       "parity to the engine on all 4,500 accounts (`python -m resilience.warehouse local-parity`).")

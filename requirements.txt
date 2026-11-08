@@ -4,3 +4,5 @@ streamlit>=1.40
 plotly>=5.24
 pytest>=8
 google-genai>=3.0
+snowflake-connector-python[pandas]>=5.2.0
+duckdb>=2.0.0

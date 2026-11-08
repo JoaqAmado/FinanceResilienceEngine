@@ -66,6 +66,25 @@ m = build_metrics()                                         # one row per accoun
 apply_shock(m.loc[20143], Shock(income_multiplier=0.55))    # RunwayResult(months=2.2, ...)
 ```
 
+## Snowflake
+
+The judges' numbers also exist as plain SQL in `warehouse/sql/`: `JUDGE_METRICS` (I, F, S, H, B, P per account),
+`EI55_RUNWAY` and `PORTFOLIO_SUMMARY`. The same files run unchanged in Snowflake and, offline, in DuckDB.
+The Python engine stays the source of every number in the app; the warehouse is a check on it.
+
+```bash
+.venv/bin/python -m resilience.warehouse local-parity   # DuckDB over data/*.csv, no account needed
+.venv/bin/python -m resilience.warehouse load           # upload 8 tables (not transactions) and create the views
+.venv/bin/python -m resilience.warehouse verify         # Snowflake vs the engine on all 4,500 accounts, counts only
+```
+
+`local-parity` matches the engine on all 4,500 accounts and gives the same 1,578 under 6 months (`tests/test_warehouse.py`).
+`load` creates the database and schema if they are missing and replaces the tables; add `--with-transactions` for
+the 100 MB transactions file. Credentials come from the environment or `.env`, which is gitignored:
+`SNOWFLAKE_ACCOUNT`, `SNOWFLAKE_USER`, `SNOWFLAKE_PASSWORD`, and optionally `SNOWFLAKE_WAREHOUSE` (default `COMPUTE_WH`),
+`SNOWFLAKE_DATABASE` (`TANGERINE`), `SNOWFLAKE_SCHEMA` (`PUBLIC`) and `SNOWFLAKE_ROLE`. With them set, the app's
+Method tab shows the `verify` result under "Computed in Snowflake". Without them, the app never touches the network.
+
 ## Sources
 - PKDD'99 Discovery Challenge Financial dataset, CTU Prague Relational Dataset Repository: https://relational.fel.cvut.cz/dataset/Financial (provided by Tangerine for the track)
 - Government of Canada, EI benefit amount (55%, $729/week maximum in 2026): https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit/benefit-amount.html

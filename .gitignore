@@ -8,3 +8,5 @@ __pycache__/
 .DS_Store
 .streamlit/secrets.toml
 .cache/
+web/node_modules/
+web/dist/

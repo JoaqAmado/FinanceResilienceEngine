@@ -1,0 +1,72 @@
+.method {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr));
+  gap: 14px;
+  align-items: start;
+}
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 16px 18px;
+  display: grid;
+  gap: 10px;
+  font-size: 0.95rem;
+  min-width: 0;
+}
+
+.h2 {
+  font-size: 1.1rem;
+  font-weight: 750;
+}
+
+.defs {
+  display: grid;
+  grid-template-columns: 2rem 1fr;
+  gap: 4px 10px;
+  margin: 0;
+}
+
+.defs dt {
+  font-weight: 800;
+  font-family: var(--mono);
+}
+
+.defs dd {
+  margin: 0;
+}
+
+.formula {
+  background: var(--sunken);
+  border-left: 4px solid var(--s-judges);
+  border-radius: var(--radius-sm);
+  padding: 0.6rem 0.8rem;
+  font-weight: 650;
+}
+
+.formula ul {
+  margin: 4px 0 0;
+  padding-left: 1.1rem;
+  font-weight: 500;
+}
+
+.list {
+  margin: 0;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: 6px;
+}
+
+.method code {
+  font-family: var(--mono);
+  font-size: 0.85em;
+  background: var(--sunken);
+  padding: 0 0.25rem;
+  border-radius: 4px;
+}
+
+.method a {
+  overflow-wrap: anywhere;
+}

@@ -1,0 +1,143 @@
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 14px 16px;
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px 20px;
+  flex-wrap: wrap;
+}
+
+.eyebrow {
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.sub {
+  font-size: 0.85rem;
+  color: var(--ink-3);
+}
+
+.legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  font-size: 0.8rem;
+  color: var(--ink-2);
+  max-width: 46rem;
+}
+
+.legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legendNote {
+  color: var(--muted);
+}
+
+.swatch {
+  flex: none;
+}
+
+/* fixed height: ResponsiveContainer renders at 0 inside an auto-height parent */
+.chart {
+  height: 22rem;
+  min-height: 260px;
+  width: 100%;
+}
+
+.tooltip {
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.14);
+  padding: 0.5rem 0.7rem;
+  font-size: 0.8rem;
+  display: grid;
+  gap: 3px;
+  min-width: 15rem;
+}
+
+.tipTitle {
+  font-weight: 750;
+  margin-bottom: 2px;
+}
+
+.tipRow {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.tipLabel {
+  color: var(--ink-3);
+}
+
+.tipValue {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.table summary {
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--ink-3);
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+}
+
+.tableScroll {
+  max-height: 16rem;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+}
+
+.tableScroll table {
+  width: 100%;
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.tableScroll th,
+.tableScroll td {
+  padding: 0.25rem 0.5rem;
+  text-align: right;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+
+.tableScroll thead th {
+  position: sticky;
+  top: 0;
+  background: var(--sunken);
+  font-weight: 650;
+  color: var(--ink-3);
+}
+
+@media (max-width: 767px) {
+  .chart {
+    height: 17rem;
+  }
+}

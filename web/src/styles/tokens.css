@@ -1,0 +1,159 @@
+/* Design tokens and base element styles. Light theme only: Tangerine orange accent on slate. */
+:root {
+  color-scheme: light;
+
+  /* brand */
+  --accent: #f47920; /* fills, borders, slider thumbs; 2.8:1 on white, so never body text */
+  --accent-ink: #b4500a; /* orange text on white, 5.1:1 */
+  --accent-soft: #fff4ea;
+  --accent-line: #f9b98a;
+  --on-accent: #0f172a; /* text on an orange fill, 6.5:1 */
+
+  /* slate ink and surfaces */
+  --ink: #0f172a;
+  --ink-2: #334155;
+  --ink-3: #475569;
+  --muted: #64748b; /* 4.8:1 on white */
+  --line: #e2e8f0;
+  --line-strong: #cbd5e1;
+  --surface: #ffffff;
+  --sunken: #f1f5f9;
+  --page: #f5f6f8;
+
+  /* status: always paired with an icon and words, never colour alone */
+  --good-ink: #166534;
+  --good-bg: #f0fdf4;
+  --good-line: #16a34a;
+  --bad-ink: #b91c1c;
+  --bad-bg: #fef2f2;
+  --bad-line: #dc2626;
+  --warn-ink: #92400e;
+  --warn-bg: #fffbeb;
+  --warn-line: #f59e0b;
+  --info-ink: #1e3a8a;
+  --info-bg: #eff6ff;
+  --info-line: #60a5fa;
+
+  /* chart series (validated for colour-vision deficiency; mirrored in src/lib/colors.ts) */
+  --s-judges: #2a78d6;
+  --s-reality: #eb6834;
+  --s-plan: #1baf7a;
+  --s-base: #64748b;
+
+  --focus: #c2410c;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow: 0 1px 2px rgba(15, 23, 42, 0.06), 0 2px 6px rgba(15, 23, 42, 0.05);
+  --font: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+}
+
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* presenter mode: every size is in rem, so this scales the whole page for the projector */
+html[data-presenter='on'] {
+  font-size: 19px;
+}
+
+@media (min-width: 1700px) {
+  html[data-presenter='on'] {
+    font-size: 21px;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--page);
+  color: var(--ink);
+  font-family: var(--font);
+  line-height: 1.45;
+  overflow-x: hidden;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+  line-height: 1.2;
+}
+
+p {
+  margin: 0;
+}
+
+button,
+input,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+a {
+  color: var(--accent-ink);
+}
+
+table {
+  border-collapse: collapse;
+}
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Recharts text follows the page's rem scale, so presenter mode enlarges chart labels too */
+.recharts-cartesian-axis-tick text,
+.recharts-label,
+.recharts-label-list text {
+  font-size: 0.78rem;
+}
+
+/* a clicked chart keeps focus for its keyboard tooltip; the tooltip already shows where it is */
+.recharts-wrapper :focus,
+.recharts-wrapper:focus {
+  outline: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
