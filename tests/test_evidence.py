@@ -1,5 +1,6 @@
 """Backtest evidence (resilience/evidence.py): the headline numbers pinned, plus the rules behind them on toy data."""
 import math
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -10,7 +11,7 @@ from resilience import warning as W
 from resilience.core import DATA_DIR, baseline_metrics, load_loans, load_monthly
 
 needs_data = pytest.mark.skipif(not (DATA_DIR / "monthly_summary.csv").exists(), reason="track data not present")
-ARTIFACTS = DATA_DIR.parent / "artifacts"
+ARTIFACTS = Path(__file__).resolve().parent.parent / "data" / "derived"
 
 
 # ------------------------------------------------------------- toy data, no track data needed
@@ -172,7 +173,7 @@ def test_lift_line_names_the_balance_tie_break_the_47_depends_on(ev):
     assert int(s.loc[points_only, "went_overdrawn"].sum()) == 39
     assert int((s.points >= 3).sum()) < k < int((s.points >= 2).sum())       # the list ends inside the 2-point tier
     assert "then lowest balance" in E.lines(ev)["lift"]
-    root = DATA_DIR.parent
+    root = Path(__file__).resolve().parent.parent
     assert '"Early-warning light: most points, then lowest balance"' in (root / "app.py").read_text()
     assert "'Early-warning light: most points, then lowest balance'" in (
         root / "web" / "src" / "components" / "Portfolio.tsx").read_text()

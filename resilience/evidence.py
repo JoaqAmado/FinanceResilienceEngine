@@ -1,6 +1,6 @@
 """Backtest evidence for the portfolio: who went overdrawn in 2025, and what each score said at the end of 2024.
 
-    python -m resilience.evidence      # prints the lines, writes artifacts/backtest_*.csv and s6_halfyear_check.csv
+    python -m resilience.evidence      # prints the lines, writes data/derived/backtest_*.csv and s6_halfyear_check.csv
 
 Population and outcome are the early-warning light's backtest (resilience.warning.backtest_frame): the rules taken
 at the 2024-12 snapshot on the accounts rated then and still active in 2025; an account went overdrawn when it has

@@ -29,7 +29,7 @@ More from the engine:
 
 ```bash
 .venv/bin/python -m resilience 20143 --income 0.55 --bills 0.15   # one account, one twist, in the terminal
-.venv/bin/python -m resilience.portfolio                          # chart tables -> artifacts/*.csv
+.venv/bin/python -m resilience.portfolio                          # chart tables -> data/derived/*.csv
 .venv/bin/python -m resilience.warehouse local-parity             # the judges' numbers in SQL (DuckDB), offline
 ```
 
@@ -41,8 +41,8 @@ More from the engine:
 | `web/` | the React/TypeScript app: the same engine, ported to the browser ([web/README.md](web/README.md)) | app |
 | `resilience/` | the engine: judges' numbers, shocks, reality checks, plans, early-warning light, 2025 backtest evidence, CLI | engine |
 | `sql/` | the judges' numbers as plain SQL, run in Snowflake or DuckDB | SQL |
-| `data/` | the track's CSV files | input |
-| `artifacts/` | chart tables from `python -m resilience.portfolio`, `python -m resilience.warning` and `python -m resilience.evidence`; the gradient-boosting benchmark from `python -m resilience.benchmark` | generated |
+| `data/raw/` | the track's CSV files | input |
+| `data/derived/` | chart tables from `python -m resilience.portfolio`, `python -m resilience.warning` and `python -m resilience.evidence`; the gradient-boosting benchmark from `python -m resilience.benchmark` | generated |
 | `web/public/data/` | the engine's inputs for the web app, from `scripts/export_web_data.py` | generated |
 | `web/test/vectors.json` | the Python engine's outputs the web app must match, from `scripts/export_web_data.py` | generated |
 | `scripts/` | `export_web_data.py`, which writes the web app's data | tool |
@@ -55,7 +55,7 @@ More from the engine:
 - [Method](docs/method.md): the judges' definitions, shocks and reality checks, plans, the early-warning light, CLI and Python examples
 - [Model card](docs/model_card.md): at a glance (data, label, time-based split, base rate, limits), intended use,
   what it is not for, data and limits, wording
-- [Data dictionary](docs/data_dictionary.md): every column of `data/`, the engine and `artifacts/`
+- [Data dictionary](docs/data_dictionary.md): every column of `data/raw/`, the engine and `data/derived/`
 - [Warehouse](docs/warehouse.md): the Snowflake and DuckDB layer and its settings
 - [Web app](web/README.md): running, testing and the TypeScript port
 

@@ -5,7 +5,7 @@ The judges' numbers also exist as plain SQL in `sql/`: `JUDGE_METRICS` (I, F, S,
 The Python engine stays the source of every number in the app; the warehouse is a check on it.
 
 ```bash
-.venv/bin/python -m resilience.warehouse local-parity   # DuckDB over data/*.csv, no account needed
+.venv/bin/python -m resilience.warehouse local-parity   # DuckDB over data/raw/*.csv, no account needed
 .venv/bin/python -m resilience.warehouse load           # upload 8 tables (not transactions) and create the views
 .venv/bin/python -m resilience.warehouse verify         # Snowflake vs the engine on every account, counts only
 ```

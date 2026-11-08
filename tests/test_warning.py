@@ -1,4 +1,6 @@
 """Early-warning light: each rule's cut, a flip case, edge cases, and the pinned 2025 backtest table."""
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -294,7 +296,7 @@ def test_cached_backtest_is_the_same_table(bt):
 
 @needs_data
 def test_artifact_matches_the_engine(bt):
-    path = DATA_DIR.parent / "artifacts" / "early_warning_tiers.csv"
+    path = Path(__file__).resolve().parent.parent / "data" / "derived" / "early_warning_tiers.csv"
     if not path.exists():
         pytest.skip("artifact not written (python -m resilience.warning)")
     pd.testing.assert_frame_equal(pd.read_csv(path), bt.table(), check_dtype=False)

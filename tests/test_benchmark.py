@@ -1,6 +1,7 @@
 """The machine-learning benchmark (resilience/benchmark.py): its counts pinned, no leakage, deterministic, and kept out
 of both apps."""
 import re
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -12,7 +13,7 @@ from resilience import evidence as E
 from resilience import warning as W
 from resilience.core import DATA_DIR, load_loans, load_monthly
 
-ROOT = DATA_DIR.parent
+ROOT = Path(__file__).resolve().parent.parent
 needs_data = pytest.mark.skipif(not (DATA_DIR / "monthly_summary.csv").exists(), reason="track data not present")
 
 
@@ -167,7 +168,7 @@ def test_cached_benchmark_is_fitted_once(bench):
 
 @needs_data
 def test_artifact_matches_the_engine(bench):
-    path = ROOT / "artifacts" / f"{B.ARTIFACT_FILE}.csv"
+    path = ROOT / "data" / "derived" / f"{B.ARTIFACT_FILE}.csv"
     if not path.exists():
         pytest.skip("artifact not written (python -m resilience.benchmark)")
     pd.testing.assert_frame_equal(pd.read_csv(path), bench.table, check_dtype=False)

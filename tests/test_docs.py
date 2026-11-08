@@ -42,7 +42,7 @@ from resilience.portfolio import INCOME_LABELS, QUARTER_CUT_PCT, REALISTIC_CUT_P
 
 ROOT = Path(__file__).resolve().parent.parent
 DOCS = ROOT / "docs"
-ARTIFACTS = ROOT / "artifacts"
+ARTIFACTS = ROOT / "data" / "derived"
 TARGET = 6  # the six-month test on the judges' EI twist
 
 needs_data = pytest.mark.skipif(not (DATA_DIR / "monthly_summary.csv").exists(), reason="track data not present")
@@ -107,7 +107,7 @@ def m():
 
 @pytest.fixture(scope="module")
 def figures(m):
-    """Each doc's figures, as the sentences that quote them, all computed from data/."""
+    """Each doc's figures, as the sentences that quote them, all computed from data/raw/."""
     t = build_all(m)
     acc, h = t["accounts"], t["headlines"].iloc[0]
     n, fail, cap = int(h["accounts"]), int(h["fail_6mo_ei55"]), int(h["fail_6mo_ei55_cap2026"])
@@ -341,14 +341,14 @@ def dictionary() -> dict[str, list[str]]:
     return sections
 
 
-@pytest.mark.parametrize("folder", [DATA_DIR, ARTIFACTS], ids=["data", "artifacts"])
+@pytest.mark.parametrize("folder", [DATA_DIR, ARTIFACTS], ids=["raw", "derived"])
 def test_data_dictionary_matches_every_csv_header(folder):
     files = sorted(folder.glob("*.csv"))
     if not files:
-        pytest.skip(f"no CSV files in {folder.name}/")
+        pytest.skip(f"no CSV files in {folder.relative_to(ROOT).as_posix()}/")
     d = dictionary()
     for path in files:
-        key = f"`{folder.name}/{path.name}`"
+        key = f"`{folder.relative_to(ROOT).as_posix()}/{path.name}`"
         assert key in d, f"{key} is missing from docs/data_dictionary.md"
         assert d[key] == list(pd.read_csv(path, nrows=0).columns), key
 

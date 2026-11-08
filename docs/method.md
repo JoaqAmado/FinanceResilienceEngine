@@ -1,6 +1,6 @@
 # Method
 
-The engine (`resilience/`) is deterministic: every number comes from `data/` using the judges' definitions
+The engine (`resilience/`) is deterministic: every number comes from `data/raw/` using the judges' definitions
 (I, F, S, B, H, P and the runway formula from the track brief). No LLM in the core. The optional story rewording
 (`resilience/llm.py`) only rephrases numbers the engine already computed, and is rejected if it adds one.
 Figures quoted from the data are on the [findings](findings.md) page; this page holds definitions only.
@@ -72,7 +72,7 @@ its opening month. A month of spending here is the median money out over those r
 | balance sliding more than 10% of a month's spending per month | balance trend < -0.10 months of spending per month |
 
 Each tier's evidence is a backtest: the rules taken at 2024-12, and the outcome is any day below zero in 2025.
-`python -m resilience.warning` writes the tier table to `artifacts/early_warning_tiers.csv`.
+`python -m resilience.warning` writes the tier table to `data/derived/early_warning_tiers.csv`.
 
 ## Command line
 
@@ -80,10 +80,10 @@ Each tier's evidence is a backtest: the rules taken at 2024-12, and the outcome 
 .venv/bin/python -m resilience 20143               # baseline + the 3 example twists
 .venv/bin/python -m resilience 20143 --income 0.55 --bills 0.15 --one-off-x-s 1 --target 6
 .venv/bin/python -m resilience 98952 --income 0.55 --pension-aware --cap --waiting-week
-.venv/bin/python -m resilience.portfolio           # chart tables -> artifacts/*.csv
-.venv/bin/python -m resilience.warning             # early-warning tiers -> artifacts/early_warning_tiers.csv
-.venv/bin/python -m resilience.evidence            # 2025 backtest evidence -> artifacts/backtest_*.csv, s6_halfyear_check.csv
-.venv/bin/python -m resilience.benchmark           # gradient-boosting benchmark vs the light -> artifacts/ml_benchmark.csv
+.venv/bin/python -m resilience.portfolio           # chart tables -> data/derived/*.csv
+.venv/bin/python -m resilience.warning             # early-warning tiers -> data/derived/early_warning_tiers.csv
+.venv/bin/python -m resilience.evidence            # 2025 backtest evidence -> data/derived/backtest_*.csv, s6_halfyear_check.csv
+.venv/bin/python -m resilience.benchmark           # gradient-boosting benchmark vs the light -> data/derived/ml_benchmark.csv
 ```
 
 Use fractions (`--income 0.55`), not percentages. `--income-cap` is a reality check and needs a job loss.

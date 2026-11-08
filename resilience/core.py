@@ -46,7 +46,7 @@ FLEXIBLE_COLUMNS = NONFIXED_COLUMNS  # kept for backward compatibility
 DATA_END_MONTH = "2025-12"
 AGE_REFERENCE_DATE = "2025-12-31"
 
-DATA_DIR = Path(__file__).resolve().parent.parent / "data"
+DATA_DIR = Path(__file__).resolve().parent.parent / "data" / "raw"
 
 
 # ---------------------------------------------------------------- loading

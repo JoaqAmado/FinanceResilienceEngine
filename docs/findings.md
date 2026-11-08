@@ -1,6 +1,6 @@
 # Findings
 
-Every figure on this page is computed by the engine from `data/` and pinned by `tests/test_docs.py`.
+Every figure on this page is computed by the engine from `data/raw/` and pinned by `tests/test_docs.py`.
 The judges' formula comes first. Reality checks are labelled and sit beside it, never instead of it.
 
 | | |
@@ -13,7 +13,7 @@ The judges' formula comes first. Reality checks are labelled and sit beside it, 
 | …held from the first month, at the cuts people who lose a job have made by about 6 months out of work (about 13–16% of spending) | 16% or less: 778 of 1,555 (50.0%) · 13% or less: 606 (39.0%) |
 | Overdrawn before the loan → labelled defaulted | 27 of 27 in this data (none of the 606 repaying borrowers ever went negative). That is built into how this dataset labels loans (CTU's rule: a loan is good only if the balance never went below zero), so it's a red flag, not evidence |
 
-The chart tables behind these rows are in `artifacts/` (written by `python -m resilience.portfolio`).
+The chart tables behind these rows are in `data/derived/` (written by `python -m resilience.portfolio`).
 The [method](method.md) page defines every term, and the [model card](model_card.md) lists the data's limits.
 
 ## 2025 backtest: the judges' test misses people
@@ -29,7 +29,7 @@ and still active in 2025, of which 75 first went overdrawn in 2025.
 | Second finding, small numbers: went overdrawn in 2025 | irregular money in that passes the EI test: 14 of 376 (3.7%, 95% interval 2.2–6.2%) · steady money in that fails it: 17 of 1,072 (1.6%, 1.0–2.5%) |
 | **Half-year spending, checked forward** (4 as-of months, 12,681 account half-years): of the 6,652 that fail the 6-month EI test on the money out that followed, missed by | the same test on the median month S: 2,406 · on half-year S6: 1,003 (false alarms: S 720 · S6 1,579) |
 
-The tables are in `artifacts/` (written by `python -m resilience.evidence`); both apps chart them on the
+The tables are in `data/derived/` (written by `python -m resilience.evidence`); both apps chart them on the
 Portfolio tab.
 
 ## How each figure is computed
@@ -42,7 +42,7 @@ All functions are in `resilience/`. "Failing" means a judges' runway under 6 mon
 - **The more money comes in, the thinner the cushion.** `portfolio.income_bands()` groups accounts by I (median
   monthly money in). Per band it gives `fail_6mo_ei55_pct` (share failing), `median_buffer_months` (median of
   B ÷ S), and the cushion in dollars: `median_B` (median buffer) and `median_S` (median monthly spending). The row
-  quotes the lowest band (`< $2.5k`) and the highest (`>= $20k`). Table: `artifacts/income_bands.csv`.
+  quotes the lowest band (`< $2.5k`) and the highest (`>= $20k`). Table: `data/derived/income_bands.csv`.
 - **Stress test with the 2026 EI maximum.** `LAID_OFF_EI_CAPPED` caps the EI part of income at
   `EI_2026_MAX_MONTHLY` (the weekly maximum × 52 ÷ 12) → `headlines.fail_6mo_ei55_cap2026`. Money in counts all
   inflows, not insurable earnings, so this is a stress test, not a forecast.
@@ -53,25 +53,25 @@ All functions are in `resilience/`. "Failing" means a judges' runway under 6 mon
   median of each calendar month's spending ÷ S (`cal_01` … `cal_12` in `build_metrics()`) is highest in those two
   months. They are a caveat, not the finding: the PKDD'99 papers on the original data already report a January
   peak (Miksovsky et al.; Pijls) and a smaller June/July one (Miksovsky et al.), so the re-dating did not create
-  them. Band by band: `portfolio.s6_calibration()`, `artifacts/s6_calibration.csv`.
+  them. Band by band: `portfolio.s6_calibration()`, `data/derived/s6_calibration.csv`.
 - **Cutting a quarter of spending or less.** `portfolio.cut_histogram()`: for each failing account with a positive
   buffer, the monthly cut that brings it back to 6 months (`ei55_min_cut_to_6mo` = gap − B ÷ 6), as a share of S.
   The count is the `<= 10%` and `10-25%` bins, out of all failing accounts with a positive buffer. The accounts that "can't
   cut their way there" are the failing accounts where `core.backup_ladder` reaches no rung, so they need cash or
-  credit. The already overdrawn are among them. Table: `artifacts/cut_histogram.csv`.
+  credit. The already overdrawn are among them. Table: `data/derived/cut_histogram.csv`.
 - **At the cuts people reach by about 6 months.** `portfolio.realistic_cuts()`: the same failing accounts with a
   positive buffer, counted at a cut of at most `REALISTIC_CUT_PCTS` of spending, held from the first month as in
   the histogram. The studies measure where cuts end up, not where they start: low-buffer families by the time
   UI ran out (JPMorgan Chase Institute, *Recovering from Job Loss*) and people still out of work at 6 months
   (Browning & Crossley, see the README sources). A cut that only builds up to those levels gets fewer back.
-  Table: `artifacts/realistic_cuts.csv`.
+  Table: `data/derived/realistic_cuts.csv`.
 - **Overdrawn before the loan.** `portfolio.preloan_overdraft()`: borrowers with any day below zero in a month
   before `loan_start`, against the loan outcome (B or D = defaulted, A or C = repaid or on track). The repaying
   borrowers are the A and C loans, and `ever_negative` is false for every one of them. That is how the dataset
   defines its labels: the CTU repository notes that `if min(trans.balance) >= 0 then good else bad` separates good
   loans from bad perfectly, so the result is guaranteed by the label, not evidence that an overdraft causes
   default. On the customer card it is the `pre_loan_overdraft` flag (`core.account_flags`), worded as a red flag.
-  Table: `artifacts/preloan_overdraft.csv`.
+  Table: `data/derived/preloan_overdraft.csv`.
 
 ### The 2025 backtest
 
@@ -84,11 +84,11 @@ on those rows, and an account passes the judges' EI test when its published runw
 - **Passed the judges' test.** `summary()`: the 75 accounts that went overdrawn, how many passed, and how many of
   those had 2+ points on the light (where both apps show it as a warning). Keeping the partial opening month in
   I, S and B, as the live card does, 34 of the 75 had passed, the light flagged 22 of them, and the EI runway
-  catches 23 on the 10% list, so leaving it out is the cautious choice. Table: `artifacts/backtest_summary.csv`.
+  catches 23 on the 10% list, so leaving it out is the cautious choice. Table: `data/derived/backtest_summary.csv`.
 - **Watch-lists.** `lift_table()`: watch-lists of 1–30% of the backtest population, highest risk first. The light
   ranks by points, then by the lowest balance relative to spending (`points - 1e-6 × min_bal_over_S`, as the
   backtest did). The runway ranks shortest first, before rounding. Buffer months rank fewest first. Remaining
-  ties go to the lowest `account_id`. Table: `artifacts/backtest_lift.csv`.
+  ties go to the lowest `account_id`. Table: `data/derived/backtest_lift.csv`.
 - **Gradient boosting benchmark.** `resilience/benchmark.py` (`python -m resilience.benchmark`). The product has no
   trained model; this checks whether one would have caught more. It fits scikit-learn's
   `HistGradientBoostingClassifier` on the light's backtest one year earlier, outcome = any day below zero in 2024:
@@ -101,12 +101,12 @@ on those rows, and an account passes the judges' EI test when its published runw
   At each list size the table also counts the overdrafts on only one of the two lists (`gradient_boosting_only`,
   `light_only`), and `versus()` words the model's count "about as many" unless an exact two-sided sign test on
   those two counts is below `SIGN_TEST_ALPHA` (`0.05`); at both sizes it is not.
-  The apps keep the rules: each rule that fires is named on the card. Table: `artifacts/ml_benchmark.csv`.
+  The apps keep the rules: each rule that fires is named on the card. Table: `data/derived/ml_benchmark.csv`.
 - **Irregular money in.** `irregular_table()`: the light's own rule (money in: std ÷ mean > 0.5 over its 6
   months) against passing or failing the judges' EI test, with Wilson 95% intervals. It rests on 14 and 17
-  overdrafts and says who to watch, not why. Table: `artifacts/backtest_irregular.csv`.
+  overdrafts and says who to watch, not why. Table: `data/derived/backtest_irregular.csv`.
 - **Half-year spending, checked forward.** `s6_check()`: at each of 2023-12, 2024-06, 2024-12 and 2025-06, every
   account with a row 12 months earlier and all 6 months after it. I, S, B and S6 use only the rows up to that
   month. The test fails when B − (6 months of spending − 6 × 0.55 × I) is below zero: on the money out that
   actually followed (a real fail), on 6 × S and on 6 × S6. None of the three is rounded, so the S check is not
-  the judges' published runway, which rounds to one decimal. Table: `artifacts/s6_halfyear_check.csv`.
+  the judges' published runway, which rounds to one decimal. Table: `data/derived/s6_halfyear_check.csv`.

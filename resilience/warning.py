@@ -44,7 +44,7 @@ Population = accounts that are "rated" at T and have at least one row in 2025.
 An account "went overdrawn" when days_below_zero > 0 in any of its 2025 rows.
 For each number of points: accounts, how many went overdrawn, and the share.
 
-    python -m resilience.warning          # prints the tier table, writes artifacts/early_warning_tiers.csv
+    python -m resilience.warning          # prints the tier table, writes data/derived/early_warning_tiers.csv
 """
 from __future__ import annotations
 

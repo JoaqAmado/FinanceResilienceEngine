@@ -1,7 +1,0 @@
-cut_as_share_of_spending,accounts
-<= 10%,444
-10-25%,748
-25-50%,335
-50-100%,28
-> 100%,0
-already overdrawn (B <= 0),23

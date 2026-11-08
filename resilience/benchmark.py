@@ -1,6 +1,6 @@
 """Machine-learning benchmark: gradient boosting on 13 features against the early-warning light's 4 rules.
 
-    python -m resilience.benchmark     # prints the comparison, writes artifacts/ml_benchmark.csv
+    python -m resilience.benchmark     # prints the comparison, writes data/derived/ml_benchmark.csv
 
 The product ships no trained model: both apps show the light's 4 transparent rules. This module only checks whether a
 model trained on the same data would have caught more of the 2025 overdrafts. Neither app imports it.
@@ -179,7 +179,7 @@ class Benchmark:
     train: Sample
     test: Sample
     score: pd.Series          # the model's score for each test account
-    table: pd.DataFrame       # comparison(): artifacts/ml_benchmark.csv
+    table: pd.DataFrame       # comparison(): data/derived/ml_benchmark.csv
 
     def row(self, budget: str) -> pd.Series:
         return self.table.set_index("budget").loc[budget]

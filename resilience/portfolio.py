@@ -1,6 +1,6 @@
 """Portfolio tables behind the discovery charts.
 
-    python -m resilience.portfolio            # writes artifacts/*.csv
+    python -m resilience.portfolio            # writes data/derived/*.csv
 
 Every table is computed from the engine, so the charts and the live demo can
 never disagree. Shares are of all 4,500 accounts unless a table says otherwise.
@@ -24,7 +24,7 @@ from .core import (
     portfolio_runway,
 )
 
-ARTIFACTS = Path(__file__).resolve().parent.parent / "artifacts"
+ARTIFACTS = Path(__file__).resolve().parent.parent / "data" / "derived"
 INCOME_BANDS = [0, 2500, 5000, 7500, 10000, 15000, 20000, np.inf]
 INCOME_LABELS = ["< $2.5k", "$2.5k-5k", "$5k-7.5k", "$7.5k-10k", "$10k-15k", "$15k-20k", ">= $20k"]
 
@@ -185,10 +185,10 @@ def main(out_dir: Path = ARTIFACTS) -> None:
 
 
 def parse_out_dir(module: str, doc: str | None, argv: list[str] | None = None) -> Path | None:
-    """The optional output folder of `python -m <module>`, or None for artifacts/. -h / --help print the usage and
+    """The optional output folder of `python -m <module>`, or None for data/derived/. -h / --help print the usage and
     exit, and any other option is an error, so neither becomes a folder name."""
     ap = argparse.ArgumentParser(prog=f"python -m {module}", description=(doc or "").strip().split("\n", 1)[0])
-    ap.add_argument("out_dir", nargs="?", type=Path, help="folder for the CSV files (default: artifacts/)")
+    ap.add_argument("out_dir", nargs="?", type=Path, help="folder for the CSV files (default: data/derived/)")
     return ap.parse_args(argv).out_dir
 
 

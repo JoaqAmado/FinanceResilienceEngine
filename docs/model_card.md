@@ -38,7 +38,7 @@ from the customer's own numbers. No LLM computes a number.
 
 ## Data
 
-- **Source:** the track's `data/` folder, the PKDD'99 Discovery Challenge Financial dataset (CTU Prague), provided
+- **Source:** the track's `data/raw/` folder, the PKDD'99 Discovery Challenge Financial dataset (CTU Prague), provided
   by Tangerine for the track. Columns: [data dictionary](data_dictionary.md).
 - **Provenance:** PKDD'99 Czech bank data, re-dated to 2020–2025 and expressed in CAD. That's why the EI-cap view
   is a stress test, not a forecast.
@@ -60,7 +60,7 @@ from the customer's own numbers. No LLM computes a number.
 - **The judges' numbers:** the SQL in `sql/` reproduces I, F, S, H, B, P and the EI 55% runway on every account,
   in DuckDB offline and in Snowflake when configured (`tests/test_warehouse.py`, [warehouse](warehouse.md)).
 - **The findings:** each figure is recomputed by `tests/test_docs.py` ([findings](findings.md)).
-- **The early-warning light:** the backtest tier table is `artifacts/early_warning_tiers.csv`, recomputed by
+- **The early-warning light:** the backtest tier table is `data/derived/early_warning_tiers.csv`, recomputed by
   `python -m resilience.warning` and pinned by `tests/test_warning.py`.
 - **Machine learning, as a benchmark only:** the product has no trained model; gradient boosting
   (`resilience/benchmark.py`) is only a check: on the 10% watch-list it catches about as many overdrafts as the light's 4 rules

@@ -1,7 +1,7 @@
 """Snowflake mirror of the judges' numbers. Optional: the engine and the app never depend on it.
 
     python -m resilience.warehouse local-parity     # offline: sql/ in DuckDB vs the engine
-    python -m resilience.warehouse load             # upload data/*.csv (not transactions), create the views
+    python -m resilience.warehouse load             # upload data/raw/*.csv (not transactions), create the views
     python -m resilience.warehouse verify           # Snowflake views vs resilience.build_metrics()
 
 The SQL in sql/ runs unchanged in Snowflake and in DuckDB, so parity is checked
@@ -278,7 +278,7 @@ def all_match(report: dict) -> bool:
 
 
 def local_parity(engine: pd.DataFrame | None = None, data_dir: Path | str = DATA_DIR) -> dict[str, float]:
-    """compare() on an in-memory DuckDB over data/*.csv: no account, no network."""
+    """compare() on an in-memory DuckDB over data/raw/*.csv: no account, no network."""
     con = duckdb_connect(data_dir)
     try:
         return compare(con, engine)
@@ -320,7 +320,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="python -m resilience.warehouse",
                                 description="Judges' numbers in SQL: DuckDB offline, Snowflake when configured.")
     sub = p.add_subparsers(dest="cmd", required=True)
-    sub.add_parser("local-parity", help="run sql/ in DuckDB over data/*.csv and compare (offline)")
+    sub.add_parser("local-parity", help="run sql/ in DuckDB over data/raw/*.csv and compare (offline)")
     load = sub.add_parser("load", help="upload the track tables to Snowflake and create the views")
     load.add_argument("--with-transactions", action="store_true", help="also upload transactions.csv (about 100 MB)")
     sub.add_parser("verify", help="compare the Snowflake views with the engine on every account")

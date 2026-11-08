@@ -1,15 +1,15 @@
 # Data dictionary
 
-The track's input files (`data/`), the columns the engine adds per account, and the generated chart tables
-(`artifacts/`). All money is in Canadian dollars. Figures computed from these columns are on the
+The track's input files (`data/raw/`), the columns the engine adds per account, and the generated chart tables
+(`data/derived/`). All money is in Canadian dollars. Figures computed from these columns are on the
 [findings](findings.md) page. `tests/test_docs.py` checks every table below against the file's header.
 
-## Input files (`data/`)
+## Input files (`data/raw/`)
 
 The files link through their ID columns: an account has transactions, monthly rows, standing orders and at most
 one loan; dispositions link clients to accounts, and cards hang off dispositions.
 
-### `data/monthly_summary.csv`
+### `data/raw/monthly_summary.csv`
 
 One row per account per month, built from the transactions, from the account's first transaction month to its last
 (quiet months included). Balances are end-of-day balances, carried forward on days with no activity. The judges'
@@ -39,7 +39,7 @@ numbers are computed from this file ([method](method.md)).
 
 The parts of money in add up to `money_in`, and the parts of money out add up to `money_out`.
 
-### `data/transactions.csv`
+### `data/raw/transactions.csv`
 
 | Column | Meaning |
 |---|---|
@@ -55,7 +55,7 @@ The parts of money in add up to `money_in`, and the parts of money out add up to
 | `partner_bank` | for transfers: the other bank, as a two-letter code. Read it as text |
 | `partner_account` | for transfers: the account number at the other bank (not an `account_id` here) |
 
-### `data/loans.csv`
+### `data/raw/loans.csv`
 
 | Column | Meaning |
 |---|---|
@@ -69,7 +69,7 @@ The parts of money in add up to `money_in`, and the parts of money out add up to
 | `status_meaning` | the status in words |
 | `defaulted` | `1` if the status is B or D, `0` if A or C |
 
-### `data/accounts.csv`
+### `data/raw/accounts.csv`
 
 | Column | Meaning |
 |---|---|
@@ -78,7 +78,7 @@ The parts of money in add up to `money_in`, and the parts of money out add up to
 | `frequency` | statement frequency |
 | `account_opened` | date the account was opened |
 
-### `data/clients.csv`
+### `data/raw/clients.csv`
 
 | Column | Meaning |
 |---|---|
@@ -87,7 +87,7 @@ The parts of money in add up to `money_in`, and the parts of money out add up to
 | `birth_date` | date of birth |
 | `district_id` | home district |
 
-### `data/dispositions.csv`
+### `data/raw/dispositions.csv`
 
 | Column | Meaning |
 |---|---|
@@ -96,7 +96,7 @@ The parts of money in add up to `money_in`, and the parts of money out add up to
 | `account_id` | the account |
 | `type` | `owner` or `authorized user` |
 
-### `data/cards.csv`
+### `data/raw/cards.csv`
 
 | Column | Meaning |
 |---|---|
@@ -105,7 +105,7 @@ The parts of money in add up to `money_in`, and the parts of money out add up to
 | `card_type` | junior, classic or gold |
 | `issued` | date the card was issued |
 
-### `data/standing_orders.csv`
+### `data/raw/standing_orders.csv`
 
 An undated snapshot at the end of the data.
 
@@ -118,7 +118,7 @@ An undated snapshot at the end of the data.
 | `amount` | amount per payment |
 | `purpose` | household bills, insurance, leasing or loan payment. Blank = other |
 
-### `data/districts.csv`
+### `data/raw/districts.csv`
 
 The bank's original regions, one row per district.
 
@@ -177,14 +177,14 @@ reality checks, plans and flags use.
 | `owner_age` | the owner's age at the end of the data |
 | `owner_gender` | the owner's gender |
 
-## Generated chart tables (`artifacts/`)
+## Generated chart tables (`data/derived/`)
 
 Written by `python -m resilience.portfolio`, `python -m resilience.warning` (`early_warning_tiers.csv`) and
 `python -m resilience.evidence` (`backtest_summary.csv`, `backtest_lift.csv`, `backtest_irregular.csv`,
 `s6_halfyear_check.csv`) and `python -m resilience.benchmark` (`ml_benchmark.csv`). Runways use the engine's
 encoding: no shortfall is `inf`.
 
-### `artifacts/accounts.csv`
+### `data/derived/accounts.csv`
 
 One row per account. Engine columns are as defined above.
 
@@ -220,7 +220,7 @@ One row per account. Engine columns are as defined above.
 | `ei55_min_cut_to_6mo` | monthly cut that brings a failing account with a positive buffer back to six months, else zero |
 | `ei55_min_cut_pct_of_S` | that cut as a share of S |
 
-### `artifacts/headlines.csv`
+### `data/derived/headlines.csv`
 
 One row: the portfolio's headline counts.
 
@@ -237,7 +237,7 @@ One row: the portfolio's headline counts.
 | `ei_cap_monthly_2026` | the EI cap per month (`EI_2026_MAX_MONTHLY`) |
 | `median_min_cut_failing` | median `ei55_min_cut_to_6mo` over failing accounts with a positive buffer |
 
-### `artifacts/income_bands.csv`
+### `data/derived/income_bands.csv`
 
 | Column | Meaning |
 |---|---|
@@ -250,7 +250,7 @@ One row: the portfolio's headline counts.
 | `median_B` | median B, the buffer in dollars |
 | `median_S` | median S, monthly spending in dollars |
 
-### `artifacts/s6_calibration.csv`
+### `data/derived/s6_calibration.csv`
 
 | Column | Meaning |
 |---|---|
@@ -258,14 +258,14 @@ One row: the portfolio's headline counts.
 | `accounts` | accounts in the band |
 | `fail_6mo_on_S6_pct` | percent of them under six months on half-year spending |
 
-### `artifacts/cut_histogram.csv`
+### `data/derived/cut_histogram.csv`
 
 | Column | Meaning |
 |---|---|
 | `cut_as_share_of_spending` | band of `ei55_min_cut_pct_of_S`, plus a row for the already overdrawn |
 | `accounts` | failing accounts in the band |
 
-### `artifacts/realistic_cuts.csv`
+### `data/derived/realistic_cuts.csv`
 
 Failing accounts with a positive buffer, at the cuts people who lose a job make and at a quarter of spending.
 
@@ -276,7 +276,7 @@ Failing accounts with a positive buffer, at the cuts people who lose a job make 
 | `failing_with_buffer` | failing accounts with a positive buffer |
 | `share_pct` | `accounts` as a percent of `failing_with_buffer` |
 
-### `artifacts/preloan_overdraft.csv`
+### `data/derived/preloan_overdraft.csv`
 
 | Column | Meaning |
 |---|---|
@@ -284,7 +284,7 @@ Failing accounts with a positive buffer, at the cuts people who lose a job make 
 | `defaulted (B/D)` | borrowers whose loan defaulted |
 | `repaid or on track (A/C)` | borrowers whose loan was repaid or is on track |
 
-### `artifacts/early_warning_tiers.csv`
+### `data/derived/early_warning_tiers.csv`
 
 The early-warning light's backtest ([method](method.md)).
 
@@ -295,7 +295,7 @@ The early-warning light's backtest ([method](method.md)).
 | `went_overdrawn` | of those, accounts with any day below zero in the outcome year |
 | `rate` | `went_overdrawn` ÷ `accounts` |
 
-### `artifacts/backtest_summary.csv`
+### `data/derived/backtest_summary.csv`
 
 One row: the backtest's population and the overdrafts the judges' test passed ([findings](findings.md)).
 
@@ -309,7 +309,7 @@ One row: the backtest's population and the overdrafts the judges' test passed ([
 | `passed_and_flagged` | of those that passed, accounts the light had flagged |
 | `watch_points` | the points from which the light counts as flagged (`WATCH_POINTS`) |
 
-### `artifacts/backtest_lift.csv`
+### `data/derived/backtest_lift.csv`
 
 One row per watch-list size.
 
@@ -322,7 +322,7 @@ One row per watch-list size.
 | `buffer_months` | the same for buffer months, fewest first |
 | `events` | accounts that went overdrawn in the whole backtest |
 
-### `artifacts/backtest_irregular.csv`
+### `data/derived/backtest_irregular.csv`
 
 The irregular-money-in two-by-two.
 
@@ -336,7 +336,7 @@ The irregular-money-in two-by-two.
 | `ci_low` | lower end of the Wilson interval for `rate` |
 | `ci_high` | upper end of that interval |
 
-### `artifacts/s6_halfyear_check.csv`
+### `data/derived/s6_halfyear_check.csv`
 
 The six-month EI test on the judges' S and on half-year S6, against the money out that followed.
 
@@ -349,7 +349,7 @@ The six-month EI test on the judges' S and on half-year S6, against the money ou
 | `missed_real_fails` | real fails this basis did not flag |
 | `false_alarms` | flags that were not real fails |
 
-### `artifacts/ml_benchmark.csv`
+### `data/derived/ml_benchmark.csv`
 
 The gradient-boosting benchmark against the light, on the backtest's outcome year ([findings](findings.md)). One
 row per flag budget.
