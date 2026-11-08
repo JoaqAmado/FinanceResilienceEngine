@@ -46,6 +46,9 @@ class Shock:
     """Share of typical income after duration_months ends (0 = no income once EI runs out)."""
     bills_increase_pct: float = 0.0
     """Household bills increase. 0.15 = +15%, applied to H: spending = S + 0.15 x H."""
+    bills_increase_amount: float = 0.0
+    """Household bills increase in dollars per month, added to spending (useful when H is 0 or a quote is known).
+    Not part of the judges' examples; it stacks with bills_increase_pct."""
     one_off_cost: float = 0.0
     """A one-off cost in dollars (e.g. a $4,000 repair), taken out of the buffer up front."""
     one_off_months_of_spending: float = 0.0
@@ -59,6 +62,8 @@ class Shock:
             parts.append(f"income at {self.income_factor:.0%} of typical{dur}")
         if self.bills_increase_pct:
             parts.append(f"household bills {self.bills_increase_pct:+.0%}")
+        if self.bills_increase_amount:
+            parts.append(f"bills +${self.bills_increase_amount:,.0f}/month")
         if self.one_off_months_of_spending:
             parts.append(f"one-off cost of {self.one_off_months_of_spending:g} month(s) of spending")
         if self.one_off_cost:
@@ -191,7 +196,8 @@ def shocked_numbers(profile: dict, shock: Shock, income_base: float | None = Non
     """(income_after, spending_after, one_off_cost) for a shock."""
     income = profile["typical_income"] if income_base is None else income_base
     income_after = income * shock.income_factor
-    spending_after = profile["typical_spending"] + shock.bills_increase_pct * profile["typical_household_bills"]
+    spending_after = (profile["typical_spending"] + shock.bills_increase_pct * profile["typical_household_bills"]
+                      + shock.bills_increase_amount)
     one_off = shock.one_off_cost + shock.one_off_months_of_spending * profile["typical_spending"]
     return income_after, spending_after, one_off
 
@@ -225,19 +231,25 @@ def stress_runway(profile: dict, shock: Shock | str | None = None) -> RunwayResu
 
 
 # ── Month-by-month simulation ────────────────────────────────────────────────
-def simulate(profile: dict, shock: Shock | str | None = None, horizon: int = 24) -> pd.DataFrame:
+def simulate(profile: dict, shock: Shock | str | None = None, horizon: int = 24,
+             discretionary_cut: float | None = None) -> pd.DataFrame:
     """Balance path for the baseline (no shock) and the shocked case.
 
     Month 0 is today's buffer (minus any one-off cost in the shocked case). Each later month adds
     income and subtracts spending. Handles time-limited shocks (e.g. EI for 6 months, then nothing).
+    With `discretionary_cut`, adds a third scenario "with_plan": the shocked case with discretionary
+    spending cut by that share (the backup plan), so the plan's effect can be drawn month by month.
     Columns: scenario, month, income, spending, balance.
     """
     shock = as_shock(shock)
     I, S, H, B = (profile[k] for k in ("typical_income", "typical_spending", "typical_household_bills", "buffer"))
+    scenarios = ["baseline", "shocked"] + (["with_plan"] if discretionary_cut is not None else [])
     rows = []
-    for scenario in ("baseline", "shocked"):
-        is_shocked = scenario == "shocked"
+    for scenario in scenarios:
+        is_shocked = scenario != "baseline"
         _, spending, one_off = shocked_numbers(profile, shock) if is_shocked else (I, S, 0.0)
+        if scenario == "with_plan":
+            spending -= discretionary_cut * profile["typical_discretionary_spending"]
         balance = B - one_off
         rows.append((scenario, 0, 0.0, 0.0, balance))
         for month in range(1, horizon + 1):
@@ -364,7 +376,8 @@ def make_plan(profile: dict, shock: Shock | str | None = None, discretionary_cut
     judge = runway_formula(B, income_after, spending_after, one_off)
     plan.backup_summary = (
         f"If the shock hits ({shock.describe()}): keep bills, insurance and loan payments "
-        f"(~${F + shock.bills_increase_pct * profile['typical_household_bills']:,.0f}/month), cut discretionary "
+        f"(~${F + shock.bills_increase_pct * profile['typical_household_bills'] + shock.bills_increase_amount:,.0f}"
+        f"/month), cut discretionary "
         f"spending by {cut:.0%} (${cut * D:,.0f}/month). Runway goes from "
         f"{runway_label(judge, buffer_left)} to {plan.backup_runway_label}. "
         f"Reaching {goal_runway:g} months of runway: {reach}."
@@ -453,7 +466,8 @@ def run(account_id: int | str, shock: Shock | str | None = "job_loss_ei55", hori
     """Everything for one account and one twist, as a JSON-serialisable dict."""
     profile = get_profile(account_id)
     shock = as_shock(shock)
-    path = simulate(profile, shock, horizon)
+    plan = make_plan(profile, shock, discretionary_cut)
+    path = simulate(profile, shock, horizon, discretionary_cut=plan.backup_discretionary_cut_pct)
     return _clean({
         "account_id": int(account_id),
         "shock": {**asdict(shock), "description": shock.describe()},
@@ -465,9 +479,10 @@ def run(account_id: int | str, shock: Shock | str | None = "job_loss_ei55", hori
             "horizon_months": horizon,
             "months_until_zero_baseline": months_until_zero(path, "baseline"),
             "months_until_zero_shocked": months_until_zero(path, "shocked"),
+            "months_until_zero_with_plan": months_until_zero(path, "with_plan"),
             "rows": path.to_dict("records"),
         },
-        "plan": asdict(make_plan(profile, shock, discretionary_cut)),
+        "plan": asdict(plan),
         "notes": context_notes(profile, shock),
     })
 

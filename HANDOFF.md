@@ -8,7 +8,7 @@ Read `CLAUDE.md` (rules, judge formulas, verified facts) before changing anythin
 - `pytest`: **46/46 pass** (incl. judge parity for all 4,500 accounts, ~4 min).
 - `findings.py` regenerates all reports and 6 figures. Headline: stress runway AUC 0.752 vs judge runway 0.639 (diff +0.113, CI [0.048, 0.180]).
 - Git: repo https://github.com/JoaqAmado/FinanceResilienceEngine, our work is on branch `Jason` (team branches: main, joaquin, marco). Raw CSVs are tracked in `data/`; `Tangerine/data/` is a git-ignored local duplicate. No Docker image pushed to any registry.
-- **Web app built** (90-day plan, FastAPI + plain HTML/JS): `app/main.py` (API), `app/plan90.py` (turns `engine.run()` into the prevent/survive plan, no new math), `app/static/` (page, CSS, JS, inline-SVG chart). Run `make app` or `docker compose up app` → http://localhost:8000. `tests/test_app.py` covers all 4,500 accounts × 6 presets; full suite now **57/57**.
+- **Web app built** (resilience plan, FastAPI + plain HTML/JS): `app/main.py` (API; 4 twist cards: no shock, job loss EI 55%, bills +15%, furnace; adjusters for income %, duration, bills $/month, repair $), `app/plan.py` (look back over the last 6 months from `marts.fact_account_month` via `tangerine.history`, then a 12-month plan in 4 phases: React / Hold the line / Adjust / Rebuild, with month 3/6/12 balance checkpoints), `app/static/` (page, CSS, JS, 12-month inline-SVG chart with no-shock / no-cuts / with-plan lines). Engine additions: `Shock.bills_increase_amount` ($/month) and `simulate(..., discretionary_cut=)` → `with_plan` scenario; judge presets unchanged. Run `python app/main.py` (:8001) or `make app` (:8000). Full suite **62/62**.
 
 ## Folder map
 | Path | Contents | Edit? |
@@ -50,28 +50,14 @@ Custom: `run(id, Shock(income_factor=0.55, bills_increase_pct=0.20, one_off_mont
 4. Don't load `transactions.csv` for metrics; use `monthly_summary` / marts.
 5. Any change → `pytest` must stay 46/46 green.
 
-## Spec: 90-day resilience plan builder (CHOSEN app; supersedes the watchlist)
+## Spec: Resilience plan app (CHOSEN; built)
 
-**Purpose:** after a shock test, show what to do *before* it hits (prevent) and *if* it hits (survive), as a 90-day checklist.
-**Audience:** the customer, with a banker able to walk through it. Plain language, no blame.
-
-**Flow (one screen, top to bottom):**
-1. **Shock test:** account_id + preset or slider (job loss EI %, bills %, one-off cost). Shows judge runway and stress runway side by side (never replace the judge number).
-2. **Warning signs:** `context_notes()` from the engine, e.g. "balance is sliding", "has gone below zero before".
-3. **Prevent (Days 1–30):** from `Plan.goal_summary` and the goal plan: target buffer (3 or 6 months, `config.py`), monthly saving, discretionary cut %.
-4. **Survive (if the shock hits):** from `Plan.backup_steps` and `backup_runway_label`: what to protect (bills, insurance, loan), what to cut and by how much, runway after the cut.
-5. **90-day calendar:** Weeks 1–13, each with one action. Built from the plan numbers, e.g. "Week 1: cut discretionary spending by X% ($Y/month)", "Week 6: check balance vs target".
-6. **Balance path:** 24-month chart from `engine.simulate()`, baseline vs shocked.
-
-**Rules:**
-- Every number comes from `engine.run()` / `make_plan()`. The app adds no new math.
-- Gap ≤ 0 shows "no shortfall (120+)"; buffer ≤ 0 shows "Step 1: get out of overdraft" first.
-- Pensioners: the job-loss step is replaced with a note that pension income continues (F7).
-- Export the 90-day plan as a printable page or PDF.
-
-**Acceptance:** all 4,500 accounts render for every preset without error; each plan step traces to an engine field; `tests/test_plan_app.py` checks that the calendar's monthly saving equals `Plan.monthly_saving`.
-
-**Deferred:** the advisor watchlist (kept below for reference; not in scope now).
+After a shock test the page shows, top to bottom: customer numbers + judge vs stress runway, warning signs,
+**3 · Look back: the last 6 months** (month table, summary tiles, lessons tied to the shock: cash flow, balance
+trend, fixed costs vs shocked income, biggest spending lever, discretionary creep, lean months, overdraft days),
+**4 · The next 12 months** (Month 1 React → Months 2–3 Hold the line → Months 4–6 Adjust → Months 7–12 Rebuild,
+each with steps and a balance checkpoint: no cuts vs with the plan), and a 12-month balance chart.
+Rules: every number comes from `engine.run()` or the mart; judge runway shown unchanged beside ours.
 
 ## Spec: Advisor early-warning watchlist (deferred)
 

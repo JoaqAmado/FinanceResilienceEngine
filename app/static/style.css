@@ -15,6 +15,7 @@
   --info-soft: #e8f0fb;
   --line-base: #868e96;
   --line-shock: #e8590c;
+  --line-plan: #2b8a3e;
   --radius: 12px;
   color-scheme: light;
 }
@@ -23,14 +24,14 @@
     --bg: #151514; --surface: #1e1e1c; --surface-2: #262624; --text: #ecebe7; --muted: #a5a29a;
     --border: #34332f; --accent: #ff8a3d; --accent-soft: #3a2518; --good: #69db7c; --good-soft: #1d3324;
     --warn: #ff8787; --warn-soft: #3b1f1f; --info: #74a9ff; --info-soft: #1b2a40;
-    --line-base: #9a9a94; --line-shock: #ff8a3d; color-scheme: dark;
+    --line-base: #9a9a94; --line-shock: #ff8a3d; --line-plan: #69db7c; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #151514; --surface: #1e1e1c; --surface-2: #262624; --text: #ecebe7; --muted: #a5a29a;
   --border: #34332f; --accent: #ff8a3d; --accent-soft: #3a2518; --good: #69db7c; --good-soft: #1d3324;
   --warn: #ff8787; --warn-soft: #3b1f1f; --info: #74a9ff; --info-soft: #1b2a40;
-  --line-base: #9a9a94; --line-shock: #ff8a3d; color-scheme: dark;
+  --line-base: #9a9a94; --line-shock: #ff8a3d; --line-plan: #69db7c; color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
@@ -164,3 +165,56 @@ button.ghost {
   .card { break-inside: avoid; border-color: #ccc; }
   .plan-grid { grid-template-columns: 1fr 1fr; }
 }
+
+/* ── Look back + next 12 months ───────────────────────────────────────── */
+h3 { font-size: 1rem; margin: 18px 0 8px; }
+.sub { color: var(--muted); margin: 4px 0 12px; font-size: .9rem; }
+.small-tiles { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); margin-bottom: 14px; }
+.small-tiles .tile strong { font-size: 1.05rem; }
+input[type=number] { width: 100%; }
+.id-row input[type=number] { width: auto; }
+
+.table-wrap { overflow-x: auto; }
+table.months { width: 100%; border-collapse: collapse; font-size: .88rem; font-variant-numeric: tabular-nums; }
+.months th, .months td { padding: 7px 10px; border-bottom: 1px solid var(--border); text-align: left; white-space: nowrap; }
+.months thead th { color: var(--muted); font-weight: 600; font-size: .78rem; }
+.months td.num { text-align: right; }
+.months thead th:nth-child(n+2):nth-child(-n+5) { text-align: right; }
+.months td.neg { color: var(--warn); }
+.months td.pos { color: var(--good); }
+.months td.flags { color: var(--warn); font-size: .8rem; }
+
+.lessons { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px; }
+.lesson { border-left: 4px solid var(--muted); background: var(--surface-2); border-radius: 8px; padding: 10px 12px; }
+.lesson strong { display: block; margin-bottom: 2px; }
+.lesson span { color: var(--muted); font-size: .88rem; }
+.lesson.good { border-left-color: var(--good); }
+.lesson.warn { border-left-color: var(--accent); }
+.lesson.urgent { border-left-color: var(--warn); background: var(--warn-soft); }
+.lesson.info { border-left-color: var(--info); }
+
+.next .pair { max-width: 520px; }
+.phases { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.phase { border: 1px solid var(--border); border-radius: 10px; padding: 12px; display: flex; flex-direction: column; }
+.phase header .when { font-size: .75rem; font-weight: 600; color: var(--accent); text-transform: uppercase; letter-spacing: .04em; }
+.phase header h3 { margin: 2px 0 10px; }
+.steps { list-style: none; margin: 0; padding: 0; flex: 1; }
+.steps li { padding: 0 0 10px 14px; position: relative; }
+.steps li::before { content: ""; position: absolute; left: 0; top: 7px; width: 7px; height: 7px; border-radius: 50%; background: var(--muted); }
+.steps li.urgent::before { background: var(--warn); }
+.steps li.warn::before { background: var(--accent); }
+.steps li.good::before { background: var(--good); }
+.steps .what { display: block; font-weight: 600; font-size: .9rem; }
+.steps .why { display: block; color: var(--muted); font-size: .84rem; }
+.checkpoint { margin-top: 8px; border-top: 1px dashed var(--border); padding-top: 8px; }
+.cp-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
+.cp-row small { display: block; color: var(--muted); font-size: .72rem; }
+.cp-row strong { font-variant-numeric: tabular-nums; }
+.cp-row .neg strong { color: var(--warn); }
+
+.sw.plan { background: var(--line-plan); }
+.chart .plan { stroke: var(--line-plan); fill: none; stroke-width: 2.5; stroke-dasharray: 6 4; }
+
+@media (max-width: 960px) { .phases { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 560px) { .phases { grid-template-columns: 1fr; } }
+@media print { .phases { grid-template-columns: 1fr 1fr; } .phase { break-inside: avoid; } }

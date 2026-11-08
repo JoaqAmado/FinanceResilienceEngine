@@ -1,4 +1,5 @@
-"""FastAPI backend: serves the resilience engine and the 90-day plan as JSON, plus the HTML page.
+"""FastAPI backend: serves the resilience engine and the resilience plan (look back + next 12 months) as JSON,
+plus the HTML page.
 
 Run:  python app/main.py                     (local Python; opens on http://localhost:8001)
       docker compose up app                 (Docker; http://localhost:8000)
@@ -20,11 +21,16 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from app.plan90 import build_90_day_plan
-from tangerine import engine
+from app.plan import build_look_back, build_next_12_months
+from tangerine import engine, history
 from tangerine.engine import PRESETS, Shock, UnknownAccount
 
 STATIC = Path(__file__).parent / "static"
+
+# Twist cards shown in the app. 'EI for 6 months' had the same runway as 'Job loss' and 'Job loss + bills'
+# is now built with the adjusters, so both stay in the engine (findings/tests) but not on the page.
+APP_PRESETS = ["no_shock", "job_loss_ei55", "bills_up_15", "furnace_1_month"]
+HORIZON_MONTHS = 12
 
 # Rehearsed accounts from reports/showcase.md, offered as quick picks in the page.
 SHOWCASE = {
@@ -39,10 +45,11 @@ SHOWCASE = {
 async def lifespan(_app: FastAPI):
     # Load (and on a fresh clone, first build) the warehouse before serving, so no request waits or races on it.
     engine.account_ids()
+    history.recent_months(engine.account_ids()[0])
     yield
 
 
-app = FastAPI(title="Tangerine 90-day resilience plan", version="1.0", lifespan=lifespan)
+app = FastAPI(title="Tangerine resilience plan", version="1.0", lifespan=lifespan)
 app.mount("/static", StaticFiles(directory=STATIC), name="static")
 
 
@@ -55,7 +62,7 @@ def index() -> FileResponse:
 def meta() -> dict:
     """Presets (twist cards), showcase accounts and the number of accounts known."""
     return {
-        "presets": {name: s.describe() for name, s in PRESETS.items()},
+        "presets": {name: PRESETS[name].describe() for name in APP_PRESETS},
         "showcase": SHOWCASE,
         "account_count": len(engine.account_ids()),
     }
@@ -82,10 +89,11 @@ def plan(
     income_factor: float = Query(1.0, ge=0, le=1.5, description="Share of typical income still coming in."),
     duration_months: int | None = Query(None, ge=1, le=24, description="Months the income cut lasts."),
     bills_increase_pct: float = Query(0.0, ge=0, le=2, description="Household bills increase, 0.15 = +15%."),
+    bills_increase_amount: float = Query(0.0, ge=0, le=100_000, description="Bills increase in dollars per month."),
     one_off_cost: float = Query(0.0, ge=0, le=1_000_000, description="One-off cost in dollars."),
     one_off_months_of_spending: float = Query(0.0, ge=0, le=12, description="One-off cost in months of spending."),
 ) -> dict:
-    """Engine result (judge numbers + ours) and the 90-day plan for one account and one shock."""
+    """Engine result (judge numbers + ours), the 6-month look back and the 12-month plan for one account and shock."""
     if preset is not None:
         if preset not in PRESETS:
             raise HTTPException(400, f"Unknown preset {preset!r}. Choose one of: {', '.join(PRESETS)}")
@@ -95,14 +103,16 @@ def plan(
             income_factor=income_factor,
             duration_months=duration_months,
             bills_increase_pct=bills_increase_pct,
+            bills_increase_amount=bills_increase_amount,
             one_off_cost=one_off_cost,
             one_off_months_of_spending=one_off_months_of_spending,
         )
     try:
-        result = engine.run(account_id, shock)
+        result = engine.run(account_id, shock, horizon=HORIZON_MONTHS)
     except UnknownAccount as e:
         raise HTTPException(404, {"message": str(e), "suggestions": nearest_accounts(account_id)}) from None
-    result["ninety_day_plan"] = build_90_day_plan(result)
+    look_back = build_look_back(result, history.recent_months(account_id))
+    result["resilience_plan"] = {"look_back": look_back, "next_12_months": build_next_12_months(result, look_back)}
     return result
 
 

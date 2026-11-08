@@ -1,4 +1,4 @@
-"""The 90-day plan app: every account under every twist card, numbers traced to the engine, API errors."""
+"""The resilience plan app: every account under every twist card, numbers traced to the engine and marts, API errors."""
 import sys
 from pathlib import Path
 
@@ -7,60 +7,96 @@ from fastapi.testclient import TestClient
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # make `app` importable
 
-from app.main import SHOWCASE, app  # noqa: E402
-from app.plan90 import build_90_day_plan  # noqa: E402
-from tangerine import engine  # noqa: E402
-from tangerine.engine import PRESETS  # noqa: E402
+from app.main import APP_PRESETS, HORIZON_MONTHS, SHOWCASE, app  # noqa: E402
+from app.plan import build_look_back, build_next_12_months  # noqa: E402
+from tangerine import engine, history  # noqa: E402
+from tangerine.engine import Shock  # noqa: E402
 
 client = TestClient(app)
 
 
-@pytest.mark.parametrize("preset", list(PRESETS))
-def test_every_account_gets_a_plan(preset):
-    """All 4,500 accounts x every twist card: a plan with steps, no errors."""
+def _plan(account_id, shock):
+    result = engine.run(account_id, shock, horizon=HORIZON_MONTHS)
+    look_back = build_look_back(result, history.recent_months(account_id))
+    return result, look_back, build_next_12_months(result, look_back)
+
+
+@pytest.mark.parametrize("shock", APP_PRESETS + [
+    Shock(income_factor=0.55, duration_months=6, bills_increase_amount=250, one_off_cost=4000),
+    Shock(bills_increase_amount=1000),
+], ids=lambda s: s if isinstance(s, str) else s.describe())
+def test_every_account_gets_a_plan(shock):
+    """All 4,500 accounts x every app twist card (+ custom shocks): look back + 4 phases, no errors."""
     for account_id in engine.account_ids():
-        plan = build_90_day_plan(engine.run(account_id, preset))
-        assert plan["prevent"]["steps"], account_id
-        assert plan["survive"]["steps"], account_id
-        assert len(plan["survive"]["checkpoints"]) == 3, account_id
+        _, look_back, nxt = _plan(account_id, shock)
+        assert look_back["lessons"], account_id
+        assert [ph["title"] for ph in nxt["phases"]] == ["React", "Hold the line", "Adjust", "Rebuild"]
+        assert all(ph["steps"] for ph in nxt["phases"]), account_id
 
 
-def test_numbers_trace_to_the_engine():
-    """Prevent checkpoints use the engine's monthly saving; survive uses the engine's simulated balance."""
-    checked = 0
-    for account_id in engine.account_ids()[:500]:
-        result = engine.run(account_id, "job_loss_ei55")
-        plan = build_90_day_plan(result)
-        saving = result["plan"]["monthly_saving"]
-        if saving:
-            b = result["profile"]["buffer"]
-            assert [c["balance"] for c in plan["prevent"]["checkpoints"]] == pytest.approx(
-                [b + saving, b + 2 * saving, b + 3 * saving], abs=0.01)
-            checked += 1
-        shocked = {r["month"]: r["balance"] for r in result["simulation"]["rows"] if r["scenario"] == "shocked"}
-        assert [c["balance"] for c in plan["survive"]["checkpoints"]] == [shocked[1], shocked[2], shocked[3]]
-        assert plan["survive"]["runway_without_cuts"] == result["judge_runway"]["label"]
-    assert checked > 0
+def test_look_back_matches_the_mart(con):
+    """Look-back months are the account's last 6 rows of marts.fact_account_month, unchanged."""
+    for account_id in SHOWCASE.values():
+        expected = con.execute(
+            "select month, money_in, money_out, net_cash_flow, days_below_zero from marts.fact_account_month "
+            "where account_id = ? order by month desc limit 6", [account_id]).fetchall()[::-1]
+        result, look_back, _ = _plan(account_id, "job_loss_ei55")
+        got = [(m["month"], m["money_in"], m["money_out"], m["net"], m["days_below_zero"]) for m in look_back["months"]]
+        assert got == [(m, round(i, 2), round(o, 2), round(n, 2), d) for m, i, o, n, d in expected]
+        assert look_back["stats"]["total_net"] == pytest.approx(sum(r[3] for r in expected), abs=0.01)
+
+
+def test_checkpoints_trace_to_the_simulation():
+    """Phase checkpoints are the engine's simulated balances at months 3, 6, 12."""
+    for account_id in engine.account_ids()[:300]:
+        result, _, nxt = _plan(account_id, "job_loss_ei55")
+        path = {(r["scenario"], r["month"]): r["balance"] for r in result["simulation"]["rows"]}
+        for ph in nxt["phases"][1:]:
+            c = ph["checkpoint"]
+            assert c["without_cuts"] == path[("shocked", c["month"])]
+            assert c["with_plan"] == path[("with_plan", c["month"])]
+        assert nxt["runway_without_cuts"] == result["judge_runway"]["label"]
+        assert max(r["month"] for r in result["simulation"]["rows"]) == 12
+
+
+def test_plan_path_applies_the_backup_cut():
+    p = engine.get_profile(SHOWCASE["Volatile cash earner"])
+    path = engine.simulate(p, "job_loss_ei55", horizon=12, discretionary_cut=0.3)
+    shocked = path[path.scenario == "shocked"].set_index("month").spending
+    planned = path[path.scenario == "with_plan"].set_index("month").spending
+    assert (shocked - planned).loc[1:].round(6).eq(round(0.3 * p["typical_discretionary_spending"], 6)).all()
+
+
+def test_bills_amount_adds_dollars_to_spending():
+    p = engine.get_profile(20111)
+    base = engine.judge_runway(p, Shock())
+    more = engine.judge_runway(p, Shock(bills_increase_amount=300))
+    assert more.spending_after == pytest.approx(base.spending_after + 300)
+    # The judge preset is unaffected by the new field
+    assert engine.judge_runway(p, "bills_up_15").spending_after == pytest.approx(
+        p["typical_spending"] + 0.15 * p["typical_household_bills"])
 
 
 def test_api_preset_matches_engine():
     for account_id in SHOWCASE.values():
-        r = client.get(f"/api/plan/{account_id}", params={"preset": "job_loss_plus_bills"})
+        r = client.get(f"/api/plan/{account_id}", params={"preset": "job_loss_ei55"})
         assert r.status_code == 200
         body = r.json()
-        direct = engine.run(account_id, "job_loss_plus_bills")
+        direct = engine.run(account_id, "job_loss_ei55", horizon=HORIZON_MONTHS)
         assert body["judge_runway"] == direct["judge_runway"]  # judge number untouched
         assert body["stress_runway"] == direct["stress_runway"]
-        assert "ninety_day_plan" in body
+        assert set(body["resilience_plan"]) == {"look_back", "next_12_months"}
 
 
 def test_api_custom_shock():
     r = client.get(f"/api/plan/{SHOWCASE['Volatile cash earner']}",
-                   params={"income_factor": 0.55, "duration_months": 6, "bills_increase_pct": 0.2,
-                           "one_off_months_of_spending": 1})
+                   params={"income_factor": 0.55, "duration_months": 6, "bills_increase_amount": 250,
+                           "one_off_cost": 4000})
     assert r.status_code == 200
-    s = r.json()["shock"]
-    assert (s["income_factor"], s["duration_months"], s["bills_increase_pct"]) == (0.55, 6, 0.2)
+    body = r.json()
+    s = body["shock"]
+    assert (s["income_factor"], s["duration_months"], s["bills_increase_amount"], s["one_off_cost"]) == (0.55, 6, 250, 4000)
+    assert body["judge_runway"]["one_off_cost"] == 4000
 
 
 def test_unknown_account_suggests_real_ones():
@@ -84,10 +120,11 @@ def test_api_errors():
     assert client.get("/api/plan/abc").status_code == 422
     assert client.get("/api/plan/20111", params={"preset": "meteor"}).status_code == 400
     assert client.get("/api/plan/20111", params={"income_factor": -1}).status_code == 422
+    assert client.get("/api/plan/20111", params={"bills_increase_amount": -5}).status_code == 422
 
 
 def test_page_and_meta():
-    assert "90-day resilience plan" in client.get("/").text
+    assert "Resilience plan" in client.get("/").text
     meta = client.get("/api/meta").json()
     assert meta["account_count"] == 4500
-    assert set(meta["presets"]) == set(PRESETS)
+    assert list(meta["presets"]) == APP_PRESETS
