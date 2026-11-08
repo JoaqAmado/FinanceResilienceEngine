@@ -199,6 +199,11 @@ table {
   outline: none;
 }
 
+/* room at the end of the live twist for the floating judges' pill, so it never hides the last lines */
+body:has(#panel-live:not([hidden])) {
+  padding-bottom: 5rem;
+}
+
 /* halo so chart labels stay readable where they cross a line ("buffer gone", "$0 at month", bar values) */
 .recharts-reference-line .recharts-label,
 .recharts-reference-dot .recharts-label,

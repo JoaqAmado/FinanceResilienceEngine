@@ -18,9 +18,11 @@ interface Props {
   /** the runway with the selected reality checks; shown as a hatched orange marker only when a check is on */
   real?: RunwayResult | null;
   still?: boolean;
+  /** the floating pill: the line for the must-survive target, without its label or the scale */
+  compact?: boolean;
 }
 
-export function RunwayBar({ judge, target, real = null, still = false }: Props) {
+export function RunwayBar({ judge, target, real = null, still = false, compact = false }: Props) {
   const over = judge.noShortfall || (judge.months ?? 0) > SCALE;
   const edge = target >= 11 ? 'end' : target <= 1 ? 'start' : undefined;
   const a = share(judge);
@@ -30,6 +32,7 @@ export function RunwayBar({ judge, target, real = null, still = false }: Props) 
     <div
       className={s.bar}
       data-still={still ? 'true' : undefined}
+      data-compact={compact ? 'true' : undefined}
       role="img"
       aria-label={`Judges' runway ${rwText(judge)}${checks}, against a must-survive line at ${target} months, on a 0 to 12 month scale`}
     >

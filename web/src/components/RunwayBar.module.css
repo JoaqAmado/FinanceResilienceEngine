@@ -108,3 +108,23 @@
 .ticks span:last-child {
   transform: translateX(-100%);
 }
+
+/* compact form for the floating pill: no label above, no scale below */
+.bar[data-compact='true'] {
+  padding-top: 0;
+  gap: 0;
+}
+
+.bar[data-compact='true'] .track {
+  height: 0.5rem;
+}
+
+.bar[data-compact='true'] .flag {
+  top: -0.2rem;
+  bottom: -0.2rem;
+}
+
+.bar[data-compact='true'] .flag span,
+.bar[data-compact='true'] .ticks {
+  display: none;
+}

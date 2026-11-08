@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import NumberFlow from '@number-flow/react';
 import { pyFixed, survives } from '../engine';
 import type { Account, RunwayResult, Shock } from '../engine';
@@ -58,6 +59,24 @@ export function JudgesPanel({ acct, judge, baseline, shock, target, greyNote, dr
   const v = verdict(acct, judge, target);
   const flow = judge.gap > 0 ? `gap ${money(judge.gap)}/mo` : `surplus ${money(Math.abs(judge.gap))}/mo`;
   const exact = rwText(judge);
+
+  // once the hero number scrolls off the top (levers, chart and plans below it), a compact pill keeps the
+  // judges' number in view. The observer lives in an effect: the tests render this on the server.
+  const heroRef = useRef<HTMLDivElement | null>(null);
+  const [scrolledPast, setScrolledPast] = useState(false);
+  useEffect(() => {
+    const el = heroRef.current;
+    if (!el || typeof IntersectionObserver === 'undefined') return;
+    // the root reaches far below the viewport, so "not intersecting" means "above the top edge", and a jump
+    // straight past the hero (End key, a focused slider far down) still crosses the observed edge
+    const io = new IntersectionObserver(
+      ([e]) => setScrolledPast(!e.isIntersecting && e.boundingClientRect.bottom < 0),
+      { rootMargin: '0px 0px 100000px 0px' },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
   return (
     <section className={s.panel} aria-labelledby="judges-title">
       <div className={s.head}>
@@ -67,7 +86,7 @@ export function JudgesPanel({ acct, judge, baseline, shock, target, greyNote, dr
         <span className={s.official}>the official number</span>
       </div>
 
-      <div className={s.hero}>
+      <div className={s.hero} ref={heroRef}>
         <span className="visually-hidden" aria-live="polite">
           Judges' runway: {exact}. {v.text}
         </span>
@@ -100,6 +119,18 @@ export function JudgesPanel({ acct, judge, baseline, shock, target, greyNote, dr
 
       {/* after the verdict, so number and verdict stay above the fold in presenter mode at 1280 x 720 */}
       <RunwayBar judge={judge} target={target} real={real} still={dragging} />
+
+      {scrolledPast && (
+        // visual only: the live region above already announces every change
+        <div className={`${s.float} ${v.kind === 'good' ? s.good : s.bad}`} aria-hidden="true">
+          <span className={s.floatLabel}>Judges' formula</span>
+          <span className={s.floatValue}>{exact}</span>
+          <span className={s.badgeIcon}>{v.icon}</span>
+          <div className={s.floatBar}>
+            <RunwayBar judge={judge} target={target} real={real} still={dragging} compact />
+          </div>
+        </div>
+      )}
 
       <Formula acct={acct} judge={judge} />
 

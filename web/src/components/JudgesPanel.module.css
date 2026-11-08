@@ -142,6 +142,65 @@
   font-size: 0.86rem;
 }
 
+/* the judges' number, kept in view once the hero has scrolled off the top */
+.float {
+  position: fixed;
+  left: 50%;
+  bottom: max(12px, env(safe-area-inset-bottom));
+  z-index: 30;
+  transform: translateX(-50%);
+  width: min(24rem, calc(100vw - 32px));
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 0.15rem 0.6rem;
+  padding: 0.5rem 0.85rem 0.6rem;
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line-strong);
+  border-top: 4px solid var(--s-judges);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-pop);
+  pointer-events: none; /* never blocks a slider or a button under it */
+  animation: rise var(--dur) var(--ease-out) 1;
+}
+
+.floatLabel {
+  font-size: var(--fs-eyebrow);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.floatValue {
+  font-size: 1.35rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+.float .badgeIcon {
+  width: 1.4rem;
+  height: 1.4rem;
+  font-size: 0.85rem;
+}
+
+.floatBar {
+  grid-column: 1 / -1;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
 @media (max-width: 767px) {
   .heroValue {
     font-size: 3.8rem;
