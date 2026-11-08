@@ -99,8 +99,9 @@ apply_shock(m.loc[20143], Shock(income_multiplier=0.55))    # RunwayResult(month
 ## The apps
 
 - **Streamlit** (`app.py`, `.venv/bin/streamlit run app.py`):
-  - **Live twist tab:** type any `account_id` or click a rehearsal account, pick a twist card or set the sliders.
-    The judges' number shows first, then reality checks (2026 EI cap, waiting week, pension kept, half-year
+  - **Live twist tab:** type any `account_id` or click a rehearsal account, then type the twist in the chat (or
+    click a hint chip, or open Fine-tune for the sliders: the same levers). See "Chat twists" in the
+    [README](../README.md#chat-twists). The judges' number shows first, then reality checks (2026 EI cap, waiting week, pension kept, half-year
     spending, bills by standing order), then a job-loss-proof goal and a minimum-pain backup ladder. Runs offline.
   - **Portfolio tab:** the findings, computed by the same engine.
 - **Web** (`web/`): the same engine ported to TypeScript, checked against the Python engine. See

@@ -37,6 +37,60 @@ More from the engine:
 .venv/bin/python -m resilience.warehouse local-parity             # the judges' numbers in SQL (DuckDB), offline
 ```
 
+## Chat twists
+
+On the Live twist tab the twist is typed, not dialled: "Job loss on EI and bills up 15%", "income drops to $2,000 a
+month", "make it 20% instead". The chat only sets the levers (the same session state the Fine-tune sliders show);
+the engine computes every number, and code writes every sentence.
+
+**What it reads.** Job loss on EI (55% unless another EI percent is named) · pay cut or reduced hours (not a job
+loss) · income drops by X% or to $N a month · a partner's job (half the money in, stated as an assumption) ·
+household bills, utilities or rent up X% · rent up $N or rent goes to $N · new monthly costs ($N a month: baby, car
+payment, insurance) · a $N one-off or N months of spending · cutting non-fixed spending X% · "for / survive N months"
+· "account 12345" · the reality checks by name (2026 EI cap, waiting week, keep pension, half-year spending, bills by
+standing order). Edits work on the current shock: "make it 20% instead" (the last percent lever), "add a $2,000
+repair", "remove the bills increase", "no job loss", "reset". Anything a message doesn't mention keeps its value.
+Numbers can be written "15", "15%", "fifteen percent", "0.15", "$2,500", "2.5k" or "$2500/mo".
+
+**Resolution order** (`resilience/shock_parser.py`): golden table (`resilience/golden_twists.json`, exact match after
+lowercasing and stripping punctuation) → cache (`resilience/llm_cache_frozen.json`, committed, then
+`.cache/shock_intents.json`, local) → LLM (`resilience/shock_llm.py`: Gemini with `GEMINI_API_KEY`, or Snowflake
+Cortex with `SNOWFLAKE_PAT` and `SHOCK_LLM=cortex`; `SHOCK_LLM=off` turns it off) → offline rules. Every backend
+returns the same intent (what was said), and one function, `validate_and_build`, turns it into a `Shock`. The LLM
+gets the message and the current shock only, never account data.
+
+**Determinism guarantees.**
+- Golden phrases and cached inputs give byte-identical results every time, with no network.
+- A new input costs one LLM call (pinned model version, temperature 0, JSON-schema output, canonicalized); from then
+  on it is cached and identical. The cache key is the normalized message, the current shock, the prompt version,
+  the model ID and the intent-schema version.
+- Offline, an uncached input falls back to the rules. That is the only way the same text can parse differently,
+  and the source badge on the reply says which backend answered. `warm` removes this case for every rehearsed
+  phrasing.
+
+**Account-relative amounts** are resolved in code against the selected customer, and the reply shows the
+arithmetic: "income drops to $N a month" → N ÷ I (kept at 100% if N is more than I; left unchanged if I is $0);
+"rent goes to $N" → N − H when the account has household bills, else all of N, with a warning (1,225 accounts have
+H = $0); "a month of spending" → 1 × S. Values out of range are clamped with a warning, reality checks that can't
+apply (an EI cap without a job loss, "keep pension" with no pension) are turned off with a warning, and anything
+unreadable gets a question back with the state left unchanged.
+
+**Consistency checks** (`resilience/consistency.py`), run on every rerun: the shock the engine ran is the one the
+levers and the chat describe; the customer card equals a recomputation from `data/raw/` with the judges'
+definitions; the judges' runway equals the published formula and its verdict box agrees; the January path matches
+a month-by-month rerun; the backup-ladder rung marked as reaching the target does (and the one before it doesn't);
+the goal's buffer passes; each reality-check runway is the engine with only that check on; every number in the
+summary is in the computed facts; each flag on the card is true in the data. The app shows "All numbers consistent"
+or lists exactly which check failed. The tests also check that the portfolio tiles, `data/derived/*.csv` and the
+figures quoted above agree.
+
+**Before a demo**, with a key set, run the rehearsed phrasings through the LLM once and freeze them:
+
+```bash
+.venv/bin/python -m resilience.shock_parser warm      # hint chips, golden and practice phrasings, one call each
+.venv/bin/python -m resilience.shock_parser freeze    # copy them into resilience/llm_cache_frozen.json, then commit
+```
+
 ## Repo map
 
 | Path | What it holds | Kind |
@@ -44,6 +98,8 @@ More from the engine:
 | `app.py` | the Streamlit app, Twin Runway: live twist, portfolio, method | app |
 | `web/` | the React/TypeScript app: the same engine, ported to the browser ([web/README.md](web/README.md)) | app |
 | `resilience/` | the engine: judges' numbers, shocks, reality checks, plans, early-warning light, 2025 backtest evidence, CLI | engine |
+| `resilience/shock_parser.py` | the chat: free-text twists to a `Shock` (golden → cache → LLM → rules), deterministic | engine |
+| `resilience/consistency.py` | the checks that every number on screen agrees with the others and with the data | engine |
 | `sql/` | the judges' numbers as plain SQL, run in Snowflake or DuckDB | SQL |
 | `data/raw/` | the track's CSV files | input |
 | `data/derived/` | chart tables from `python -m resilience.portfolio`, `python -m resilience.warning` and `python -m resilience.evidence`; the gradient-boosting benchmark from `python -m resilience.benchmark` | generated |
