@@ -42,7 +42,7 @@ More from the engine:
 | `resilience/` | the engine: judges' numbers, shocks, reality checks, plans, early-warning light, 2025 backtest evidence, CLI | engine |
 | `sql/` | the judges' numbers as plain SQL, run in Snowflake or DuckDB | SQL |
 | `data/` | the track's CSV files | input |
-| `artifacts/` | chart tables from `python -m resilience.portfolio`, `python -m resilience.warning` and `python -m resilience.evidence` | generated |
+| `artifacts/` | chart tables from `python -m resilience.portfolio`, `python -m resilience.warning` and `python -m resilience.evidence`; the gradient-boosting benchmark from `python -m resilience.benchmark` | generated |
 | `web/public/data/` | the engine's inputs for the web app, from `scripts/export_web_data.py` | generated |
 | `web/test/vectors.json` | the Python engine's outputs the web app must match, from `scripts/export_web_data.py` | generated |
 | `scripts/` | `export_web_data.py`, which writes the web app's data | tool |

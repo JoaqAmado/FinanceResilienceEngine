@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from resilience import benchmark as BM
 from resilience import evidence as E
 from resilience import warehouse
 from resilience import warning as W
@@ -162,6 +163,10 @@ def figures(m):
     kept = E.score_frame(pop, baseline_metrics(ms[ms["month"] <= es["snapshot"]], loans))
     ks, kl = E.summary(kept), E.lift_table(kept).set_index("list_pct").loc[E.HEADLINE_LIST_PCT]
     org = E.S6_ORIGINS
+    bm = BM.cached_benchmark()
+    bh, bl, btr = bm.row(BM.HEADLINE_BUDGET), bm.row(BM.LIGHT_BUDGET), bm.train
+    assert int(bh.light) == int(lift.light) and int(bh.list_accounts) == int(lift.list_accounts)  # the same lists
+    versus_rules = f"{BM.versus(int(bh.gradient_boosting), int(bh.light))} the light's {len(W.RULES)} rules"
 
     return {
         "readme": [
@@ -211,6 +216,17 @@ def figures(m):
             f"It rests on {irr_a.went_overdrawn} and {irr_b.went_overdrawn}",
             f"at each of {', '.join(org[:-1])} and {org[-1]}, every",
             f"account with a row {E.S6_HISTORY} months earlier and all {E.S6_HORIZON} months after it",
+            # the gradient-boosting benchmark (resilience/benchmark.py)
+            f"| Gradient boosting on {len(BM.FEATURES)} features, trained on {btr.label_year}'s outcomes "
+            f"({len(btr.X):,} accounts, {int(btr.y.sum())} went overdrawn), on the same lists | {E.HEADLINE_LIST_PCT}% "
+            f"watch-list: {int(bh.gradient_boosting)}, {versus_rules} · as many accounts as the light flags with "
+            f"{E.WATCH_POINTS}+ points ({int(bl.list_accounts):,}): {int(bl.gradient_boosting)}, against the light's "
+            f"{int(bl.light)} |",
+            f"the {len(btr.X):,} accounts rated at the {btr.snapshot} snapshot and still active in {btr.label_year}",
+            f"ranks the same {len(bm.test.X):,} accounts as the watch-lists",
+            f"Its {len(BM.FEATURES)} features read only the months up to each snapshot: the light's {len(W.RULES)} rule "
+            f"inputs",
+            f"over the light's {W.WINDOW_ROWS} months",
         ],
         "docs/model_card.md": [
             f"re-dated to {str(ms['month'].min())[:4]}–{DATA_END_MONTH[:4]}",
@@ -226,6 +242,8 @@ def figures(m):
             f"zero median spending ({int(flags['no_spending'])})",
             f"no recorded household bills ({int((m['H'] == 0).sum()):,})",
             f"accounts that stop before {end} ({int(flags['stale'])})",
+            # evaluation: the gradient-boosting benchmark (resilience/benchmark.py)
+            f"on the {E.HEADLINE_LIST_PCT}% watch-list it catches {versus_rules}",
         ],
         "docs/warehouse.md": [
             f"matches the engine on all {n:,} accounts and gives the same {fail:,} under {TARGET} months",

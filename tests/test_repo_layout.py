@@ -131,7 +131,8 @@ def test_web_readme_names_every_ported_engine_module():
         assert word in text, word
 
 
-@pytest.mark.parametrize("module", ["resilience.portfolio", "resilience.warning", "resilience.evidence"])
+@pytest.mark.parametrize("module", ["resilience.portfolio", "resilience.warning", "resilience.evidence",
+                                    "resilience.benchmark"])
 @pytest.mark.parametrize("flag", ["--help", "-h"])
 def test_cli_help_prints_usage_and_writes_nothing(tmp_path, module, flag):
     """Review fix: `python -m resilience.evidence --help` used to write its CSVs into a folder named --help."""

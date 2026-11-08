@@ -6,3 +6,4 @@ pytest>=8
 google-genai>=3.0
 snowflake-connector-python[pandas]>=5.2.0
 duckdb>=2.0.0
+scikit-learn>=1.5

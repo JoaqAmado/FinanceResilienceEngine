@@ -181,7 +181,8 @@ reality checks, plans and flags use.
 
 Written by `python -m resilience.portfolio`, `python -m resilience.warning` (`early_warning_tiers.csv`) and
 `python -m resilience.evidence` (`backtest_summary.csv`, `backtest_lift.csv`, `backtest_irregular.csv`,
-`s6_halfyear_check.csv`). Runways use the engine's encoding: no shortfall is `inf`.
+`s6_halfyear_check.csv`) and `python -m resilience.benchmark` (`ml_benchmark.csv`). Runways use the engine's
+encoding: no shortfall is `inf`.
 
 ### `artifacts/accounts.csv`
 
@@ -347,3 +348,20 @@ The six-month EI test on the judges' S and on half-year S6, against the money ou
 | `flagged` | pairs that fail the test on this spending basis |
 | `missed_real_fails` | real fails this basis did not flag |
 | `false_alarms` | flags that were not real fails |
+
+### `artifacts/ml_benchmark.csv`
+
+The gradient-boosting benchmark against the light, on the backtest's outcome year ([findings](findings.md)). One
+row per flag budget.
+
+| Column | Meaning |
+|---|---|
+| `budget` | how many accounts each ranking may flag: the headline watch-list, or as many as the light shows as a warning |
+| `list_accounts` | accounts flagged at that budget |
+| `gradient_boosting` | accounts that went overdrawn among the model's highest scores, `list_accounts` of them |
+| `light` | the same for the light (most points, then lowest balance) |
+| `ei55_runway` | the same for the judges' EI runway, shortest first |
+| `buffer_months` | the same for buffer months, fewest first |
+| `events` | accounts that went overdrawn in the whole backtest |
+| `train_accounts` | accounts the model was trained on, at the snapshot a year earlier |
+| `train_events` | of those, accounts with any day below zero in the year after that snapshot |

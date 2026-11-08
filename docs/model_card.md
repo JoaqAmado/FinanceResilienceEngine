@@ -62,6 +62,9 @@ from the customer's own numbers. No LLM computes a number.
 - **The findings:** each figure is recomputed by `tests/test_docs.py` ([findings](findings.md)).
 - **The early-warning light:** the backtest tier table is `artifacts/early_warning_tiers.csv`, recomputed by
   `python -m resilience.warning` and pinned by `tests/test_warning.py`.
+- **Machine learning, as a benchmark only:** the product has no trained model; gradient boosting
+  (`resilience/benchmark.py`) is only a check: on the 10% watch-list it catches as many overdrafts as the light's 4 rules
+  ([findings](findings.md)).
 - **The web app:** its TypeScript engine must match the Python engine exactly ([web/README.md](../web/README.md)).
 
 ## Wording
