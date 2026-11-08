@@ -308,6 +308,13 @@ def test_rehearsal_accounts(full, acct, ei55, pension, s6, jan, cap):
 
 
 @needs_data
+def test_rehearsal_label_for_20143_is_what_the_engine_says(full):
+    """Both apps label 20143 'spends more than comes in' (review fix: the Streamlit button said 'high earner')."""
+    r = full.loc[20143]
+    assert r["S"] > r["I"]
+
+
+@needs_data
 def test_flip_cases(full):
     assert not apply_shock(full.loc[98952], LAID_OFF_EI).survives(6)
     assert apply_shock(full.loc[98952], LAID_OFF_EI.with_(pension_aware=True)).survives(6)
@@ -383,9 +390,24 @@ def test_realistic_cuts_and_the_lines_both_apps_show(full):
     L = lines(t)
     assert L["quarter"] == ("1,192 of 1,555 failing customers with a positive buffer get back to 6 months by "
                             "cutting a quarter of spending or less.")
-    assert L["realistic_cuts"] == ("Studies of people who lost a job find they cut about 13–16% of spending. At "
-                                   "those cuts, 778 of 1,555 (50.0%) get back to 6 months with 16% or less, and 606 "
-                                   "(39.0%) with 13% or less.")
+    assert L["realistic_cuts"] == ("Studies of people who lost a job find that by about 6 months out of work they "
+                                   "have cut about 13–16% of spending. Held from the first month, a cut of 16% or "
+                                   "less gets 778 of 1,555 (50.0%) back to 6 months and 13% or less gets 606 (39.0%); "
+                                   "a cut that builds up to those levels gets fewer back.")
+    # review fix: the studies' cuts are where people end up by about 6 months, but the count holds the cut from the
+    # first month. A cut that builds up to the same level (k/6 of spending in month 1 ... k in month 6) gets fewer
+    # back, never more, so the line says so.
+    acc = t["accounts"]
+    f = acc[(acc["runway_ei55"] < 6) & (acc["B"] > 0)]
+    gap = (f["S"] - 0.55 * f["I"]).to_numpy()[:, None]
+    months = np.arange(1, 7)[None, :]
+    for k in REALISTIC_CUT_PCTS:
+        held = (f["B"].to_numpy()[:, None] - np.cumsum(np.broadcast_to(gap - k / 100 * f["S"].to_numpy()[:, None],
+                                                                        (len(f), 6)), axis=1) >= -1e-9).all(axis=1)
+        ramp = (f["B"].to_numpy()[:, None] - np.cumsum(gap - k / 100 * months / 6 * f["S"].to_numpy()[:, None],
+                                                       axis=1) >= -1e-9).all(axis=1)
+        assert int(held.sum()) == int(rc.set_index("max_cut_pct").loc[k, "accounts"])
+        assert not (ramp & ~held).any() and ramp.sum() < held.sum(), k
     assert L["cushion"] == ("In dollars the cushion does grow with money in: the median buffer is $13.9k under $2.5k "
                             "a month and $38.9k over $20k. Median monthly spending grows faster ($1.4k → $23.0k), "
                             "so in months of spending the buffer shrinks (8.9 → 1.6).")

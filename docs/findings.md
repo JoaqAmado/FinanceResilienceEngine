@@ -10,7 +10,7 @@ The judges' formula comes first. Reality checks are labelled and sit beside it, 
 | …stress test with the real 2026 EI maximum ($729/week ≈ $3,159/month) | 2,304 (51.2%) |
 | **A typical month isn't a typical half-year:** spending is lumpy, so an account "safe" on the formula can be under 6 months on its own half-year spending | 783 of 2,922 (560, or 1 in 5, with the same window on money in too). Calendar caveat: spending peaks in January and June, a pattern already in the original PKDD'99 data, so it is not a Canadian season |
 | Failing customers who get back to 6 months by cutting a quarter of spending or less | 3 in 4 (1,192 of 1,555 with a positive buffer); only 121 can't cut their way there |
-| …at the cuts people who lose a job really make (about 13–16% of spending) | 16% or less: 778 of 1,555 (50.0%) · 13% or less: 606 (39.0%) |
+| …held from the first month, at the cuts people who lose a job have made by about 6 months out of work (about 13–16% of spending) | 16% or less: 778 of 1,555 (50.0%) · 13% or less: 606 (39.0%) |
 | Overdrawn before the loan → labelled defaulted | 27 of 27 in this data (none of the 606 repaying borrowers ever went negative). That is built into how this dataset labels loans (CTU's rule: a loan is good only if the balance never went below zero), so it's a red flag, not evidence |
 
 The chart tables behind these rows are in `artifacts/` (written by `python -m resilience.portfolio`).
@@ -24,9 +24,9 @@ and still active in 2025, of which 75 first went overdrawn in 2025.
 | | |
 |---|---|
 | Of those 75, passed the judges' EI 55% test at the snapshot | 28 (the light had flagged 17 of them, 2+ points) |
-| Overdrafts caught by a 10% watch-list (385 accounts) | light 47 · judges' EI 55% runway 25 · buffer months 29 |
+| Overdrafts caught by a 10% watch-list (385 accounts) | light (most points, then lowest balance) 47 · judges' EI 55% runway 25 · buffer months 29 |
 | Second finding, small numbers: went overdrawn in 2025 | irregular money in that passes the EI test: 14 of 376 (3.7%, 95% interval 2.2–6.2%) · steady money in that fails it: 17 of 1,072 (1.6%, 1.0–2.5%) |
-| **Half-year spending, checked forward** (4 as-of months, 12,681 account half-years): of the 6,652 that fail the 6-month EI test on the money out that followed, missed by | the judges' median month S: 2,406 · half-year S6: 1,003 (false alarms: S 720 · S6 1,579) |
+| **Half-year spending, checked forward** (4 as-of months, 12,681 account half-years): of the 6,652 that fail the 6-month EI test on the money out that followed, missed by | the same test on the median month S: 2,406 · on half-year S6: 1,003 (false alarms: S 720 · S6 1,579) |
 
 The tables are in `artifacts/` (written by `python -m resilience.evidence`); both apps chart them on the
 Portfolio tab.
@@ -58,10 +58,12 @@ All functions are in `resilience/`. "Failing" means a judges' runway under 6 mon
   The count is the `<= 10%` and `10-25%` bins, out of all failing accounts with a positive buffer. The accounts that "can't
   cut their way there" are the failing accounts where `core.backup_ladder` reaches no rung, so they need cash or
   credit. The already overdrawn are among them. Table: `artifacts/cut_histogram.csv`.
-- **At the cuts people really make.** `portfolio.realistic_cuts()`: the same failing accounts with a positive
-  buffer, counted at a cut of at most `REALISTIC_CUT_PCTS` of spending: about what people who lose a job cut
-  (JPMorgan Chase Institute, *Recovering from Job Loss*; Browning & Crossley, see the README sources). Table:
-  `artifacts/realistic_cuts.csv`.
+- **At the cuts people reach by about 6 months.** `portfolio.realistic_cuts()`: the same failing accounts with a
+  positive buffer, counted at a cut of at most `REALISTIC_CUT_PCTS` of spending, held from the first month as in
+  the histogram. The studies measure where cuts end up, not where they start: low-buffer families by the time
+  UI ran out (JPMorgan Chase Institute, *Recovering from Job Loss*) and people still out of work at 6 months
+  (Browning & Crossley, see the README sources). A cut that only builds up to those levels gets fewer back.
+  Table: `artifacts/realistic_cuts.csv`.
 - **Overdrawn before the loan.** `portfolio.preloan_overdraft()`: borrowers with any day below zero in a month
   before `loan_start`, against the loan outcome (B or D = defaulted, A or C = repaid or on track). The repaying
   borrowers are the A and C loans, and `ever_negative` is false for every one of them. That is how the dataset
@@ -92,4 +94,5 @@ on those rows, and an account passes the judges' EI test when its published runw
 - **Half-year spending, checked forward.** `s6_check()`: at each of 2023-12, 2024-06, 2024-12 and 2025-06, every
   account with a row 12 months earlier and all 6 months after it. I, S, B and S6 use only the rows up to that
   month. The test fails when B − (6 months of spending − 6 × 0.55 × I) is below zero: on the money out that
-  actually followed (a real fail), on 6 × S and on 6 × S6. Table: `artifacts/s6_halfyear_check.csv`.
+  actually followed (a real fail), on 6 × S and on 6 × S6. None of the three is rounded, so the S check is not
+  the judges' published runway, which rounds to one decimal. Table: `artifacts/s6_halfyear_check.csv`.

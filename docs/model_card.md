@@ -29,7 +29,7 @@ from the customer's own numbers. No LLM computes a number.
 
 ## Out of scope
 
-- **Not a credit decision and not a default model.** The engine gives no probabilities and no scores.
+- **Not a credit decision and not a default model.** The engine gives no probabilities and no credit scores.
 - **The overdraft-before-loan figure is a red flag, not evidence.** It is built into how this dataset labels loans:
   the CTU repository notes that `if min(trans.balance) >= 0 then good else bad` separates good loans from bad
   perfectly. It is shown on the customer card as a flag.

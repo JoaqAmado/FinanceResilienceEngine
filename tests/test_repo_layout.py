@@ -70,3 +70,78 @@ def _repo_text_files():
 def test_no_repo_file_points_at_private_notes():
     hits = [rel for rel, text in _repo_text_files() if NOTES_DIR in text]
     assert not hits, hits
+
+
+# ------------------------------------------------ regressions from the review of the reorganized repo
+
+def _readme_commands():
+    """Each command line of the README's bash blocks, comments stripped."""
+    for block in re.findall(r"```bash\n(.*?)```", (ROOT / "README.md").read_text(), re.S):
+        for line in block.splitlines():
+            line = line.split("  #", 1)[0].strip()
+            if line:
+                yield line
+
+
+def test_readme_commands_run_from_the_repo_root():
+    """The quickstart's web line used to `cd web` in the shell itself, so the next block's relative .venv/bin
+    paths failed. A `cd` into a folder must run in a subshell `( ... )`."""
+    lines = list(_readme_commands())
+    assert any(".venv/bin/" in x for x in lines) and any("cd web" in x for x in lines)
+    for line in lines:
+        if line.startswith("("):
+            continue                                    # a subshell: its cd ends with it
+        for part in line.split("&&"):
+            part = part.strip()
+            if part.startswith("cd "):
+                assert part == "cd FinanceResilienceEngine", f"leaves the shell outside the repo root: {line}"
+
+
+APP_TEXT = [ROOT / "app.py", *sorted((ROOT / "resilience").glob("*.py")),
+            *sorted((ROOT / "web" / "src").rglob("*.ts")), *sorted((ROOT / "web" / "src").rglob("*.tsx"))]
+
+
+@pytest.mark.parametrize("path", APP_TEXT, ids=lambda p: p.relative_to(ROOT).as_posix())
+def test_app_text_keeps_the_wording_rules(path):
+    """Review fix: the wording check read only the Markdown, so a 'high earner' button in app.py got through."""
+    text = path.read_text(encoding="utf-8").lower()
+    for phrase in ("predicts default", "salary", "high earner"):
+        assert phrase not in text, f"{path.name}: {phrase!r}"
+    assert not re.search(r"\bauc\b", text), f"{path.name}: AUC"
+
+
+@pytest.mark.parametrize("md", MARKDOWN, ids=lambda p: p.relative_to(ROOT).as_posix())
+def test_docs_never_deny_the_scores_they_describe(md):
+    """Review fix: the model card said 'no scores' next to the backtest's scores; it means no credit scores."""
+    prose = CODE.sub(" ", md.read_text()).lower()
+    assert "no scores" not in prose, md.name
+
+
+def test_web_readme_names_every_ported_engine_module():
+    """Review fix: web/README listed core, narrative and warning as the ports, but not evidence."""
+    text = (ROOT / "web" / "README.md").read_text()
+    ports = set()
+    for ts in sorted((ROOT / "web" / "src" / "engine").glob("*.ts")):
+        ports |= set(re.findall(r"port of (resilience/\w+\.py)", ts.read_text()[:400]))
+    assert {"resilience/core.py", "resilience/warning.py", "resilience/evidence.py"} <= ports
+    for py in sorted(ports):
+        assert f"`{py}`" in text, py
+        assert f"`src/engine/{Path(py).stem}.ts`" in text, py
+    for word in ("backtest evidence", "lift chart", "irregular money in", "realistic cuts", "dollar cushion"):
+        assert word in text, word
+
+
+@pytest.mark.parametrize("module", ["resilience.portfolio", "resilience.warning", "resilience.evidence"])
+@pytest.mark.parametrize("flag", ["--help", "-h"])
+def test_cli_help_prints_usage_and_writes_nothing(tmp_path, module, flag):
+    """Review fix: `python -m resilience.evidence --help` used to write its CSVs into a folder named --help."""
+    import os
+    import sys
+    env = {**os.environ, "PYTHONPATH": str(ROOT)}
+    out = subprocess.run([sys.executable, "-m", module, flag], cwd=tmp_path, env=env, capture_output=True, text=True)
+    assert out.returncode == 0, out.stderr
+    assert out.stdout.startswith(f"usage: python -m {module} [-h] [out_dir]")
+    assert not list(tmp_path.iterdir())
+    bad = subprocess.run([sys.executable, "-m", module, "--bogus"], cwd=tmp_path, env=env, capture_output=True, text=True)
+    assert bad.returncode == 2 and "unrecognized arguments" in bad.stderr
+    assert not list(tmp_path.iterdir())

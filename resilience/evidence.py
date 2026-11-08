@@ -31,12 +31,12 @@ opening month is partial and left out).
 4. Half-year spending, checked forward: at each as-of month t0 in S6_ORIGINS, for the accounts with a row at least
    S6_HISTORY months before t0 and all S6_HORIZON months after it. Inputs are core.baseline_metrics on the rows up
    to t0 only (I, S, B, S6). The 6-month EI test is B - (6-month spending - 6 x 0.55 x I) < 0. A real fail uses
-   the money out that actually followed; the judges' test uses 6 x S; the half-year check uses 6 x S6.
+   the money out that actually followed; the median-month check uses 6 x S; the half-year check uses 6 x S6.
+   All three are unrounded, so the S check is not the judges' published (rounded) runway.
 """
 from __future__ import annotations
 
 import math
-import sys
 from pathlib import Path
 
 import numpy as np
@@ -229,9 +229,10 @@ def passed_line(s: dict) -> str:
 
 def lift_line(lift: pd.DataFrame, s: dict, pct: int = HEADLINE_LIST_PCT) -> str:
     r = lift[lift["list_pct"] == pct].iloc[0]
-    return (f"On a {pct}% watch-list ({int(r['list_accounts']):,} accounts), the light catches {int(r['light']):,} of "
-            f"the {int(r['events']):,} accounts that went overdrawn in {s['label_year']}; the judges' EI 55% runway "
-            f"catches {int(r['ei55_runway']):,} and buffer months {int(r['buffer_months']):,}.")
+    return (f"On a {pct}% watch-list ({int(r['list_accounts']):,} accounts), the light (most points first, then "
+            f"lowest balance against spending) catches {int(r['light']):,} of the {int(r['events']):,} accounts "
+            f"that went overdrawn in {s['label_year']}; the judges' EI 55% runway catches {int(r['ei55_runway']):,} "
+            f"and buffer months {int(r['buffer_months']):,}.")
 
 
 def irregular_line(table: pd.DataFrame, s: dict) -> str:
@@ -255,9 +256,9 @@ def s6_line(check: pd.DataFrame, origins: tuple[str, ...] = S6_ORIGINS) -> str:
     return (f"Checked forward at {len(origins)} as-of months from {origins[0]} to {origins[-1]} "
             f"({int(S['account_halfyears']):,} account half-years, each using only the data up to its month): of "
             f"the {int(S['real_fails']):,} half-years that fail the 6-month EI test on the money out that actually "
-            f"followed, the judges' median month S misses {int(S['missed_real_fails']):,} and half-year spending S6 "
-            f"misses {int(S6['missed_real_fails']):,}; S6 raises {int(S6['false_alarms']):,} false alarms against "
-            f"{int(S['false_alarms']):,} for S.")
+            f"followed, the same test on the median month S misses {int(S['missed_real_fails']):,} and on half-year "
+            f"spending S6 misses {int(S6['missed_real_fails']):,}; S6 raises {int(S6['false_alarms']):,} false "
+            f"alarms against {int(S['false_alarms']):,} for S.")
 
 
 def lines(ev: dict) -> dict[str, str]:
@@ -285,4 +286,5 @@ def main(out_dir: Path | None = None) -> None:
 
 
 if __name__ == "__main__":
-    main(Path(sys.argv[1]) if len(sys.argv) > 1 else None)
+    from .portfolio import parse_out_dir
+    main(parse_out_dir("resilience.evidence", __doc__))

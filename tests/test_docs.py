@@ -193,13 +193,13 @@ def figures(m):
             f"| Of those {es['went_overdrawn']}, passed the judges' EI {EI_PCT}% test at the snapshot | "
             f"{es['passed_ei55']} (the light had flagged {es['passed_and_flagged']} of them, {es['watch_points']}+ points) |",
             f"| Overdrafts caught by a {E.HEADLINE_LIST_PCT}% watch-list ({int(lift.list_accounts):,} accounts) | "
-            f"light {lift.light} · judges' EI {EI_PCT}% runway {lift.ei55_runway} · buffer months {lift.buffer_months} |",
+            f"light (most points, then lowest balance) {lift.light} · judges' EI {EI_PCT}% runway {lift.ei55_runway} · buffer months {lift.buffer_months} |",
             f"went overdrawn in {es['label_year']} | irregular money in that passes the EI test: "
             f"{irr_a.went_overdrawn} of {irr_a.accounts:,} ({rate(irr_a)}95% interval {span(irr_a)}) · steady money in "
             f"that fails it: {irr_b.went_overdrawn} of {irr_b.accounts:,} ({rate(irr_b)}{span(irr_b)}) |",
             f"({len(org)} as-of months, {s6.loc['S', 'account_halfyears']:,} account half-years): of the "
             f"{s6.loc['S', 'real_fails']:,} that fail the {E.S6_HORIZON}-month EI test",
-            f"| the judges' median month S: {s6.loc['S', 'missed_real_fails']:,} · half-year S6: "
+            f"| the same test on the median month S: {s6.loc['S', 'missed_real_fails']:,} · on half-year S6: "
             f"{s6.loc['S6', 'missed_real_fails']:,} (false alarms: S {s6.loc['S', 'false_alarms']:,} · "
             f"S6 {s6.loc['S6', 'false_alarms']:,}) |",
             f"those had {E.WATCH_POINTS}+ points on the light",

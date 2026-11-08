@@ -95,7 +95,7 @@ function BandTooltip({ active, payload }: TooltipContentProps) {
 
 /** The lift chart's three rankings: the light is the lead line; the judges' runway keeps its blue. */
 const LIFT_SERIES = [
-  { key: 'light', label: 'Early-warning light', color: COLORS.accent, dash: '', width: 3 },
+  { key: 'light', label: 'Early-warning light: most points, then lowest balance', color: COLORS.accent, dash: '', width: 3 },
   { key: 'ei55_runway', label: "Judges' EI 55% runway, shortest first", color: COLORS.judges, dash: DASH.reality, width: 2 },
   { key: 'buffer_months', label: 'Buffer months, fewest first', color: COLORS.plan, dash: DASH.base, width: 2 },
 ] as const;

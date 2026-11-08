@@ -7,7 +7,7 @@ never disagree. Shares are of all 4,500 accounts unless a table says otherwise.
 """
 from __future__ import annotations
 
-import sys
+import argparse
 from pathlib import Path
 
 import numpy as np
@@ -100,8 +100,9 @@ QUARTER_CUT_PCT = 25  # "a quarter of spending or less": the <= 10% and 10-25% b
 
 
 def realistic_cuts(acc: pd.DataFrame) -> pd.DataFrame:
-    """Finding #4, at the cuts real job losers make: failing accounts with a positive buffer that get back to
-    6 months with a cut of at most max_cut_pct of spending (the same test as cut_histogram's bins)."""
+    """Finding #4, at the cuts real job losers reach by about 6 months, held here from the first month: failing
+    accounts with a positive buffer that get back to 6 months with a cut of at most max_cut_pct of spending (the
+    same test as cut_histogram's bins)."""
     fail = acc[(acc["runway_ei55"] < 6) & (acc["B"] > 0)]
     pct = fail["ei55_min_cut_pct_of_S"] * 100
     return pd.DataFrame([{"max_cut_pct": k, "accounts": int((pct <= k).sum()), "failing_with_buffer": len(fail),
@@ -162,11 +163,12 @@ def lines(t: dict[str, pd.DataFrame]) -> dict[str, str]:
     return {
         "quarter": f"{int(q.accounts):,} of {int(q.failing_with_buffer):,} failing customers with a positive buffer "
                    f"get back to 6 months by cutting a quarter of spending or less.",
-        "realistic_cuts": f"Studies of people who lost a job find they cut about {REALISTIC_CUT_PCTS[0]}–"
-                          f"{REALISTIC_CUT_PCTS[1]}% of spending. At those cuts, {int(hi_cut.accounts):,} of "
-                          f"{int(hi_cut.failing_with_buffer):,} ({hi_cut.share_pct:.1f}%) get back to 6 months with "
-                          f"{REALISTIC_CUT_PCTS[1]}% or less, and {int(lo_cut.accounts):,} ({lo_cut.share_pct:.1f}%) "
-                          f"with {REALISTIC_CUT_PCTS[0]}% or less.",
+        "realistic_cuts": f"Studies of people who lost a job find that by about 6 months out of work they have cut "
+                          f"about {REALISTIC_CUT_PCTS[0]}–{REALISTIC_CUT_PCTS[1]}% of spending. Held from the first "
+                          f"month, a cut of {REALISTIC_CUT_PCTS[1]}% or less gets {int(hi_cut.accounts):,} of "
+                          f"{int(hi_cut.failing_with_buffer):,} ({hi_cut.share_pct:.1f}%) back to 6 months and "
+                          f"{REALISTIC_CUT_PCTS[0]}% or less gets {int(lo_cut.accounts):,} ({lo_cut.share_pct:.1f}%); "
+                          f"a cut that builds up to those levels gets fewer back.",
         "cushion": f"In dollars the cushion does grow with money in: the median buffer is {_k(lo.median_B)} under "
                    f"{INCOME_LABELS[0][2:]} a month and {_k(hi.median_B)} over {INCOME_LABELS[-1][3:]}. Median "
                    f"monthly spending grows faster ({_k(lo.median_S)} → {_k(hi.median_S)}), so in months of "
@@ -182,5 +184,14 @@ def main(out_dir: Path = ARTIFACTS) -> None:
         print(f"wrote {path.relative_to(out_dir.parent)} ({len(df)} rows)")
 
 
+def parse_out_dir(module: str, doc: str | None, argv: list[str] | None = None) -> Path | None:
+    """The optional output folder of `python -m <module>`, or None for artifacts/. -h / --help print the usage and
+    exit, and any other option is an error, so neither becomes a folder name."""
+    ap = argparse.ArgumentParser(prog=f"python -m {module}", description=(doc or "").strip().split("\n", 1)[0])
+    ap.add_argument("out_dir", nargs="?", type=Path, help="folder for the CSV files (default: artifacts/)")
+    return ap.parse_args(argv).out_dir
+
+
 if __name__ == "__main__":
-    main(Path(sys.argv[1]) if len(sys.argv) > 1 else ARTIFACTS)
+    out = parse_out_dir("resilience.portfolio", __doc__)
+    main(ARTIFACTS if out is None else out)

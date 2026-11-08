@@ -157,8 +157,26 @@ def test_population_is_the_light_backtest(monthly, ev):
 def test_headline_lift_at_a_ten_percent_list(ev):
     r = ev["lift"].set_index("list_pct").loc[E.HEADLINE_LIST_PCT]
     assert (r.list_accounts, r.light, r.ei55_runway, r.buffer_months, r.events) == (385, 47, 25, 29, 75)
-    assert E.lines(ev)["lift"] == ("On a 10% watch-list (385 accounts), the light catches 47 of the 75 accounts that "
-                                   "went overdrawn in 2025; the judges' EI 55% runway catches 25 and buffer months 29.")
+    assert E.lines(ev)["lift"] == ("On a 10% watch-list (385 accounts), the light (most points first, then lowest "
+                                   "balance against spending) catches 47 of the 75 accounts that went overdrawn in "
+                                   "2025; the judges' EI 55% runway catches 25 and buffer months 29.")
+
+
+@needs_data
+def test_lift_line_names_the_balance_tie_break_the_47_depends_on(ev):
+    """Review fix: on points alone (ties by account_id) the 10% list catches 39, not 47, because the list cuts
+    through the 2-point tier. So every place that quotes the 47 names the balance tie-break."""
+    s = ev["scores"]
+    k = E.list_size(E.HEADLINE_LIST_PCT, len(s))
+    points_only = s.assign(aid=s.index).sort_values(["points", "aid"], ascending=[False, True]).index[:k]
+    assert int(s.loc[points_only, "went_overdrawn"].sum()) == 39
+    assert int((s.points >= 3).sum()) < k < int((s.points >= 2).sum())       # the list ends inside the 2-point tier
+    assert "then lowest balance" in E.lines(ev)["lift"]
+    root = DATA_DIR.parent
+    assert '"Early-warning light: most points, then lowest balance"' in (root / "app.py").read_text()
+    assert "'Early-warning light: most points, then lowest balance'" in (
+        root / "web" / "src" / "components" / "Portfolio.tsx").read_text()
+    assert "light (most points, then lowest balance) 47" in (root / "docs" / "findings.md").read_text()
 
 
 @needs_data
@@ -237,8 +255,24 @@ def test_s6_checked_forward(ev):
     assert E.lines(ev)["s6"] == (
         "Checked forward at 4 as-of months from 2023-12 to 2025-06 (12,681 account half-years, each using only the "
         "data up to its month): of the 6,652 half-years that fail the 6-month EI test on the money out that actually "
-        "followed, the judges' median month S misses 2,406 and half-year spending S6 misses 1,003; S6 raises 1,579 "
-        "false alarms against 720 for S.")
+        "followed, the same test on the median month S misses 2,406 and on half-year spending S6 misses 1,003; S6 "
+        "raises 1,579 false alarms against 720 for S.")
+
+
+@needs_data
+def test_s6_line_does_not_call_its_unrounded_s_test_the_judges(ev):
+    """Review fix: the half-year check is unrounded. The judges' published runway (rounded, core.portfolio_runway)
+    flags different half-years and misses 2,434 on S and 1,033 on S6, so the line must not credit the judges."""
+    from resilience.core import LAID_OFF_EI, portfolio_runway
+    h = ev["halfyears"]
+    real = h.B - (h.next_spending - E.S6_HORIZON * LAID_OFF_EI.income_multiplier * h.I) < 0
+    published = {"S": portfolio_runway(h, LAID_OFF_EI) < E.PASS_MONTHS,
+                 "S6": portfolio_runway(h, LAID_OFF_EI.with_(spending_basis="S6")) < E.PASS_MONTHS}
+    missed = {b: int((~flag & real).sum()) for b, flag in published.items()}
+    assert missed == {"S": 2434, "S6": 1033}
+    t = ev["s6"].set_index("spending_basis")["missed_real_fails"].to_dict()
+    assert t == {"S": 2406, "S6": 1003} and t != missed
+    assert "judges'" not in E.lines(ev)["s6"]
 
 
 @needs_data

@@ -20,7 +20,7 @@ python3.12 -m venv .venv
 .venv/bin/pip install -r requirements.txt -e .
 .venv/bin/pytest -rs                      # offline suite; the live Snowflake check is opt-in: .venv/bin/pytest -m live
 .venv/bin/streamlit run app.py            # http://localhost:8501
-cd web && npm install && npm test && npm run build && npm run preview   # http://localhost:4173 (npm run dev for :5173)
+(cd web && npm install && npm test && npm run build && npm run preview)   # http://localhost:4173 (npm run dev for :5173)
 ```
 
 On Windows, use `.venv\Scripts\` instead of `.venv/bin/`. The web app's data files are committed, so it runs without Python.

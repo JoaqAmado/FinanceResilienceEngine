@@ -49,7 +49,6 @@ For each number of points: accounts, how many went overdrawn, and the share.
 from __future__ import annotations
 
 import math
-import sys
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
@@ -388,4 +387,5 @@ def main(out_dir: Path | None = None) -> None:
 
 
 if __name__ == "__main__":
-    main(Path(sys.argv[1]) if len(sys.argv) > 1 else None)
+    from .portfolio import parse_out_dir
+    main(parse_out_dir("resilience.warning", __doc__))

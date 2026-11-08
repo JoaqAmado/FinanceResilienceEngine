@@ -400,10 +400,16 @@ describe('portfolio tab: 2025 backtest evidence', () => {
     }
     // the same sentences tests/test_evidence.py pins on the Python side
     expect(text).toContain(
-      'On a 10% watch-list (385 accounts), the light catches 47 of the 75 accounts that went overdrawn in 2025; ' +
-        "the judges' EI 55% runway catches 25 and buffer months 29.",
+      'On a 10% watch-list (385 accounts), the light (most points first, then lowest balance against spending) ' +
+        "catches 47 of the 75 accounts that went overdrawn in 2025; the judges' EI 55% runway catches 25 and buffer " +
+        'months 29.',
     );
     expect(text).toContain('the light had flagged 17 of them (2+ points).');
+    // review fixes: the 47 needs the balance tie-break, so the chart's series says so; the half-year check is
+    // unrounded, so it is not credited to the judges
+    expect(text).toContain('Early-warning light: most points, then lowest balance');
+    expect(text).toContain('the same test on the median month S misses 2,406 and on half-year spending S6 misses 1,003');
+    expect(text).not.toContain("judges' median month");
   });
 
   it('realistic cuts, dollar cushions and the reworded caveats, as Python writes them', () => {
@@ -411,8 +417,9 @@ describe('portfolio tab: 2025 backtest evidence', () => {
     // the quarter sentence the tab builds from cut_histogram is Python's, and the realistic-cut line sits beside it
     expect(text).toContain(`${L.quarter} ${L.realistic_cuts}`);
     expect(L.realistic_cuts).toBe(
-      'Studies of people who lost a job find they cut about 13–16% of spending. At those cuts, 778 of 1,555 (50.0%) ' +
-        'get back to 6 months with 16% or less, and 606 (39.0%) with 13% or less.',
+      'Studies of people who lost a job find that by about 6 months out of work they have cut about 13–16% of ' +
+        'spending. Held from the first month, a cut of 16% or less gets 778 of 1,555 (50.0%) back to 6 months and ' +
+        '13% or less gets 606 (39.0%); a cut that builds up to those levels gets fewer back.',
     );
     expect(text).toContain(L.cushion);
     expect(L.cushion).toContain('the median buffer is $13.9k under $2.5k a month and $38.9k over $20k');

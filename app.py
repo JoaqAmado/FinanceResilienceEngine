@@ -41,7 +41,7 @@ st.set_page_config(page_title="Twin Runway · Tangerine Resilience Engine", page
 ORANGE, SLATE, GREY = "#F47920", "#334155", "#94A3B8"
 AQUA = "#1BAF7A"  # a third series beside orange and slate (the web app's backup-plan aqua)
 st.markdown("<style>[data-testid='stMetricValue']{font-size:1.65rem}</style>", unsafe_allow_html=True)
-REHEARSAL = {20331: "lender red flag", 20143: "high earner", 88269: "looks safe, isn't",
+REHEARSAL = {20331: "lender red flag", 20143: "spends more than comes in", 88269: "looks safe, isn't",
              98952: "retiree", 77743: "furnace wipes buffer"}
 _X = "× typical spending"
 PRESETS = {
@@ -399,7 +399,8 @@ with tab_port:
     st.markdown(f"#### 1 · The judges' test misses people: who went overdrawn in {es['label_year']}")
     fig = go.Figure()
     head = lift[lift.list_pct == EV.HEADLINE_LIST_PCT].iloc[0]
-    for col, name, color, dash, place in (("light", "Early-warning light", ORANGE, "solid", "middle left"),
+    for col, name, color, dash, place in (("light", "Early-warning light: most points, then lowest balance", ORANGE,
+                                           "solid", "middle left"),
                                           ("ei55_runway", "Judges' EI 55% runway, shortest first", SLATE, "dash",
                                            "bottom left"),
                                           ("buffer_months", "Buffer months, fewest first", AQUA, "dot", "top left")):

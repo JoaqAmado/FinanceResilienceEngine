@@ -290,3 +290,16 @@ def test_early_warning_light_not_enough_history_names_the_light(monkeypatch):
     line = [x.value for x in app.info if "Not enough history" in x.value]
     assert line == ["Early-warning light: Not enough history: the light needs 6 months after the opening month "
                     "and this account has 5, so no points or backtest rate."]
+
+
+@needs_data
+def test_rehearsal_buttons_keep_the_wording_rules_and_match_the_web_app(at):
+    """Review fix: the 20143 button said 'high earner'. It now reads as the web app's picker does."""
+    import re
+    labels = [b.label for b in at.button if " · " in b.label]
+    assert len(labels) == 5
+    for label in labels:
+        assert not any(p in label.lower() for p in ("high earner", "salary", "predicts default")), label
+    picker = (Path(__file__).resolve().parent.parent / "web" / "src" / "components" / "AccountPicker.tsx").read_text()
+    web = dict(re.findall(r"\[(\d{5}), '([^']+)'\]", picker))
+    assert web["20143"] == "spends more than comes in" and f"20143 · {web['20143']}" in labels

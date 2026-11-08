@@ -231,8 +231,8 @@ export function liftLine(lift: readonly LiftRow[], s: EvidenceSummary, at: numbe
   const r = lift.find((x) => x.list_pct === at);
   if (!r) throw new Error(`no ${at}% row in the lift table`);
   return (
-    `On a ${at}% watch-list (${n0(r.list_accounts)} accounts), the light catches ${n0(r.light)} of the ` +
-    `${n0(r.events)} accounts that went overdrawn in ${s.label_year}; the judges' EI 55% runway catches ` +
+    `On a ${at}% watch-list (${n0(r.list_accounts)} accounts), the light (most points first, then lowest balance ` +
+    `against spending) catches ${n0(r.light)} of the ${n0(r.events)} accounts that went overdrawn in ${s.label_year}; the judges' EI 55% runway catches ` +
     `${n0(r.ei55_runway)} and buffer months ${n0(r.buffer_months)}.`
   );
 }
@@ -265,7 +265,7 @@ export function s6Line(check: readonly S6Row[], origins: readonly string[] = S6_
     `Checked forward at ${origins.length} as-of months from ${origins[0]} to ${origins[origins.length - 1]} ` +
     `(${n0(S.account_halfyears)} account half-years, each using only the data up to its month): of the ` +
     `${n0(S.real_fails)} half-years that fail the 6-month EI test on the money out that actually followed, the ` +
-    `judges' median month S misses ${n0(S.missed_real_fails)} and half-year spending S6 misses ` +
+    `same test on the median month S misses ${n0(S.missed_real_fails)} and on half-year spending S6 misses ` +
     `${n0(S6.missed_real_fails)}; S6 raises ${n0(S6.false_alarms)} false alarms against ${n0(S.false_alarms)} for S.`
   );
 }
