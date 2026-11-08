@@ -4,14 +4,17 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Resilience Plan Builder</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
   <header class="top">
     <div class="wrap">
       <p class="eyebrow">Tangerine · Resilience Rewired</p>
-      <h1>90-day resilience plan</h1>
-      <p class="lede">Test a shock, see how long the money lasts, and get a week-by-week plan to prevent it and to get through it.</p>
+      <h1>Resilience plan</h1>
+      <p class="lede">Test a shock, look back at the last 6 months to learn from them, and get a plan for the next 12.</p>
     </div>
   </header>
 
@@ -36,12 +39,12 @@
       </div>
 
       <div class="field">
-        <span>Twist cards</span>
+        <span>Start from</span>
         <div id="presets" class="chips"></div>
       </div>
 
-      <details id="custom" class="custom">
-        <summary>Adjust the shock size</summary>
+      <div id="custom" class="custom">
+        <span class="custom-title">Set the shock</span>
         <div class="sliders">
           <label class="field">
             <span>Income kept <output id="income-out">100%</output></span>
@@ -57,17 +60,27 @@
               <option value="12">12 months</option>
             </select>
           </label>
-          <label class="field">
-            <span>Household bills <output id="bills-out">+0%</output></span>
-            <input id="bills" type="range" min="0" max="50" step="5" value="0">
-          </label>
-          <label class="field">
-            <span>Surprise cost <output id="oneoff-out">none</output></span>
-            <input id="oneoff" type="range" min="0" max="3" step="0.5" value="0">
-            <small>in months of typical spending (1 = the furnace)</small>
-          </label>
+          <div class="field">
+            <label for="bills">Bills increase</label>
+            <div class="unit-row">
+              <input id="bills" type="number" min="0" step="1" value="0" inputmode="decimal">
+              <select id="bills-unit" aria-label="Bills increase unit">
+                <option value="pct">% of bills</option>
+                <option value="amount">$ per month</option>
+              </select>
+            </div>
+            <small id="bills-hint">&nbsp;</small>
+          </div>
+          <div class="field">
+            <label for="oneoff">Surprise repair (furnace, car, roof…)</label>
+            <div class="unit-row">
+              <span class="prefix" aria-hidden="true">$</span>
+              <input id="oneoff" type="number" min="0" step="100" value="0" inputmode="decimal">
+            </div>
+            <small id="oneoff-hint">&nbsp;</small>
+          </div>
         </div>
-      </details>
+      </div>
       <div id="error" class="error" role="alert" hidden>
         <p id="error-msg"></p>
         <div id="error-suggest" class="chips"></div>
@@ -75,7 +88,7 @@
     </section>
 
     <div id="results" hidden>
-      <!-- Customer + runway -->
+      <!-- 2. Customer + runway -->
       <section class="card" aria-labelledby="know-h">
         <div class="card-head">
           <h2 id="know-h">2 · Know the customer</h2>
@@ -95,9 +108,24 @@
             <small>Typical (median) month</small>
           </div>
           <div class="runway ours">
-            <span class="label">Stress runway <em>· our check-engine light</em></span>
+            <span class="label">Stress runway <em>· plans from a lean month</em></span>
             <strong id="rw-stress"></strong>
             <small id="rw-stress-note"></small>
+          </div>
+        </div>
+
+        <div class="engine-row">
+          <div id="ce-box" class="ce" role="status">
+            <span class="label">Check-engine light</span>
+            <div class="ce-head"><span id="ce-icon" class="ce-icon" aria-hidden="true"></span><strong id="ce-zone"></strong></div>
+            <p id="ce-why" class="ce-text"></p>
+            <p id="ce-evidence" class="ce-text muted"></p>
+          </div>
+          <div class="why-box">
+            <span class="label">Why the two runways differ</span>
+            <div class="why-row"><span class="why-name">Typical month in</span><span class="why-track"><i id="why-typ" class="why-bar typ"></i></span><strong id="why-typ-v"></strong></div>
+            <div class="why-row"><span class="why-name">Lean month in</span><span class="why-track"><i id="why-lean" class="why-bar lean"></i></span><strong id="why-lean-v"></strong></div>
+            <small id="why-note" class="muted"></small>
           </div>
         </div>
       </section>
@@ -107,35 +135,65 @@
         <ul id="notes" class="notes"></ul>
       </section>
 
-      <!-- 90-day plan -->
-      <div class="plan-grid">
-        <section class="card plan prevent" aria-labelledby="prev-h">
-          <h2 id="prev-h">3 · Prevent it</h2>
-          <p class="sub">Before a shock: steady the base and build the cushion.</p>
-          <p id="prev-summary" class="summary"></p>
-          <div id="prev-checks" class="checks"></div>
-          <ol id="prev-steps" class="timeline"></ol>
-        </section>
+      <!-- 3. Look back -->
+      <section class="card lookback" aria-labelledby="lb-h">
+        <h2 id="lb-h">3 · Look back: the last 6 months</h2>
+        <p class="sub" id="lb-period"></p>
+        <div id="lb-stats" class="tiles small-tiles"></div>
+        <div class="table-wrap">
+          <table class="months">
+            <thead>
+              <tr><th scope="col">Month</th><th scope="col">Money in</th><th scope="col">Money out</th>
+                <th scope="col">Net</th><th scope="col">Avg balance</th><th scope="col">Flags</th></tr>
+            </thead>
+            <tbody id="lb-rows"></tbody>
+          </table>
+        </div>
+        <h3>What these months teach us for this shock</h3>
+        <ul id="lb-lessons" class="lessons"></ul>
+      </section>
 
-        <section class="card plan survive" aria-labelledby="surv-h">
-          <h2 id="surv-h">4 · If the shock hits</h2>
-          <p class="sub">Protect fixed costs, cut the rest, buy time.</p>
-          <div class="pair">
-            <div><span class="label">Runway without cuts</span><strong id="surv-before"></strong></div>
-            <div><span class="label">With the backup cuts</span><strong id="surv-after"></strong></div>
-          </div>
-          <div id="surv-checks" class="checks"></div>
-          <ol id="surv-steps" class="timeline"></ol>
-        </section>
-      </div>
+      <!-- 4. Next 12 months -->
+      <section class="card next" aria-labelledby="nx-h">
+        <h2 id="nx-h">4 · The next 12 months</h2>
+        <div class="pair">
+          <div><span class="label">Runway without cuts</span><strong id="nx-before"></strong></div>
+          <div><span class="label">With this plan</span><strong id="nx-after"></strong></div>
+        </div>
+        <div id="phases" class="phases"></div>
+      </section>
 
       <section class="card" aria-labelledby="path-h">
-        <h2 id="path-h">Balance over the next 24 months</h2>
-        <div class="legend">
-          <span><i class="sw base"></i>No shock</span>
-          <span><i class="sw shock"></i>With the shock, no cuts</span>
+        <h2 id="path-h">What the plan saves</h2>
+        <div class="kpis">
+          <div class="kpi hero">
+            <span class="label">Kept by the plan over 12 months</span>
+            <strong id="kpi-saved"></strong>
+            <small id="kpi-saved-note"></small>
+          </div>
+          <div class="kpi">
+            <span class="label">Money lasts</span>
+            <strong id="kpi-lasts"></strong>
+            <small id="kpi-lasts-note"></small>
+          </div>
+          <div class="kpi">
+            <span class="label">Balance at month 12, with the plan</span>
+            <strong id="kpi-m12"></strong>
+            <small id="kpi-m12-note"></small>
+          </div>
         </div>
-        <div id="chart" class="chart" role="img" aria-label="Projected balance with and without the shock"></div>
+        <div class="chart-head">
+          <div id="chart-legend" class="legend"></div>
+          <div class="seg no-print" role="group" aria-label="Chart view">
+            <button type="button" data-view="bars" aria-pressed="true">Checkpoints</button>
+            <button type="button" data-view="lines" aria-pressed="false">Month by month</button>
+          </div>
+        </div>
+        <div class="chart-wrap">
+          <div id="chart" class="chart" tabindex="0" role="img"
+               aria-label="Projected balance over 12 months: no shock, shock without cuts, shock with the plan. Use left and right arrow keys to read each month."></div>
+          <div id="chart-tip" class="tip" role="status" hidden></div>
+        </div>
         <p class="muted small">From the engine's month-by-month simulation, starting at today's buffer. Typical months only; real months vary.</p>
       </section>
 
