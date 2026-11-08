@@ -108,9 +108,24 @@
             <small>Typical (median) month</small>
           </div>
           <div class="runway ours">
-            <span class="label">Stress runway <em>· our check-engine light</em></span>
+            <span class="label">Stress runway <em>· plans from a lean month</em></span>
             <strong id="rw-stress"></strong>
             <small id="rw-stress-note"></small>
+          </div>
+        </div>
+
+        <div class="engine-row">
+          <div id="ce-box" class="ce" role="status">
+            <span class="label">Check-engine light</span>
+            <div class="ce-head"><span id="ce-icon" class="ce-icon" aria-hidden="true"></span><strong id="ce-zone"></strong></div>
+            <p id="ce-why" class="ce-text"></p>
+            <p id="ce-evidence" class="ce-text muted"></p>
+          </div>
+          <div class="why-box">
+            <span class="label">Why the two runways differ</span>
+            <div class="why-row"><span class="why-name">Typical month in</span><span class="why-track"><i id="why-typ" class="why-bar typ"></i></span><strong id="why-typ-v"></strong></div>
+            <div class="why-row"><span class="why-name">Lean month in</span><span class="why-track"><i id="why-lean" class="why-bar lean"></i></span><strong id="why-lean-v"></strong></div>
+            <small id="why-note" class="muted"></small>
           </div>
         </div>
       </section>

@@ -17,6 +17,8 @@
   --line-shock: #eb6834;
   --line-plan: #2a78d6;
   --critical: #d03b3b;
+  --status-good: #0ca30c;
+  --status-warning: #fab219;
   --radius: 12px;
   color-scheme: light;
 }
@@ -282,3 +284,26 @@ table.months { width: 100%; border-collapse: collapse; font-size: .88rem; font-v
 .chart .bracket-sub { fill: var(--muted); font-size: 11px; }
 .chart .hit { fill: transparent; }
 .chart .hit.on { fill: var(--text); fill-opacity: .04; }
+
+/* Check-engine light (F10) + why the runways differ */
+.engine-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+.ce { border: 1px solid var(--border); border-left: 6px solid var(--muted); border-radius: 10px; padding: 12px 14px; }
+.ce.red { border-left-color: var(--critical); background: var(--warn-soft); }
+.ce.amber { border-left-color: var(--status-warning); }
+.ce.green { border-left-color: var(--status-good); }
+.ce-head { display: flex; align-items: center; gap: 8px; margin: 4px 0 6px; }
+.ce-head strong { font-size: 1.35rem; }
+.ce-icon { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; font-size: .85rem; color: #fff; background: var(--muted); }
+.ce.red .ce-icon { background: var(--critical); }
+.ce.amber .ce-icon { background: var(--status-warning); color: #0b0b0b; }
+.ce.green .ce-icon { background: var(--status-good); }
+.ce-text { margin: 0 0 4px; font-size: .88rem; }
+.why-box { border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+.why-row { display: grid; grid-template-columns: 120px 1fr 80px; align-items: center; gap: 8px; margin: 8px 0; font-size: .88rem; }
+.why-name { color: var(--muted); }
+.why-track { height: 12px; background: var(--surface-2); border-radius: 4px; overflow: hidden; }
+.why-bar { display: block; height: 100%; border-radius: 0 4px 4px 0; }
+.why-bar.typ { background: var(--line-base); }
+.why-bar.lean { background: var(--line-plan); }
+.why-row strong { text-align: right; font-variant-numeric: tabular-nums; }
+@media (max-width: 760px) { .engine-row { grid-template-columns: 1fr; } .why-row { grid-template-columns: 100px 1fr 70px; } }

@@ -134,6 +134,8 @@ function render(d) {
   $("rw-stress").textContent = d.stress_runway.label;
   $("rw-stress-note").textContent = `Lean month: ${money(p.lean_month_income_p25)} in`;
 
+  renderCheckEngine(d.check_engine, p);
+
   $("notes").replaceChildren(...d.notes.map((n) => el("li", null, n)));
   $("warn-card").hidden = d.notes.length === 0;
 
@@ -141,6 +143,32 @@ function render(d) {
   renderNext(d.resilience_plan.next_12_months);
   renderSavings(d.simulation);
   drawChart(d.simulation);
+}
+
+// Check-engine light (F10): zone + plain-language evidence from the loan test; icon + label, never colour alone.
+const CE_ICON = { red: "■", amber: "▲", green: "✓" };
+function renderCheckEngine(ce, p) {
+  const box = $("ce-box");
+  box.className = `ce ${ce.zone}`;
+  $("ce-icon").textContent = CE_ICON[ce.zone];
+  $("ce-zone").textContent = ce.label;
+  const runway = ce.stress_runway_months == null ? "no shortfall (120+)" : `${ce.stress_runway_months.toFixed(1)} months`;
+  const range = ce.zone === "red" ? `under ${ce.to_months} months`
+    : ce.zone === "amber" ? `${ce.from_months}–${ce.to_months} months` : `${ce.from_months}+ months`;
+  $("ce-why").textContent = `With no shock, planning from a lean month gives ${runway}: the ${ce.label.toLowerCase()} zone (${range}).`;
+  $("ce-evidence").textContent = ce.zone === "green"
+    ? `In our test of ${ce.test_loans} borrowers, ${ce.defaults} of ${ce.loans} in this zone defaulted (${Math.round(ce.default_rate * 100)}%).`
+    : `In our test of ${ce.test_loans} borrowers, ${ce.defaults} of ${ce.loans} in this zone defaulted (${Math.round(ce.default_rate * 100)}%), against ${Math.round(ce.green_default_rate * 100)}% in the green zone.`;
+
+  const typ = Math.max(0, p.typical_income), lean = Math.max(0, p.lean_month_income_p25);
+  const top = Math.max(typ, lean, 1);
+  $("why-typ").style.width = `${(typ / top) * 100}%`;
+  $("why-lean").style.width = `${(lean / top) * 100}%`;
+  $("why-typ-v").textContent = money(typ);
+  $("why-lean-v").textContent = money(lean);
+  $("why-note").textContent = typ > 0 && lean < typ
+    ? `A lean month (about 1 in 4) brings ${Math.round((1 - lean / typ) * 100)}% less. The judges' runway uses the typical month; the stress runway uses the lean one.`
+    : "Income is steady: lean months are close to typical, so both runways agree.";
 }
 
 function renderLookBack(lb) {

@@ -25,7 +25,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.plan import build_look_back, build_next_12_months
-from tangerine import engine, history
+from tangerine import check_engine, engine, history
 from tangerine.engine import PRESETS, Shock, UnknownAccount
 
 STATIC = Path(__file__).parent / "static"
@@ -49,6 +49,7 @@ async def lifespan(_app: FastAPI):
     # Load (and on a fresh clone, first build) the warehouse before serving, so no request waits or races on it.
     engine.account_ids()
     history.recent_months(engine.account_ids()[0])
+    check_engine.zones()
     yield
 
 
@@ -128,6 +129,9 @@ def plan(
         result = engine.run(account_id, shock, horizon=HORIZON_MONTHS)
     except UnknownAccount as e:
         raise HTTPException(404, {"message": str(e), "suggestions": nearest_accounts(account_id)}) from None
+    # Check-engine light (F10): the no-shock stress runway placed in the F10 test's zones, with the evidence.
+    no_shock_stress = engine.stress_runway(engine.get_profile(account_id), "no_shock")
+    result["check_engine"] = check_engine.light(no_shock_stress.months)
     look_back = build_look_back(result, history.recent_months(account_id))
     result["resilience_plan"] = {"look_back": look_back, "next_12_months": build_next_12_months(result, look_back)}
     return result

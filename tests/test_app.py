@@ -148,3 +148,30 @@ def test_typed_numbers_match_the_judges_cards():
                                   params={"one_off_cost": p["typical_spending"]}).json()
         card_repair = engine.run(account_id, "furnace_1_month", horizon=HORIZON_MONTHS)
         assert typed_repair["judge_runway"]["months"] == card_repair["judge_runway"]["months"]
+
+
+def test_check_engine_zones_match_the_f10_test(con):
+    """The light's zones are the F10 stress-runway quartiles (red = Q1, amber = Q2, green = Q3 + Q4)."""
+    from tangerine import check_engine
+    q = con.execute("select loans, defaults, min_value from marts.mart_default_drivers "
+                    "where driver = 'stress_runway_with_loan' order by group_order").fetchall()
+    red, amber, green = check_engine.zones()
+    assert (red["loans"], red["defaults"]) == (q[0][0], q[0][1])
+    assert (amber["loans"], amber["defaults"]) == (q[1][0], q[1][1])
+    assert (green["loans"], green["defaults"]) == (q[2][0] + q[3][0], q[2][1] + q[3][1])
+    assert red["to_months"] == amber["from_months"] == q[1][2] and amber["to_months"] == q[2][2]
+    assert sum(z["loans"] for z in (red, amber, green)) == 682
+
+
+def test_check_engine_light_in_the_api():
+    from tangerine import check_engine
+    red, amber, green = check_engine.zones()
+    assert check_engine.light(0.0)["zone"] == "red"
+    assert check_engine.light(red["to_months"])["zone"] == "amber"   # boundary goes to the higher zone
+    assert check_engine.light(amber["to_months"])["zone"] == "green"
+    assert check_engine.light(None)["zone"] == "green"                # no shortfall
+    for account_id in SHOWCASE.values():
+        ce = client.get(f"/api/plan/{account_id}", params={"preset": "job_loss_ei55"}).json()["check_engine"]
+        expected = engine.stress_runway(engine.get_profile(account_id), "no_shock").months
+        assert ce["stress_runway_months"] == expected                  # always the NO-shock stress runway
+        assert ce["zone"] == check_engine.light(expected)["zone"]
