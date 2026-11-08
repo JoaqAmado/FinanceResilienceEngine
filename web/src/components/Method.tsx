@@ -1,6 +1,6 @@
 import s from './Method.module.css';
 
-/** Definitions, limits and sources: the README's "Data and limits" and "Sources", and app.py's method tab. */
+/** Definitions, limits and sources: docs/model_card.md ("Data and limits"), the README's "Sources", and app.py's method tab. */
 export function Method() {
   return (
     <div className={s.method}>

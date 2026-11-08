@@ -529,7 +529,7 @@ def backup_ladder(row: pd.Series, shock: Shock, target_months: float = 6.0) -> L
 
 # Calibration of the judges' 6-month EI test against typical half-year spending (S6):
 # share of accounts in each judge-runway band that fail 6 months on S6
-# (research/ideation/income-volatility.md, verified by an independent script).
+# (the same shares resilience.portfolio.s6_calibration computes).
 GREY_ZONE = ((6.0, 8.0, 0.819), (8.0, 10.0, 0.423), (10.0, 12.0, 0.231))
 
 

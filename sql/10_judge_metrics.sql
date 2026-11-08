@@ -8,7 +8,7 @@
 --   B  buffer                     = mean(avg_daily_balance) over the last 6 rows of the account by month
 --   P  loan payment               = loans.monthly_payment if status is C or D (running at the end of 2025), else 0
 --
--- Portability rules for every file in warehouse/sql/:
+-- Portability rules for every file in sql/:
 --   * identifiers are unquoted, so Snowflake resolves them to the UPPER-case tables write_pandas
 --     creates, and DuckDB matches them case-insensitively
 --   * only functions both dialects document: MEDIAN, AVG, ROW_NUMBER() OVER, CAST, COALESCE,

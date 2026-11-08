@@ -2,7 +2,7 @@ import { useEffect, useId, useMemo, useState } from 'react';
 import type { RefObject } from 'react';
 import s from './AccountPicker.module.css';
 
-/** Rehearsal accounts and the story each one tells (research/pitch-and-twist-script.md). */
+/** Rehearsal accounts and the story each one tells. */
 export const REHEARSAL: readonly [number, string][] = [
   [77743, 'high money-in, thin buffer'],
   [20331, 'overdrawn before its loan'],

@@ -213,8 +213,8 @@ describe('live screen model', () => {
   const at = (id: number, patch: Partial<Scenario> = {}) =>
     buildLive(byId.get(id)!, { ...DEFAULT_SCENARIO, id, card: 'ei', levers: CARD_LEVERS.ei, ...patch });
 
-  it('rehearsal numbers from the pitch script', () => {
-    // research/pitch-and-twist-script.md, "Rehearsal accounts"
+  it('rehearsal account numbers', () => {
+    // rehearsal accounts
     expect(at(77743).judge.months).toBe(4.8);
     expect(at(77743, { card: 'furnace', levers: CARD_LEVERS.furnace }).judge.months).toBe(0);
     expect(at(20331).judge.months).toBe(5.1);

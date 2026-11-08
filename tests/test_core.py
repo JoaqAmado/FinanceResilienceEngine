@@ -24,6 +24,8 @@ from resilience.core import (
     runway,
 )
 
+ROOT = Path(__file__).resolve().parent.parent  # the CLI tests run `python -m resilience` from here
+
 
 def row(**kw):
     base = dict(I=5000.0, F=1500.0, S=4000.0, B=12000.0, H=1000.0, P=0.0, flexible_median=1500.0)
@@ -150,7 +152,7 @@ def test_vectorised_runway_matches_single_account_path(metrics):
 
 @needs_data
 def test_ei_six_month_failure_count(metrics):
-    # independent research recompute (research/tangerine-profile.txt): 1,578 accounts < 6 months
+    # independent recompute: 1,578 accounts < 6 months
     ei = portfolio_runway(metrics, LAID_OFF_EI)
     assert int((ei < 6).sum()) == 1578
 
@@ -199,7 +201,7 @@ def test_cli_treats_income_zero_as_a_real_twist():
     if not (DATA_DIR / "monthly_summary.csv").exists():
         pytest.skip("track data not present")
     out = subprocess.run([sys.executable, "-m", "resilience", "20143", "--income", "0"],
-                         capture_output=True, text=True, check=True).stdout
+                         capture_output=True, text=True, check=True, cwd=ROOT).stdout
     assert "Custom twist" in out and "income $0" in out
 
 
@@ -269,7 +271,7 @@ def test_grey_zone_note():
     assert grey_zone_note(runway(13000, 0, 1000, 0)) is None
 
 
-# --- against the real data: every number in research/IDEATION.md that the app shows
+# --- against the real data: every number the app shows
 
 @pytest.fixture(scope="module")
 def full():
@@ -355,10 +357,10 @@ def test_cli_income_cap_needs_a_job_loss_and_keeps_plan_consistent():
     if not (DATA_DIR / "monthly_summary.csv").exists():
         pytest.skip("track data not present")
     refused = subprocess.run([sys.executable, "-m", "resilience", "20143", "--income-cap", "1500"],
-                             capture_output=True, text=True)
+                             capture_output=True, text=True, cwd=ROOT)
     assert refused.returncode != 0 and "--cap" in refused.stderr
     out = subprocess.run([sys.executable, "-m", "resilience", "20143", "--income", "0.55", "--income-cap", "1500"],
-                         capture_output=True, text=True, check=True).stdout
+                         capture_output=True, text=True, check=True, cwd=ROOT).stdout
     assert "DEPLETED" in out and "Survives without changes" not in out
 
 
@@ -396,7 +398,7 @@ def test_cli_rejects_percent_style_inputs_and_misused_cap():
     import subprocess, sys
     if not (DATA_DIR / "monthly_summary.csv").exists():
         pytest.skip("track data not present")
-    run = lambda *a: subprocess.run([sys.executable, "-m", "resilience", *a], capture_output=True, text=True)  # noqa: E731
+    run = lambda *a: subprocess.run([sys.executable, "-m", "resilience", *a], capture_output=True, text=True, cwd=ROOT)  # noqa: E731
     assert run("30111", "--income", "55").returncode != 0
     assert run("30111", "--bills", "15").returncode != 0
     assert run("36427", "--one-off-x-s", "1", "--income-cap", "3159").returncode != 0
@@ -416,8 +418,8 @@ def test_cap_label_and_cli_income_cap_is_a_reality_check():
     if not (DATA_DIR / "monthly_summary.csv").exists():
         pytest.skip("track data not present")
     out = subprocess.run([sys.executable, "-m", "resilience", "79750", "--income", "0.55", "--income-cap", "3159"],
-                         capture_output=True, text=True, check=True).stdout
+                         capture_output=True, text=True, check=True, cwd=ROOT).stdout
     assert "runway 3.8 months" in out and "income cap $3,159/mo 3.0 months" in out  # judges' 3.8 stays first
-    bad = lambda *a: subprocess.run([sys.executable, "-m", "resilience", *a], capture_output=True).returncode != 0  # noqa: E731
+    bad = lambda *a: subprocess.run([sys.executable, "-m", "resilience", *a], capture_output=True, cwd=ROOT).returncode != 0  # noqa: E731
     assert bad("30111", "--extra", "nan") and bad("30111", "--target", "0") and bad("30111", "--one-off-x-s", "-1")
     assert bad("30111", "--pay-cut") and bad("30111", "--income", "0.55", "--cap", "--income-cap", "3000")

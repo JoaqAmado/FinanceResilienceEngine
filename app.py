@@ -464,8 +464,8 @@ Government of Canada, EI benefit amount (canada.ca/en/services/benefits/ei/ei-re
                     st.warning(line)
                 st.caption(f"EI 55% runway in SQL: {sf['runway_matched']:,}/{sf['accounts']:,} match · "
                            f"PORTFOLIO_SUMMARY: {sf['under_6_months_sql']:,} under 6 months (engine "
-                           f"{sf['under_6_months_engine']:,}). Same SQL as warehouse/sql/, which also runs offline "
+                           f"{sf['under_6_months_engine']:,}). Same SQL as sql/, which also runs offline "
                            "in DuckDB.")
         else:
-            st.caption("No Snowflake credentials here: the same SQL (warehouse/sql/) runs locally in DuckDB with "
+            st.caption("No Snowflake credentials here: the same SQL (sql/) runs locally in DuckDB with "
                        "parity to the engine on all 4,500 accounts (`python -m resilience.warehouse local-parity`).")

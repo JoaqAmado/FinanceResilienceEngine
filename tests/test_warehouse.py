@@ -1,4 +1,4 @@
-"""warehouse/sql/ reproduces the judges' numbers: run in DuckDB here, and in Snowflake when credentials exist."""
+"""sql/ reproduces the judges' numbers: run in DuckDB here, and in Snowflake when credentials exist."""
 import re
 from pathlib import Path
 
@@ -85,7 +85,7 @@ def test_local_parity_report_is_all_matches(engine):
 @needs_data
 def test_no_runway_sits_near_a_rounding_tie(engine):
     # SQL ROUND sends a .x5 tie away from zero, numpy to even. No account is within 1e-9 of a tie under
-    # EI 55%, so the 1-decimal runway is the same under any rounding rule (warehouse/sql/20_ei55_runway.sql).
+    # EI 55%, so the 1-decimal runway is the same under any rounding rule (sql/20_ei55_runway.sql).
     gap = engine["S"] - 0.55 * engine["I"]
     ok = (engine["B"] > 0) & (gap > 0)
     y = np.minimum(engine["B"][ok] / gap[ok], 120) * 10
@@ -233,9 +233,10 @@ def test_app_shows_the_snowflake_match_count(no_credentials, monkeypatch):
 # ------------------------------------------------------- live, opt-in only
 
 @needs_data
+@pytest.mark.live
 @pytest.mark.skipif(not warehouse.available(), reason="no Snowflake credentials (SNOWFLAKE_ACCOUNT/USER + key file or password)")
 def test_snowflake_matches_engine_on_every_account(engine):
     r = warehouse.verify(engine)  # needs `python -m resilience.warehouse load` once
     assert r["sql_rows"] == r["metrics_matched"] == 4500 and r["metric_mismatches"] == 0
-    assert r["runway_mismatches"] == 0, "see the rounding note in warehouse/sql/20_ei55_runway.sql"
+    assert r["runway_mismatches"] == 0, "see the rounding note in sql/20_ei55_runway.sql"
     assert r["under_6_months_sql"] == 1578

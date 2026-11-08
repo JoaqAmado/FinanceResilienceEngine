@@ -1,10 +1,10 @@
 """Snowflake mirror of the judges' numbers. Optional: the engine and the app never depend on it.
 
-    python -m resilience.warehouse local-parity     # offline: warehouse/sql/ in DuckDB vs the engine
+    python -m resilience.warehouse local-parity     # offline: sql/ in DuckDB vs the engine
     python -m resilience.warehouse load             # upload data/*.csv (not transactions), create the views
     python -m resilience.warehouse verify           # Snowflake views vs resilience.build_metrics()
 
-The SQL in warehouse/sql/ runs unchanged in Snowflake and in DuckDB, so parity is checked
+The SQL in sql/ runs unchanged in Snowflake and in DuckDB, so parity is checked
 with no account and no network. Both get the same upper-cased tables from the same pandas
 frames. Settings come from the environment or the local, gitignored .env:
 
@@ -34,11 +34,11 @@ from .core import DATA_DIR, LAID_OFF_EI, build_metrics, portfolio_runway
 from .llm import _dotenv_value
 
 ROOT = Path(__file__).resolve().parent.parent
-SQL_DIR = ROOT / "warehouse" / "sql"
+SQL_DIR = ROOT / "sql"
 METRIC_COLUMNS = ("I", "F", "S", "H", "B", "P")
 TOLERANCE = 1e-6
 TABLES = ("monthly_summary", "loans", "accounts", "clients", "dispositions", "cards", "districts", "standing_orders")
-SQL_TABLES = ("monthly_summary", "loans")  # what warehouse/sql/ reads
+SQL_TABLES = ("monthly_summary", "loans")  # what sql/ reads
 REQUIRED = ("SNOWFLAKE_ACCOUNT", "SNOWFLAKE_USER")
 SECRETS = ("SNOWFLAKE_PASSWORD", "SNOWFLAKE_PRIVATE_KEY_FILE")  # one of these is needed
 DEFAULTS = {"SNOWFLAKE_WAREHOUSE": "COMPUTE_WH", "SNOWFLAKE_DATABASE": "TANGERINE",
@@ -192,7 +192,7 @@ def sql_files() -> list[Path]:
 
 
 def run_sql_files(conn) -> list[str]:
-    """Run every file in warehouse/sql/ in order, on Snowflake or DuckDB alike."""
+    """Run every file in sql/ in order, on Snowflake or DuckDB alike."""
     for path in sql_files():
         text = path.read_text()
         if _is_duckdb(conn):
@@ -251,7 +251,7 @@ def parity(a, b, columns: Sequence[str] | None = None, tol: float = TOLERANCE) -
 
 
 def compare(conn, engine: pd.DataFrame | None = None) -> dict[str, float]:
-    """Run warehouse/sql/ on conn and check it against the Python engine. Counts only."""
+    """Run sql/ on conn and check it against the Python engine. Counts only."""
     eng = build_metrics() if engine is None else engine
     run_sql_files(conn)
     sql, runway_sql, summary = fetch_metrics(conn), fetch_runway(conn), fetch_summary(conn)
@@ -320,7 +320,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="python -m resilience.warehouse",
                                 description="Judges' numbers in SQL: DuckDB offline, Snowflake when configured.")
     sub = p.add_subparsers(dest="cmd", required=True)
-    sub.add_parser("local-parity", help="run warehouse/sql/ in DuckDB over data/*.csv and compare (offline)")
+    sub.add_parser("local-parity", help="run sql/ in DuckDB over data/*.csv and compare (offline)")
     load = sub.add_parser("load", help="upload the track tables to Snowflake and create the views")
     load.add_argument("--with-transactions", action="store_true", help="also upload transactions.csv (about 100 MB)")
     sub.add_parser("verify", help="compare the Snowflake views with the engine on every account")

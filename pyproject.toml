@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "finance-resilience-engine"
+version = "0.1.0"
+readme = "README.md"
+requires-python = ">=3.12"
+# Same lines as requirements.txt (tests/test_repo_layout.py keeps the two in sync).
+dependencies = [
+    "pandas>=2.2",
+    "numpy>=1.26",
+    "streamlit>=1.40",
+    "plotly>=5.24",
+    "google-genai>=3.0",
+    "snowflake-connector-python[pandas]>=5.2.0",
+    "duckdb>=2.0.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[tool.setuptools]
+# Flat layout: only the engine is a package. app.py, scripts/ and web/ are not installed.
+packages = ["resilience"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+markers = ["live: needs Snowflake credentials and a loaded warehouse (run with -m live)"]
+addopts = "-m 'not live'"

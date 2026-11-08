@@ -70,7 +70,7 @@ Keys: `/` account box · `1`–`4` twist cards · `R` reset levers to the card �
    - the January balance series crosses $0 where `calendarPath()` says, for every account
    - the hero number's `Intl` formatting prints the same digits as Python's `:.1f`
    - the portfolio bands reproduce `resilience/portfolio.py`
-   - the pitch script's rehearsal numbers come out right
+   - the rehearsal accounts' numbers come out right
    - the URL hash round-trips
    - the early-warning light renders on the customer card with the same sentence as `app.py`
 
