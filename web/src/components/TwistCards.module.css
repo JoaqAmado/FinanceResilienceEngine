@@ -23,22 +23,35 @@
   background: var(--surface);
   box-shadow: var(--shadow);
   transition:
-    border-color 120ms ease,
-    background-color 120ms ease,
-    transform 120ms ease;
+    transform var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur) var(--ease-out),
+    border-color var(--dur-fast) ease,
+    background-color var(--dur-fast) ease;
 }
 
 .card:hover {
   border-color: var(--accent-line);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-hover);
 }
 
 .card:active {
-  transform: translateY(1px);
+  transform: scale(0.98);
+}
+
+.card:focus-visible {
+  outline-offset: 3px;
 }
 
 .card[aria-pressed='true'] {
-  border-color: var(--accent);
-  background: var(--accent-soft);
+  border-color: var(--accent-strong);
+  background: var(--grad-peach);
+  box-shadow: var(--glow-accent);
+}
+
+/* the levers have moved away from the selected card */
+.card[data-edited='true'] {
+  border-style: dashed;
 }
 
 .key {
@@ -60,7 +73,7 @@
 }
 
 .card[aria-pressed='true'] .key {
-  border-color: var(--accent);
+  border-color: var(--accent-strong);
   background: var(--accent);
   color: var(--on-accent);
 }
@@ -69,6 +82,7 @@
   font-size: 1.05rem;
   font-weight: 750;
   padding-right: 2rem;
+  color: var(--ink);
 }
 
 .detail {
@@ -102,7 +116,7 @@
   margin-left: auto;
   border: 1px solid var(--line-strong);
   background: var(--surface);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-pill);
   min-height: 40px;
   padding: 0 0.75rem;
   font-weight: 650;

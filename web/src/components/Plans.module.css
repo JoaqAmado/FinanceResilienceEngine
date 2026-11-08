@@ -34,7 +34,7 @@
   border: 1px solid var(--line);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-  padding: 14px 16px;
+  padding: 16px 18px;
   display: grid;
   gap: 8px;
   align-content: start;
@@ -56,6 +56,7 @@
 
 .big {
   font-size: 2.2rem;
+  color: var(--ink);
   font-weight: 800;
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
@@ -71,18 +72,18 @@
 }
 
 .progress {
-  height: 14px;
+  height: 0.875rem;
   border-radius: 999px;
-  background: var(--sunken);
-  border: 1px solid var(--line);
+  background: var(--peach);
+  border: 0;
   overflow: hidden;
 }
 
 .progressFill {
   height: 100%;
-  background: var(--accent);
+  background: var(--grad-sun);
   border-radius: 999px;
-  transition: width 300ms ease;
+  transition: width var(--dur-slow) var(--ease-out);
 }
 
 .progressFill[data-done='true'] {
@@ -155,7 +156,7 @@
 }
 
 .rung[data-state='lit'] .rungDot {
-  border-color: var(--accent);
+  border-color: var(--accent-strong);
   background: var(--accent-soft);
   color: var(--accent-ink);
 }
@@ -202,6 +203,7 @@
 
 .story {
   border-left: 4px solid var(--accent);
+  background: linear-gradient(180deg, var(--accent-soft) 0, var(--surface) 7rem);
 }
 
 .storyHead {

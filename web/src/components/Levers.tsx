@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import type { CSSProperties } from 'react';
 import { LIMITS } from '../lib/scenario';
 import type { Levers as LeverValues } from '../lib/scenario';
 import s from './Levers.module.css';
@@ -94,6 +95,9 @@ function Lever({
   onChange: (v: number) => void;
 }) {
   const hintId = hint ? `${id}-hint` : undefined;
+  // the track fills tangerine up to the thumb (a bar length only; the number field shows the value)
+  const shown = Math.min(value, limit.sliderMax);
+  const fill = limit.sliderMax > limit.min ? ((shown - limit.min) / (limit.sliderMax - limit.min)) * 100 : 0;
   return (
     <div className={s.lever} data-disabled={disabled ? 'true' : undefined}>
       <div className={s.leverTop}>
@@ -121,7 +125,8 @@ function Lever({
         min={limit.min}
         max={limit.sliderMax}
         step={limit.step}
-        value={Math.min(value, limit.sliderMax)}
+        value={shown}
+        style={{ '--p': `${fill}%` } as CSSProperties}
         disabled={disabled}
         onChange={(e) => onChange(Number(e.target.value))}
       />

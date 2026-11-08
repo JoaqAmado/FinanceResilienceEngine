@@ -21,6 +21,7 @@ export function TwistCards({ card, matches, label, onPick, onReset }: Props) {
             type="button"
             className={s.card}
             aria-pressed={card === c.id}
+            data-edited={card === c.id && !matches && c.id !== 'custom' ? 'true' : undefined}
             aria-keyshortcuts={c.key}
             onClick={() => onPick(c.id)}
           >

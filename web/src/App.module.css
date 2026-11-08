@@ -38,18 +38,19 @@
 }
 
 .logo {
-  width: 1.9rem;
-  height: 1.9rem;
+  width: 2.1rem;
+  height: 2.1rem;
   border-radius: 50%;
-  background: radial-gradient(circle at 35% 35%, #ffb070 0 18%, var(--accent) 19% 100%);
-  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.08);
+  background: var(--grad-logo); /* an abstract sun disc */
+  box-shadow: 0 4px 12px -2px rgba(244, 121, 32, 0.45), inset 0 -3px 0 rgba(0, 0, 0, 0.06);
   flex: none;
 }
 
 .title {
-  font-size: 1.35rem;
-  font-weight: 750;
-  letter-spacing: -0.01em;
+  font-size: var(--fs-title);
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  color: var(--ink);
 }
 
 .tagline {
@@ -60,7 +61,8 @@
 .tabs {
   display: flex;
   gap: 4px;
-  background: var(--sunken);
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid var(--line);
   border-radius: 999px;
   padding: 4px;
   flex-wrap: wrap;
@@ -74,16 +76,19 @@
   min-height: 44px;
   font-weight: 600;
   color: var(--ink-3);
+  transition: background-color var(--dur-fast) ease, color var(--dur-fast) ease;
 }
 
 .tab:hover {
   color: var(--ink);
+  background: var(--accent-soft);
 }
 
+/* after .tab:hover so the selected pill stays navy under the pointer */
 .tab[aria-selected='true'] {
-  background: var(--surface);
-  color: var(--ink);
-  box-shadow: var(--shadow);
+  background: var(--ink);
+  color: #fff;
+  box-shadow: 0 4px 12px -4px rgba(19, 35, 63, 0.45);
 }
 
 .tools {
@@ -96,21 +101,27 @@
 .tool {
   border: 1px solid var(--line-strong);
   background: var(--surface);
-  border-radius: var(--radius-sm);
-  padding: 0.45rem 0.8rem;
+  border-radius: var(--radius-pill);
+  padding: 0.45rem 1rem;
   min-height: 44px;
   font-size: 0.9rem;
   font-weight: 600;
   color: var(--ink-2);
+  transition: border-color var(--dur-fast) ease, box-shadow var(--dur) var(--ease-out);
 }
 
 .tool:hover {
   border-color: var(--ink-3);
+  box-shadow: var(--shadow);
+}
+
+.tool:active {
+  transform: translateY(1px);
 }
 
 .tool[aria-pressed='true'] {
   background: var(--accent);
-  border-color: var(--accent);
+  border-color: var(--accent-strong);
   color: var(--on-accent);
 }
 

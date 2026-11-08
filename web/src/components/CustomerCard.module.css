@@ -40,6 +40,10 @@
   grid-template-rows: subgrid;
   row-gap: 0;
   min-width: 0;
+  background: var(--page);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 0.45rem 0.6rem;
 }
 
 .mLabel {
@@ -50,7 +54,8 @@
 }
 
 .mValue {
-  font-size: 1.2rem;
+  font-size: var(--fs-stat-sm);
+  color: var(--ink);
   font-weight: 800;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.01em;
@@ -155,7 +160,7 @@
   background: var(--surface);
   border: 1px solid var(--line-strong);
   border-radius: var(--radius-sm);
-  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.14);
+  box-shadow: var(--shadow-pop);
   padding: 0.4rem 0.6rem;
   font-size: 0.78rem;
   font-variant-numeric: tabular-nums;

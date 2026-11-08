@@ -79,8 +79,12 @@
     grid-template-areas:
       'picker cards cards'
       'customer judges reality'
+      'customer chart chart'
       'levers chart chart'
       'levers plans plans';
+    /* the flexible row takes the chart's spill, so the levers start right under the customer card */
+    grid-template-rows: auto auto auto 1fr auto;
+    row-gap: 12px;
     align-items: start;
   }
 }

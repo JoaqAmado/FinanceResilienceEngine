@@ -14,14 +14,14 @@
   border: 1px solid var(--line);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-  padding: 12px 14px;
+  padding: 14px 16px;
   display: grid;
   gap: 2px;
   align-content: start;
 }
 
 .tile:first-child {
-  border-top: 5px solid var(--s-judges);
+  border-top: 6px solid var(--s-judges);
 }
 
 .tileLabel {
@@ -31,7 +31,8 @@
 }
 
 .tileValue {
-  font-size: 2.2rem;
+  font-size: var(--fs-stat);
+  color: var(--ink);
   font-weight: 800;
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
@@ -62,7 +63,7 @@
   border: 1px solid var(--line);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-  padding: 14px 16px;
+  padding: 16px 18px;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 8px;
@@ -126,7 +127,7 @@
   background: var(--surface);
   border: 1px solid var(--line-strong);
   border-radius: var(--radius-sm);
-  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.14);
+  box-shadow: var(--shadow-pop);
   padding: 0.45rem 0.65rem;
   font-size: 0.8rem;
   font-variant-numeric: tabular-nums;
@@ -152,11 +153,17 @@
   font-size: 0.85rem;
   font-weight: 650;
   color: var(--ink-2);
+  transition: border-color var(--dur-fast) ease, background-color var(--dur-fast) ease;
+}
+
+.bandBtn:hover {
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
 }
 
 .bandBtn[aria-pressed='true'] {
-  border-color: var(--accent);
-  background: var(--accent-soft);
+  border-color: var(--accent-strong);
+  background: var(--grad-peach);
   color: var(--ink);
 }
 
@@ -243,7 +250,7 @@
 .openBtn {
   border: 1px solid var(--line-strong);
   background: var(--surface);
-  border-radius: 6px;
+  border-radius: var(--radius-pill);
   padding: 0.1rem 0.55rem;
   min-height: 32px;
   font-weight: 750;
@@ -285,5 +292,24 @@
   .openBtn,
   .numbers summary {
     min-height: 44px;
+  }
+}
+
+/* phones: charts scroll sideways instead of crushing their x labels */
+@media (max-width: 639px) {
+  .chart,
+  .chartTall {
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+  }
+
+  /* !important: ResponsiveContainer writes an inline min-width */
+  .chart > * {
+    min-width: 600px !important;
+  }
+
+  /* the money-in band chart has seven two-line labels: 600px still butts "buffer … mo" labels together */
+  .chartTall > * {
+    min-width: 680px !important;
   }
 }

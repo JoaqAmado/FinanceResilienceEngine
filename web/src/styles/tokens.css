@@ -1,26 +1,33 @@
-/* Design tokens and base element styles. Light theme only: Tangerine orange accent on slate. */
+/* Design tokens and base element styles. Light theme only: tangerine fills on cream, navy ink. */
 :root {
   color-scheme: light;
 
-  /* brand */
-  --accent: #f47920; /* fills, borders, slider thumbs; 2.8:1 on white, so never body text */
-  --accent-ink: #b4500a; /* orange text on white, 5.1:1 */
-  --accent-soft: #fff4ea;
-  --accent-line: #f9b98a;
-  --on-accent: #0f172a; /* text on an orange fill, 6.5:1 */
+  /* brand: one tangerine for fills, a burnt orange for text */
+  --accent: #f47920; /* fills, gradients, display only: 2.76:1 on white, so never text, never white text on it */
+  --accent-strong: #d95f0e; /* thin strokes that must be seen: selected borders, thumb ring, toggle on (3.75:1 white) */
+  --accent-ink: #a6470a; /* orange text: 5.95 white, 5.53 cream, 5.18 sand, 4.85 peach */
+  --accent-soft: #fff4ea; /* hover and selected tint */
+  --accent-line: #f9b98a; /* decorative border on peach boxes */
+  --on-accent: #13233f; /* text on a tangerine fill: 5.67:1 */
+  --apricot: #ffb27a;
+  --peach: #ffe3cc;
+  --sun: #ff9a3c;
 
-  /* slate ink and surfaces */
-  --ink: #0f172a;
-  --ink-2: #334155;
-  --ink-3: #475569;
-  --muted: #64748b; /* 4.8:1 on white */
-  --line: #e2e8f0;
-  --line-strong: #cbd5e1;
+  /* navy ink */
+  --ink: #13233f;
+  --ink-2: #2b3a55;
+  --ink-3: #46536b;
+  --muted: #5b6474; /* 5.97 white, 5.55 cream, 5.19 sand */
+
+  /* sand surfaces */
+  --page: #fbf6ee;
   --surface: #ffffff;
-  --sunken: #f1f5f9;
-  --page: #f5f6f8;
+  --sunken: #f6eee3;
+  --line: #efe4d6;
+  --line-strong: #e2d2bd;
+  --line-control: #8f7f69; /* text-field borders: 3.88 white, 3.61 cream */
 
-  /* status: always paired with an icon and words, never colour alone */
+  /* status: unchanged values, always paired with an icon and words */
   --good-ink: #166534;
   --good-bg: #f0fdf4;
   --good-line: #16a34a;
@@ -34,16 +41,56 @@
   --info-bg: #eff6ff;
   --info-line: #60a5fa;
 
-  /* chart series (validated for colour-vision deficiency; mirrored in src/lib/colors.ts) */
+  /* chart series: meaning fixed; mirrored in src/lib/colors.ts */
   --s-judges: #2a78d6;
   --s-reality: #eb6834;
-  --s-plan: #1baf7a;
+  --s-plan: #12946a; /* was #1baf7a (2.82:1, under 3:1); same hue, now 3.84:1 on white */
   --s-base: #64748b;
 
-  --focus: #c2410c;
-  --radius: 12px;
-  --radius-sm: 8px;
-  --shadow: 0 1px 2px rgba(15, 23, 42, 0.06), 0 2px 6px rgba(15, 23, 42, 0.05);
+  --focus: #13233f; /* navy ring: visible on cream, white, peach and tangerine */
+
+  --radius-lg: 20px;
+  --radius: 16px;
+  --radius-sm: 10px;
+  --radius-pill: 999px;
+
+  --shadow: 0 1px 2px rgba(19, 35, 63, 0.05), 0 6px 18px -6px rgba(180, 80, 10, 0.12);
+  --shadow-hover: 0 2px 4px rgba(19, 35, 63, 0.06), 0 14px 30px -12px rgba(180, 80, 10, 0.28);
+  --shadow-pop: 0 12px 32px -8px rgba(19, 35, 63, 0.22);
+  --glow-accent: 0 8px 20px -10px rgba(244, 121, 32, 0.6);
+
+  --grad-sun: linear-gradient(90deg, #ffb27a 0%, #f47920 100%);
+  --grad-peach: linear-gradient(135deg, #fff6ec 0%, #ffe3cc 100%);
+  --grad-logo: radial-gradient(circle at 32% 30%, #ffd2a8 0 14%, #ff9a3c 15% 55%, #f47920 56% 100%);
+  --grad-page:
+    radial-gradient(1200px 380px at 85% -120px, rgba(255, 178, 122, 0.35), transparent 70%),
+    radial-gradient(900px 300px at -10% -80px, rgba(255, 227, 204, 0.7), transparent 70%);
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-fast: 120ms;
+  --dur: 200ms;
+  --dur-slow: 450ms; /* same as the hero NumberFlow */
+
+  /* type scale, in rem so presenter mode scales it */
+  --fs-display: 5rem; /* hero runway number (3.8rem under 768px) */
+  --fs-stat: 2.25rem; /* portfolio tiles, plan amount */
+  --fs-stat-sm: 1.25rem; /* customer metrics */
+  --fs-title: 1.4rem; /* app title */
+  --fs-h2: 1.1rem;
+  --fs-body: 0.95rem;
+  --fs-sm: 0.86rem;
+  --fs-xs: 0.78rem;
+  --fs-eyebrow: 0.75rem; /* uppercase, 800, 0.08em tracking */
+
+  /* spacing: 4px base, in rem */
+  --sp-1: 0.25rem;
+  --sp-2: 0.5rem;
+  --sp-3: 0.75rem;
+  --sp-4: 1rem;
+  --sp-5: 1.25rem;
+  --sp-6: 1.5rem;
+  --sp-8: 2rem;
+
   --font: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
 }
@@ -72,11 +119,13 @@ html[data-presenter='on'] {
 
 body {
   margin: 0;
-  background: var(--page);
+  background: var(--grad-page), var(--page); /* apricot glow at the top, cream below */
+  background-repeat: no-repeat;
   color: var(--ink);
   font-family: var(--font);
   line-height: 1.45;
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
 }
 
 h1,
@@ -106,10 +155,10 @@ button:disabled {
   cursor: not-allowed;
 }
 
+/* no border-radius here: the outline follows each element's own radius */
 :focus-visible {
   outline: 3px solid var(--focus);
   outline-offset: 2px;
-  border-radius: 4px;
 }
 
 a {
@@ -150,11 +199,23 @@ table {
   outline: none;
 }
 
+/* halo so chart labels stay readable where they cross a line ("buffer gone", "$0 at month", bar values) */
+.recharts-reference-line .recharts-label,
+.recharts-reference-dot .recharts-label,
+.recharts-label-list text {
+  paint-order: stroke;
+  stroke: var(--surface);
+  stroke-width: 4px;
+  stroke-linejoin: round;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important; /* the ui.module.css shimmer loops forever otherwise */
+    scroll-behavior: auto !important;
   }
 }

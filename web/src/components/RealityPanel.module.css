@@ -1,10 +1,10 @@
 .panel {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-top: 5px dashed var(--s-reality);
-  border-radius: var(--radius);
+  border-top: 6px solid var(--s-reality);
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow);
-  padding: 14px 16px;
+  padding: 14px 20px 18px; /* matches the judges' panel beside it */
   display: grid;
   gap: 10px;
   min-width: 0;
@@ -34,9 +34,9 @@
   flex-wrap: wrap;
   align-items: baseline;
   gap: 4px 10px;
-  background: var(--accent-soft);
+  background: var(--grad-peach);
   border: 1px solid var(--accent-line);
-  border-radius: var(--radius-sm);
+  border-radius: 12px;
   padding: 0.5rem 0.7rem;
 }
 
@@ -48,9 +48,11 @@
 }
 
 .combinedValue {
-  font-size: 1.7rem;
+  font-size: 1.8rem;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  letter-spacing: -0.02em;
 }
 
 .active {
@@ -70,8 +72,15 @@
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding: 6px 0;
+  padding: 6px 8px;
+  margin: 0 -8px;
   border-bottom: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  transition: background-color var(--dur-fast) ease;
+}
+
+.row:not([data-disabled='true']):not(.janRow):hover {
+  background: var(--accent-soft);
 }
 
 .row:last-child {
@@ -115,7 +124,8 @@
   height: 24px;
   margin-top: 2px;
   border-radius: 999px;
-  background: var(--line-strong);
+  background: #e9dfd2;
+  box-shadow: inset 0 0 0 1px var(--line-control);
   transition: background-color 120ms ease;
 }
 
@@ -133,7 +143,8 @@
 }
 
 .toggle input:checked + .track {
-  background: var(--accent-ink);
+  background: var(--accent-strong);
+  box-shadow: none;
 }
 
 .toggle input:checked + .track::after {
@@ -210,4 +221,22 @@
 
 .janRow {
   background: transparent;
+}
+
+/* a value the engine just changed flashes peach once (the global reduced-motion rule makes it instant) */
+.flash {
+  animation: flash 700ms var(--ease-out) 1;
+  border-radius: 6px;
+}
+
+@keyframes flash {
+  from {
+    background-color: var(--peach);
+    box-shadow: 0 0 0 4px var(--peach);
+  }
+
+  to {
+    background-color: transparent;
+    box-shadow: 0 0 0 4px transparent;
+  }
 }

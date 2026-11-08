@@ -40,15 +40,16 @@
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.04em;
   padding: 0.25rem 0.75rem;
-  border: 2px solid var(--line-strong);
-  border-radius: var(--radius-sm);
+  border: 2px solid var(--line-control);
+  border-radius: 12px;
   background: var(--surface);
+  transition: border-color var(--dur-fast) ease, box-shadow var(--dur) var(--ease-out);
 }
 
 .input:focus-visible {
   outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(244, 121, 32, 0.3);
+  border-color: var(--accent-strong);
+  box-shadow: 0 0 0 4px rgba(244, 121, 32, 0.25);
 }
 
 .input[aria-invalid='true'] {
@@ -66,8 +67,8 @@
   list-style: none;
   background: var(--surface);
   border: 1px solid var(--line-strong);
-  border-radius: var(--radius-sm);
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.14);
+  border-radius: 12px;
+  box-shadow: var(--shadow-pop);
 }
 
 .option {
@@ -87,7 +88,7 @@
   min-height: 52px;
   border: 1px solid var(--line-strong);
   background: var(--surface);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-pill);
   padding: 0 0.9rem;
   font-weight: 650;
   color: var(--ink-2);
@@ -95,6 +96,7 @@
 
 .random:hover {
   border-color: var(--ink-3);
+  box-shadow: var(--shadow);
 }
 
 .chips {
@@ -111,18 +113,28 @@
   min-height: 44px;
   border: 1px solid var(--line-strong);
   background: var(--surface);
-  border-radius: var(--radius-sm);
+  border-radius: 12px;
   padding: 0.25rem 0.6rem;
   text-align: left;
+  transition:
+    transform var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur) var(--ease-out),
+    border-color var(--dur-fast) ease;
 }
 
 .chip:hover {
-  border-color: var(--accent);
+  border-color: var(--accent-line);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-hover);
+}
+
+.chip:active {
+  transform: scale(0.98);
 }
 
 .chip[aria-pressed='true'] {
-  border-color: var(--accent);
-  background: var(--accent-soft);
+  border-color: var(--accent-strong);
+  background: var(--grad-peach);
 }
 
 .chipId {

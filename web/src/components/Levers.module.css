@@ -26,7 +26,7 @@
 .reset {
   border: 1px solid var(--line-strong);
   background: var(--surface);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-pill);
   min-height: 40px;
   padding: 0 0.7rem;
   font-weight: 650;
@@ -77,8 +77,8 @@
   font-size: 1rem;
   font-weight: 650;
   font-variant-numeric: tabular-nums;
-  border: 1px solid var(--line-strong);
-  border-radius: 6px;
+  border: 1px solid var(--line-control);
+  border-radius: 8px;
   background: var(--surface);
 }
 
@@ -86,12 +86,76 @@
   background: var(--sunken);
 }
 
+/* custom track: tangerine fill up to --p (set per slider in Levers.tsx), peach after it */
 .range {
+  --p: 50%;
+  -webkit-appearance: none;
+  appearance: none;
   width: 100%;
   height: 32px;
   margin: 2px 0 0;
-  accent-color: var(--accent);
+  background: transparent;
+  border-radius: 999px; /* the global focus outline becomes a pill */
   cursor: pointer;
+}
+
+.range::-webkit-slider-runnable-track {
+  height: 0.5rem;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent) 0 var(--p), var(--peach) var(--p) 100%);
+  box-shadow: inset 0 0 0 1px rgba(143, 127, 105, 0.35);
+}
+
+.range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  box-sizing: border-box;
+  width: 1.375rem;
+  height: 1.375rem;
+  margin-top: -0.4375rem; /* (track 0.5rem - thumb 1.375rem) / 2 */
+  border-radius: 50%;
+  background: #fff;
+  border: 3px solid var(--accent-strong);
+  box-shadow: 0 2px 6px rgba(19, 35, 63, 0.25);
+  transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur) var(--ease-out);
+}
+
+.range:hover::-webkit-slider-thumb {
+  transform: scale(1.08);
+}
+
+.range:active::-webkit-slider-thumb {
+  transform: scale(1.15);
+  box-shadow: 0 0 0 6px rgba(244, 121, 32, 0.2), 0 2px 6px rgba(19, 35, 63, 0.25);
+}
+
+.range::-moz-range-track {
+  height: 0.5rem;
+  border-radius: 999px;
+  background: var(--peach);
+}
+
+.range::-moz-range-progress {
+  height: 0.5rem;
+  border-radius: 999px;
+  background: var(--accent);
+}
+
+.range::-moz-range-thumb {
+  box-sizing: border-box;
+  width: 1.375rem;
+  height: 1.375rem;
+  border-radius: 50%;
+  background: #fff;
+  border: 3px solid var(--accent-strong);
+  box-shadow: 0 2px 6px rgba(19, 35, 63, 0.25);
+}
+
+.range:disabled::-webkit-slider-thumb {
+  border-color: var(--line-control);
+}
+
+.range:disabled::-moz-range-thumb {
+  border-color: var(--line-control);
 }
 
 .range:disabled {
@@ -121,7 +185,7 @@
   width: 20px;
   height: 20px;
   margin-top: 1px;
-  accent-color: var(--accent);
+  accent-color: var(--accent-ink);
   flex: none;
 }
 
@@ -163,15 +227,16 @@
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
+  transition: border-color var(--dur-fast) ease, background-color var(--dur-fast) ease;
 }
 
 .mode input {
-  accent-color: var(--accent);
+  accent-color: var(--accent-ink);
 }
 
 .mode[data-on='true'] {
-  border-color: var(--accent);
-  background: var(--accent-soft);
+  border-color: var(--accent-strong);
+  background: var(--grad-peach);
 }
 
 @media (pointer: coarse) {
