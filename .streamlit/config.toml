@@ -1,6 +1,15 @@
 [theme]
-primaryColor = "#F47920"
 base = "light"
+primaryColor = "#BA520B"
+backgroundColor = "#FBF6EE"
+secondaryBackgroundColor = "#F6EEE3"
+textColor = "#13233F"
+linkColor = "#A6470A"
+borderColor = "#E2D2BD"
+baseRadius = "0.75rem"
+buttonRadius = "full"
+metricValueFontWeight = 800
+dataframeHeaderBackgroundColor = "#F6EEE3"
 
 [server]
 headless = true

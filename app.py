@@ -41,8 +41,20 @@ from resilience.warning import RULES, WINDOW_ROWS, account_light, backtest
 st.set_page_config(page_title="Twin Runway · Tangerine Resilience Engine", page_icon="🍊", layout="wide")
 
 ORANGE, SLATE, GREY = "#F47920", "#334155", "#94A3B8"
-AQUA = "#1BAF7A"  # a third series beside orange and slate (the web app's backup-plan aqua)
-st.markdown("<style>[data-testid='stMetricValue']{font-size:1.65rem}</style>", unsafe_allow_html=True)
+AQUA = "#12946A"  # a third series beside orange and slate (the web app's backup-plan aqua)
+# summer-bank look, matching the web app: cream page with an apricot glow, white metric cards, navy numbers
+st.markdown("""<style>
+[data-testid='stApp']{background:radial-gradient(1200px 380px at 85% -120px,rgba(255,178,122,.35),transparent 70%),#FBF6EE}
+[data-testid='stHeader']{background:transparent}
+[data-testid='stMetric']{background:#FFFFFF;border:1px solid #EFE4D6;border-radius:16px;padding:.75rem 1rem;
+  box-shadow:0 1px 2px rgba(19,35,63,.05),0 6px 18px -6px rgba(180,80,10,.12)}
+[data-testid='stMetricValue']{font-size:1.65rem;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+[data-testid='stMetricLabel']{color:#46536B}
+[data-testid='stColumn'] [data-testid='stElementContainer']:only-child:has(> [data-testid='stMetric']){flex:1 1 auto}
+[data-testid='stColumn'] [data-testid='stElementContainer']:only-child > [data-testid='stMetric']{height:100%;box-sizing:border-box}
+[data-testid='stBaseButton-secondary']{background:#FFFFFF}
+[data-testid='stBaseButton-secondary']:hover{box-shadow:0 6px 16px -8px rgba(180,80,10,.35)}
+</style>""", unsafe_allow_html=True)
 REHEARSAL = {20331: "lender red flag", 20143: "spends more than comes in", 88269: "looks safe, isn't",
              98952: "retiree", 77743: "furnace wipes buffer"}
 _X = "× typical spending"
@@ -162,7 +174,7 @@ m = metrics()
 
 # ------------------------------------------------------------------ header
 
-st.markdown(f"<h2 style='margin-bottom:0'>🍊 Twin Runway <span style='color:{GREY};font-weight:400'>"
+st.markdown("<h2 style='margin-bottom:0'>🍊 Twin Runway <span style='color:#5B6474;font-weight:400'>"
             "· the judges' number, then the real world</span></h2>", unsafe_allow_html=True)
 st.caption("Tangerine · Resilience Rewired · Sheridan Datathon 2026. Runway uses the judges' published formula; "
            "reality checks are labelled assumptions shown beside it.")
