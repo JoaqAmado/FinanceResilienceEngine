@@ -1,4 +1,5068 @@
 {
  "about": "Rehearsed LLM shock intents (read-only at runtime). Written by `python -m resilience.shock_parser freeze`.",
- "entries": {}
+ "entries": {
+  "04b57fd6de568578981299bbe16f187ab4093fd6ba741058fbafdc7ce9e7252a": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 2000.0,
+     "kind": "to_amount",
+     "pct": 0.0
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "none",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "income falls to 2000 a month",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "058f351a8ca2cc74da4818cf260547487461b048b9fbb9858d6be562ffb4a8bc": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "none",
+     "pct": 0.0
+    },
+    "monthly_cost": {
+     "amount": 300.0,
+     "kind": "set"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "none",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "rent up 300 a month",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "067e1a754ca079890d5d12d730c288efac4319a3964c7c85e64a8e076ee942c1": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "pay_cut_pct",
+     "pct": 0.5
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "none",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "their hours get cut down a lot roughly half from next month",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "09b54a87de8e50ba544547fc6d3db276e4cd477e1d4e18d31564b1d2f54b9643": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "none",
+     "pct": 0.0
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "months_of_spending",
+     "months": 1.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "emergency repair worth one month of spending",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "0b6aae91259008143e263f6a7c389b289698349081124bcf046c46da4cbecb82": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "partner_job_loss",
+     "pct": 0.5
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "none",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "lose half the household income",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "0ba8e7a0b49cf260687ec3885f5b3c41e949b9cc788c56371389e3c41d88f970": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "none",
+     "pct": 0.0
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "none",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "set",
+     "months": 12.0
+    }
+   },
+   "message": "survive 12 months",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "0fd72c57454fe03996e28186563f6c6035914ab9268552c86449d3b9d7b7b312": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "increase_pct",
+     "pct": 0.15
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "job_loss_ei",
+     "pct": 0.55
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "none",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "job loss on ei and bills up 15%",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "109df514196c23eec33af90242d15d6e05744630220a3a5c44cf2ff440a07cfa": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "none",
+     "pct": 0.0
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "months_of_spending",
+     "months": 1.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "furnace dies",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "13d7501af1bf2c1cf37a3538b0180c51dc5a5d29429ca422e1a3fc185559da55": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "on",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "job_loss_ei",
+     "pct": 0.55
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "none",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "job loss on ei with the 2026 cap",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "164a8fe950505abb30898c9033dd938e4cccf0c79a33dcebe9e1a23c1d19ddd5": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "none",
+     "pct": 0.0
+    },
+    "monthly_cost": {
+     "amount": 450.0,
+     "kind": "set"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "none",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "new car payment of 450",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "183086ad322f54c183bcb8a4458e8ca85b6e39fe3a79e9cbe8ffdcc1a7f8a523": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "none",
+     "pct": 0.0
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "none",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "set_pct",
+     "pct": 0.25
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "cut non fixed spending 25%",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "1b9bb58551fcab226fc6a8edd52abbfa046c6916fbd78e640a9feeec78bca777": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "on",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "none",
+     "pct": 0.0
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "none",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "turn on the ei cap",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "1c1856c58b760eb0cd3963dc301bb8ca4c1e2e1272b0bd699bab696847b398ae": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "increase_pct",
+     "pct": 0.1
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "job_loss_ei",
+     "pct": 0.55
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "none",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "unemployed on ei and utilities up 10%",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "1f8aeefb5e9f65b693b30cb74c36013f278d6f2ca1eed483fec3d1249ce068d0": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "pay_cut_pct",
+     "pct": 0.2
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "none",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "set",
+     "months": 6.0
+    }
+   },
+   "message": "pay cut 20% for 6 months",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "1fe0fa83dce192ec15267edb1e91a5956f9041ea1f9b54a136416d8c13398951": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "job_loss_ei",
+     "pct": 0.55
+    },
+    "monthly_cost": {
+     "amount": 200.0,
+     "kind": "set"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "none",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "laid off and rent goes up 200 a month",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "20ffbf55cc2ffea58de185cae036e57a78ff1bd6ba0d3d0527028ccc4a39ada3": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "job_loss_ei",
+     "pct": 0.55
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "none",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "job loss on ei",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "23ff33b93d526bdbe4df86cb2bbbfc63b7d6c439cca40f60756a652d542f37b4": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "none",
+     "pct": 0.0
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "none",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "set",
+     "months": 9.0
+    }
+   },
+   "message": "survive 9 months",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "244bd1fb6fb193a2e3e61f0bd0312cdfa4a2aea6ce3c28e38fb67daa511ad11c": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "none",
+     "pct": 0.0
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "months_of_spending",
+     "months": 1.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "the furnace dies",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "2461c39759b5008812c5677dd6765e17a79db5810802bc485b10b42b80eebab1": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "job_loss_ei",
+     "pct": 0.55
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "none",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "laid off ei pays 55%",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "2b0b5fc600a5a501dbd692e4f2858cfb3897aa3f9a3b8c3465718a74c9078d86": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "partner_job_loss",
+     "pct": 0.0
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "none",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "partner loses their job",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "33ca4979b978dc07c648fdd85de88e6b496ee89ebe9a3783987eb1197cd7e169": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "none",
+     "pct": 0.0
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "months_of_spending",
+     "months": 3.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "a one off worth 3 months of spending",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "36153c656e6d6cec695d99bf6690a0d53a8b1536a1041d1016cbbd957d19fae7": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "none",
+     "pct": 0.0
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "months_of_spending",
+     "months": 2.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "a one off of two months of spending",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "38141cd8ce0d814b52d801a48e743e3975d33f7dc7cf26de03259af505d4894b": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "none",
+     "pct": 0.0
+    },
+    "monthly_cost": {
+     "amount": 1800.0,
+     "kind": "rent_to"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "none",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "rent goes to 1800 a month",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "3af4c5ca9b99430d9a5fa8cafb8342d874f5a5c038ac1e95a5dde9285de32ee7": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "job_loss_ei",
+     "pct": 0.55
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "none",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "lost my job",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "430966ed77b8cc2e0d2a55e0a24faa04959d3045bb433b23cbc4b71ab128eec0": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "drop_pct",
+     "pct": 0.3
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "none",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "income falls by 30%",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "445788cc1d960b197c1ab17044af4309e48ca44864cbb7193e5c97bbce291781": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "none",
+     "pct": 0.0
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "none",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "set_pct",
+     "pct": 0.25
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "cut back on spending by 25%",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "45f0b56761f25c0b89b3df475b399fb9782092b510dfa1f63a81dd570ea43f26": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "pay_cut_pct",
+     "pct": 0.25
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "none",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "income cut 0.25",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "47fe1f3a95114f42ef4246932f75dad12bd139a39b3b92a44577233a368ede12": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "none",
+     "pct": 0.0
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "months_of_spending",
+     "months": 1.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "furnace dies repair 1 month of typical spending",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "491090270b426968eda2b9e8d5080ec74071c2f455b6700f4851d9e31e858f15": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 2000.0,
+     "kind": "to_amount",
+     "pct": 0.0
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 3000.0,
+     "kind": "set_amount",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "income down to 2k mo and a 3k car repair",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "4bc3d7270de6404fe97a1c9d61a1245b79d8ecd58524a4313e602123e125df71": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "on",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "on"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "job_loss_ei",
+     "pct": 0.55
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "none",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "laid off with the 2026 ei cap and waiting week",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "50af2f1ea6d7cca59fcacaa263384a773bb3a866eba84ada1828bfc8b111e2e6": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "job_loss_ei",
+     "pct": 0.55
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "none",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "job loss",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "5398afb2e0454d0a27498870426ed1e01464b102d45cbe7bf71b9234db7b7712": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "on",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "job_loss_ei",
+     "pct": 0.55
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "none",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "laid off ei at 55% capped at the 2026 maximum 729 week",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "5ba3e3acc6d1c8068a39fd037ea088beecb029c70bbb750fc5af26095530dfbe": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "job_loss_ei",
+     "pct": 0.55
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "none",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "the customer is laid off and ei pays 55%",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "5d4d8c2ff4aa7d98d52acb7387cff40fc9bec353f1692fc77a1a56a7c3a0458c": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 98952,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "on",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "job_loss_ei",
+     "pct": 0.55
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "none",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "customer 98952 loses job keep the pension",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "5fd21072efabe38d18c06bc680600ef07691c90252bb75a3cde009a67a350cae": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "none",
+     "pct": 0.0
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "months_of_spending",
+     "months": 1.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "furnace breaks",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "64822ea3dd92d64f27ef2c68cca5efc0fe0441b8058c37d93f96c9088df333ef": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "increase_pct",
+     "pct": 0.15
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "job_loss_ei",
+     "pct": 0.55
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "none",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "pt got laid off ei kicks in rent 15%",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "6482838b4fd7c4fb4bc219d800b5b0ce6c37f790ee0e3156945ac96b2b77119b": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "job_loss_ei",
+     "pct": 0.55
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "none",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "laid off",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "658e5397cb8d85b155988604b885975ba6bf8f99e76c8ebd7ca5bf059be10191": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "none",
+     "pct": 0.0
+    },
+    "monthly_cost": {
+     "amount": 300.0,
+     "kind": "set"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "none",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "rent up 300 mo",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "6666897133ff6b5b4aae6ae7f52b13a367bb44dfc0482c1834edaa588c0ddea7": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "none",
+     "pct": 0.0
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "none",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "set",
+     "months": 9.0
+    }
+   },
+   "message": "a 9 month test",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "69ff6df7ddacc7244e4faa9b6023031bde73d567d52b9a19c9a198a0b621422c": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "none",
+     "pct": 0.0
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "none",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "set_pct",
+     "pct": 0.15
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "discretionary spending down fifteen percent",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "6a748d51d0ec4844ea96d2a01c0f39e151c69db979f1c9f9b7f4183dbab8a6f3": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "none",
+     "pct": 0.0
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "months_of_spending",
+     "months": 1.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "furnace repair costs a month of spending",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "6bad481a79f2d6371dd592a3b00c9a103d111c2480665432ae3a7e14444a1782": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "none",
+     "pct": 0.0
+    },
+    "monthly_cost": {
+     "amount": 450.0,
+     "kind": "set"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "none",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "rent up by 450 mo",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "6cf7802638ef49e489a01f0008831802726bc3e44d290bac9c5f2628d506b31f": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "increase_pct",
+     "pct": 0.15
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "job_loss_ei",
+     "pct": 0.55
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "none",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "laid off and bills up 15%",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "6de882a1dbb451c45714d892fcda345a01483db38fe8873365ea7ed5e7c172fc": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "none",
+     "pct": 0.0
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 1200.0,
+     "kind": "set_amount",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "emergency vet bill of 1200",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "720a0a311d2a54c724ef25442d3311e5c109a1bec4829d2f48bc23b0b392e0c5": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "none",
+     "pct": 0.0
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "months_of_spending",
+     "months": 1.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "a repair that costs a full month of spending",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "7d30f0f44c7edc8ae8032920d8512f91c0e664c6e7632b19202d28fc70eb3c4b": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "none",
+     "pct": 0.0
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "months_of_spending",
+     "months": 1.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "one off cost of a month of spending",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "7fd47e602af912a34a92bcc7562601a900dfdb77a8a8d3cae5f15019ccb250c0": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "job_loss_ei",
+     "pct": 0.55
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "none",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "laid off ei at 55% of usual income",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "80812a73bf4f0876703653d0c803f81aa006ecbbd011d052612d4daab0ffba61": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "none",
+     "pct": 0.0
+    },
+    "monthly_cost": {
+     "amount": 300.0,
+     "kind": "set"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "none",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "rent 300 mo",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "821d63aea4daa341f95aa173aafd5190965b0098e0546c9227f021b7ce683584": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "on",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "job_loss_ei",
+     "pct": 0.55
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "none",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "on ei half year spending",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "8ad640da80dd0bcaf42021e86a45e7af0a1768061dfbae1d7c186458bd0622fe": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "on",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "job_loss_ei",
+     "pct": 0.55
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "none",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "job loss on ei keep pension",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "8de2385b8940fc94c5ced749410da1d9555a0ca030d7d4cd677d46f1c53a505c": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "on",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "job_loss_ei",
+     "pct": 0.55
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "none",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "laid off with the 2026 ei cap",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "902c3f4b6cb36c79ffceff18fad19d3f3a62db4273bed5dfd3ecfcc43c05586c": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "job_loss_ei",
+     "pct": 0.55
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "none",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "on ei at 55%",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "9595519d9d4f272ebf3c50a6b244a238cfb678bab622d523958d7cbb5548d63e": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "increase_pct",
+     "pct": 0.15
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "job_loss_ei",
+     "pct": 0.55
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "none",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "ei at 55% and bills up 15%",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "a0df3d191bf9e3393c13d0525fbbc37552b2165a8bad17202581f86d1def636f": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "increase_pct",
+     "pct": 0.15
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "job_loss_ei",
+     "pct": 0.55
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "none",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "job loss ei 55% household bills 15%",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "a1fa91d3418c0172ee7d13fa04e926ebbd0c4b8301b93ded16276e7ad6c3cf4c": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "reset_all",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "none",
+     "pct": 0.0
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "none",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "start over",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "aa97e3891603e3b17a816cd6545110d287cb3fca7674ac91e161aecb55e059fb": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "job_loss_ei",
+     "pct": 0.55
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "none",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "laid off ei 55%",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "b460d5d631174c162c4e5ec73c441730f8e308d31ef6ffd2e6f6a9c072c7f040": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "increase_pct",
+     "pct": 0.2
+    },
+    "checks": {
+     "bills_by_standing_order": "on",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "none",
+     "pct": 0.0
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "none",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "bills by standing order up 20%",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "b49d9422b0e8c9abd4b56b8798bfdc1532c0337c7749771078a4e82b1f2c465e": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "none",
+     "pct": 0.0
+    },
+    "monthly_cost": {
+     "amount": 300.0,
+     "kind": "set"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "none",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "rent goes up 300 a month",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "b6f2543e92ee33458723db56b3305c518f797a195c8021d646bbbe4d0748e341": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "increase_pct",
+     "pct": 0.15
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "job_loss_ei",
+     "pct": 0.55
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "none",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "job loss and household bills up 15%",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "ba31946667ac334f203c6a5aa9814546e15a1d6edd795ed7ff68e8868cba6d44": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "reset_all",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "none",
+     "pct": 0.0
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "none",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "reset",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "c3a3d6677dd8925ec2ec3ce0dc50686bfc465ed39a8ad802840c13d95a4be3ef": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 2000.0,
+     "kind": "to_amount",
+     "pct": 0.0
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "none",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "income drops to 2000 a month",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "c4b4138514ff9957e87295969a550412656f10f4712daa2d2ff92bf43f71c3bd": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "none",
+     "pct": 0.0
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "none",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "set_pct",
+     "pct": 0.25
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "cut spending 25%",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "c57de5042fe86278c34eb2f3b84d59a69894f064cfb9f7194e6790a19791ff17": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "on",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "none",
+     "pct": 0.0
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "none",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "with the 2026 ei cap",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "cb80e3ec335ee0c1a37d3802ab072d58aa5be69e0b56a666901dfa44c61c65dd": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "job_loss_ei",
+     "pct": 0.55
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "none",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "lost their job",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "cdd30de6b446226decd4e62c035232f148191b9d831a2d404fe31931e151174a": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "none",
+     "pct": 0.0
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "none",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "set",
+     "months": 3.0
+    }
+   },
+   "message": "a 3 month test",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "d1de5a32ebc2cac052ee4a243a251ba5143db4660292f14e03e0c39c6e2d3f87": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "increase_pct",
+     "pct": 0.15
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "job_loss_ei",
+     "pct": 0.55
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "none",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "job loss bills 15%",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "d42e5f730159c58de331daec6c331b833de7d0eb4a9645dfead295079d201f2d": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "job_loss_ei",
+     "pct": 0.55
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "none",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "lose the job ei 55%",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "d5130f992c0864ab527341b829ca9d10a6062415545e3fc1c851b39e611d9307": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 2000.0,
+     "kind": "to_amount",
+     "pct": 0.0
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "none",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "income drops to 2000 mo",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "d6418e633d59488c97d3dced47b3a84e5a5b240d17c949686be9bbf5df2e57c1": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "none",
+     "pct": 0.0
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "none",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "set",
+     "months": 9.0
+    }
+   },
+   "message": "must last 9 months",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "d7bc13eb6b1c90616a89c53197e1b93c5f91d520e4d562167fc8a8970a42f999": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "job_loss_ei",
+     "pct": 0.55
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "none",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "laid off on ei",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "dbb22f585f828050c59d27cef7751a4c2feeac017686aa10c9917227fa28634f": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "on",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "none",
+     "pct": 0.0
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "none",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "add the 2026 ei cap",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "ddedfec5c88d63d0a3c8f8929925d669b553e1a9c0f6a296f2b3a1c12f8f8d29": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "job_loss_ei",
+     "pct": 0.55
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "none",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "they lose their job and go on ei",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "e2e8a749c5d04398d646909923cd3676bb4bcd155a525e4b899e43a2e4a9f886": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "pay_cut_pct",
+     "pct": 0.4
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "none",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "reduced hours 40%",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "e43181bdceb140e4754cd42808c01802645204bac7970819106e8270e9ae4019": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "none",
+     "pct": 0.0
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "months_of_spending",
+     "months": 1.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "furnace dies repair a month of spending",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "e7f975998b67d4bd452ce3087f4931f01d32649fbb18a077e78895355bc29425": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "keep_pct",
+     "pct": 0.6
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "none",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "only 60% of income coming in",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "e87140ed5731c2f691f3f672d8491d583cda43b23033a2cdeecc9cec329de1f1": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "increase_pct",
+     "pct": 0.15
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "job_loss_ei",
+     "pct": 0.55
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "none",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "laid off ei pays 55% and household bills rise 15%",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "eacfb808ef0889cad2fcbad24f27ba4cb0a9e372796842502cb98a0bb7b7c0fd": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "none",
+     "pct": 0.0
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 2500.0,
+     "kind": "set_amount",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "a 2500 furnace repair",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "f09898c3cdba0d9cfba22de77df24364e552499404c3a47da1a0216ffbf728ba": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 20143,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "job_loss_ei",
+     "pct": 0.55
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "none",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "account 20143 laid off",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "f326420e1f1b823bc746b83570a5331e57a46a8dd676e0c87bca0da53b316f31": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "none",
+     "pct": 0.0
+    },
+    "monthly_cost": {
+     "amount": 900.0,
+     "kind": "set"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "none",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "baby on the way 900 a month more",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "f84d2a51a7bec89027aa43d6060ce9a2ce267df3b2468d248aa632cf08ddfdb7": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "job_loss_ei",
+     "pct": 0.55
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "none",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "unemployed on ei",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "f901ed2e04ec37c53e6529907745548de9d9ef136b43628b4bbddcafb435ed93": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "keep_pct",
+     "pct": 0.7
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "none",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "income kept at 70%",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "fc09dee53705fabe099646933dfa1fb68190efe5018a1dfdbdcd6d4c548eee0e": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "job_loss_ei",
+     "pct": 0.55
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "none",
+     "months": 0.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "they lost their job ei at 55 percent",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  },
+  "fc597ac264a708431f1261a4e9567c6fe3b63fc8fb7dce7932e4557a64f02bb9": {
+   "current": {
+    "bills_fallback": false,
+    "bills_increase_pct": 0.0,
+    "extra_monthly_cost": 0.0,
+    "flexible_cut_pct": 0.0,
+    "income_cap_monthly": null,
+    "income_multiplier": 1.0,
+    "job_loss": false,
+    "one_off_cost": 0.0,
+    "one_off_multiple_of_S": 0.0,
+    "pension_aware": false,
+    "spending_basis": "S",
+    "waiting_week": false
+   },
+   "intent": {
+    "account_id": 0,
+    "bills": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "checks": {
+     "bills_by_standing_order": "unchanged",
+     "ei_cap": "unchanged",
+     "half_year_spending": "unchanged",
+     "keep_pension": "unchanged",
+     "waiting_week": "unchanged"
+    },
+    "clarify": "",
+    "edit": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "income": {
+     "amount": 0.0,
+     "kind": "none",
+     "pct": 0.0
+    },
+    "monthly_cost": {
+     "amount": 0.0,
+     "kind": "none"
+    },
+    "one_off": {
+     "amount": 0.0,
+     "kind": "months_of_spending",
+     "months": 1.0
+    },
+    "spending_cut": {
+     "kind": "none",
+     "pct": 0.0
+    },
+    "target": {
+     "kind": "none",
+     "months": 0.0
+    }
+   },
+   "message": "furnace dies 1x spending",
+   "model": "gemini-3.5-flash-lite",
+   "prompt": "shock-v1",
+   "schema": "intent-v1"
+  }
+ }
 }

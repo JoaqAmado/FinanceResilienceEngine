@@ -124,7 +124,7 @@ def user_payload(norm: str, current: Shock) -> str:
 # ------------------------------------------------------------------ providers
 
 class ProviderError(Exception):
-    """kind: network | auth | server | bad_response | other. The message never holds a key or a response body."""
+    """kind: network | auth | rate_limit | server | bad_response | other. The message never holds a key or a response body."""
 
     def __init__(self, kind: str, detail: str = ""):
         super().__init__(f"{kind}{': ' + detail if detail else ''}")
@@ -147,6 +147,8 @@ def _classify(e: Exception) -> ProviderError:
     if isinstance(code, int):
         if code in (401, 403):
             return ProviderError("auth", f"HTTP {code}")
+        if code == 429:
+            return ProviderError("rate_limit", "HTTP 429")
         if code >= 500:
             return ProviderError("server", f"HTTP {code}")
         return ProviderError("other", f"HTTP {code}")

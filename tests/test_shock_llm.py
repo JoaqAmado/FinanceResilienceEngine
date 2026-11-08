@@ -287,7 +287,8 @@ def test_gemini_adapter_sends_deterministic_settings_and_hides_the_key(monkeypat
     assert seen["model"] == L.GEMINI_MODEL and seen["timeout"] == 10_000
 
 
-@pytest.mark.parametrize("exc, kind", [(HTTPish(401), "auth"), (HTTPish(403), "auth"), (HTTPish(500), "server"),
+@pytest.mark.parametrize("exc, kind", [(HTTPish(401), "auth"), (HTTPish(403), "auth"), (HTTPish(429), "rate_limit"),
+                                       (HTTPish(500), "server"),
                                        (socket.timeout(SECRET), "network"), (ConnectionError(SECRET), "network"),
                                        (RuntimeError(SECRET), "other")])
 def test_gemini_errors_never_carry_their_text(monkeypatch, exc, kind):
@@ -328,6 +329,13 @@ def test_warm_and_freeze_with_a_fake_provider(isolated):
     n = sp.freeze(["they got let go"], out=open("/dev/null", "w"))
     frozen = json.loads(sp.FROZEN_CACHE.read_text())["entries"]
     assert n == 1 and [e["message"] for e in frozen.values()] == ["they got let go"]
+
+
+def test_warm_waits_out_a_rate_limit(isolated):
+    fake = Fake(HTTPish(429), answer(income={"kind": "job_loss_ei", "pct": 0.55}))
+    waits = []
+    counts = sp.warm(["they got let go"], adapter=fake, out=open("/dev/null", "w"), sleep=waits.append)
+    assert counts == {"cached": 0, "new": 1, "failed": 0} and waits == [15.0] and len(fake.calls) == 2
 
 
 # ------------------------------------------------------------------ live (opt-in, needs a key)
