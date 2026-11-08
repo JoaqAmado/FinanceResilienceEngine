@@ -9,6 +9,7 @@ Everything works offline: no API keys, no network.
 from __future__ import annotations
 
 import math
+import time
 
 import pandas as pd
 import plotly.graph_objects as go
@@ -28,6 +29,7 @@ from resilience import (
     goal_shock_for,
     grey_zone_note,
     load_monthly,
+    loan_in_trouble,
 )
 from resilience import evidence as EV
 from resilience import llm, warehouse
@@ -169,19 +171,21 @@ tab_live, tab_port, tab_method = st.tabs(["Live twist", "Portfolio discoveries",
 
 # =============================================================== LIVE TWIST
 with tab_live:
-    c_id, c_pick = st.columns([1, 3])
+    c_id, _ = st.columns([1, 3])
     with c_id:
         acct = st.number_input("account_id", min_value=1, max_value=999_999, step=1, key="acct",
                                on_change=apply_preset)
-    with c_pick:
-        st.write("Rehearsal accounts")
-        cols = st.columns(len(REHEARSAL))
-        for c, (a, why) in zip(cols, REHEARSAL.items()):
-            c.button(f"{a} · {why}", on_click=pick, args=(a,), width="stretch")
+    st.write("Rehearsal accounts")
+    cols = st.columns(len(REHEARSAL))  # full width, so the labels fit at 1440
+    for c, (a, why) in zip(cols, REHEARSAL.items()):
+        c.button(f"{a} · {why}", on_click=pick, args=(a,), width="stretch")
 
-    if acct not in m.index:
-        st.error(f"account_id {acct} is not in the data. IDs run {m.index.min()} to {m.index.max()} with gaps.")
-        st.stop()
+    if acct not in m.index:  # keep the last account on screen: st.stop() here would blank the other tabs
+        shown = ss.get("last_acct", next(iter(REHEARSAL)))
+        st.error(f"account_id {acct} is not in the data. IDs run {m.index.min()} to {m.index.max()} with gaps. "
+                 f"Still showing account {shown}.")
+        acct = shown
+    ss["last_acct"] = acct
     r = m.loc[acct]
 
     # ---------------------------------------------------------- 1. know the customer
@@ -191,9 +195,9 @@ with tab_live:
     k[0].metric("Money in (I) / mo", money(r.I))
     k[1].metric("Spending (S) / mo", money(r.S))
     k[2].metric("Buffer (B)", money(r.B), f"{r.B / r.S:.1f} months of spending" if r.S > 0 else None,
-                delta_color="off")
+                delta_color="off", delta_arrow="off")
     k[3].metric("Runway today (months)", "120+" if base.no_shortfall else base.label,
-                "no shortfall" if base.no_shortfall else None, delta_color="off")
+                "no shortfall" if base.no_shortfall else None, delta_color="off", delta_arrow="off")
     k2 = st.columns(4)
     k2[0].metric("Fixed costs (F) / mo", money(r.F))
     k2[1].metric("Household bills (H) / mo", money(r.H))
@@ -265,7 +269,7 @@ with tab_live:
                         job_loss=bool(ss.job_loss) and ss.income_pct < 100, name=twist_label())
 
     st.markdown("**Reality checks** (our assumptions; the judges' number never changes)")
-    t = st.columns(5)
+    t = list(st.columns([1, 2.6, 1.2])) + list(st.columns(2))  # room for the waiting-week label at 1440
     job_loss = judge_shock.is_job_loss
     can_pension = job_loss and r.Pn > 0
     can_bills = r.H == 0 and r.H_SO > 0
@@ -292,7 +296,7 @@ with tab_live:
         st.markdown("##### Judges' formula")
         st.metric("Runway", rw_text(judge))
         if judge.survives(N):
-            st.success(f"SURVIVES {N} MONTHS", icon="✅")
+            st.success(f"SURVIVES {N} MONTH{'' if N == 1 else 'S'}", icon="✅")
         elif r.B <= 0:
             st.error(f"ALREADY OVERDRAWN: the buffer was {money(r.B)} before any shock, so runway is 0", icon="🛑")
         elif judge.buffer_left <= 0:
@@ -308,7 +312,8 @@ with tab_live:
     with R:
         st.markdown("##### Reality check")
         delta = None
-        if any((cap, ww, pens, s6, bfb)) and not (judge.no_shortfall or real.no_shortfall):
+        if (any((cap, ww, pens, s6, bfb)) and not (judge.no_shortfall or real.no_shortfall)
+                and real.months != judge.months):
             delta = f"{real.months - judge.months:+.1f} mo vs judges"
         st.metric("Runway with selected checks", rw_text(real), delta)
         rows = [("Half-year spending", apply_shock(r, judge_shock.with_(spending_basis="S6"))),
@@ -336,7 +341,8 @@ with tab_live:
     with P1:
         st.markdown("##### Goal plan · normal times")
         st.metric(f"Job-loss-proof fund ({N} months)", money(g.target_buffer),
-                  f"{money(g.shortfall)} to go" if g.shortfall else "already in place", delta_color="off")
+                  f"{money(g.shortfall)} to go" if g.shortfall else "already in place", delta_color="off",
+                  delta_arrow="off")
         if g.shortfall == 0:
             st.write("Keep it ring-fenced in a separate **Tangerine Savings Account** named *Emergency Fund*.")
             if g.current_buffer < g.target_buffer:
@@ -348,11 +354,21 @@ with tab_live:
         else:
             st.write("The normal-month surplus can't close the gap. Make the backup steps a permanent budget change "
                      "and save the difference.")
+        # name the shock the fund is actually sized on (goal_shock_for) and whether reality checks are in it
+        kept = round(goal_shock.income_multiplier * 100)
+        sized_on = ("passes this shock" if plan_shock.is_job_loss else
+                    f"lasts {N} months of a job loss on EI 55%" if kept == 55 else
+                    f"lasts {N} months of a job loss keeping {kept}% of money in")
+        basis = "with your reality checks" if active else "under the judges' formula"
         st.caption(f"Conventional benchmark: 3 months of spending = {money(conv.target_buffer)}. "
-                   "The job-loss-proof target is exactly the buffer that passes this shock under the judges' formula.")
+                   f"The job-loss-proof target is exactly the buffer that {sized_on} {basis}.")
     with P2:
         st.markdown("##### Backup plan · if the shock hits")
-        st.write(f"**{lad.verdict}**")
+        verdict = lad.verdict
+        if loan_in_trouble(r):  # no new credit for a loan in arrears or default (same swap as the web app)
+            verdict = (verdict.replace("income or credit", "income or a hardship deferral")
+                       .replace("cash or credit", "cash or a hardship deferral"))
+        st.write(f"**{verdict}**")
         if lad.rungs:
             stop = lad.first_sufficient if lad.first_sufficient is not None else len(lad.rungs) - 1
             st.dataframe(pd.DataFrame({
@@ -373,15 +389,21 @@ with tab_live:
                        if llm.available() else "Set GEMINI_API_KEY to enable. The template works offline.")
     story, source = None, "template (offline)"
     if use_ai and llm.available():
-        with st.spinner("Asking Gemini to reword the numbers…"):
-            story, source = llm.gemini_story(f)
+        if ss.get("gemini_down_until", 0) < time.time():
+            with st.spinner("Asking Gemini to reword the numbers…"):
+                story, source = llm.gemini_story(f, timeout_s=8)
+            if source.startswith("Gemini unavailable"):  # a hanging network: don't wait again on every rerun
+                ss["gemini_down_until"] = time.time() + 300
+        else:
+            source = "template (Gemini was unreachable; trying again in a few minutes)"
     story = story or template_story(f)
     with st.container(border=True):
         st.markdown(f"**{story['headline']}**")
         st.write(story["what_changed"])
         for step in story["plan_steps"]:
             st.write("• " + step)
-        st.caption(f"Reality check: {story['reality_check']}. {story['caveat']} · Summary: {source}")
+        reality = str(story["reality_check"]).rstrip(". ")  # Gemini ends it with a full stop, the template doesn't
+        st.caption(f"Reality check: {reality}. {story['caveat']} · Summary: {source}")
 
 # =========================================================== PORTFOLIO
 with tab_port:
@@ -389,7 +411,8 @@ with tab_port:
     hl = P["headlines"].iloc[0]
     n = int(hl.accounts)
     a, b, c, d = st.columns(4)
-    a.metric(f"Fail 6 months on EI 55%, judges' formula ({int(hl.fail_6mo_ei55):,} of {n:,})", f"{hl.fail_6mo_ei55 / n:.1%}")
+    a.metric(f"Fail 6 mo on EI 55% ({int(hl.fail_6mo_ei55):,} of {n:,})", f"{hl.fail_6mo_ei55 / n:.1%}",
+             help="Judges' formula")
     b.metric(f"… with the real 2026 EI cap ({int(hl.fail_6mo_ei55_cap2026):,})", f"{hl.fail_6mo_ei55_cap2026 / n:.1%}")
     c.metric(f"… on half-year spending ({int(hl.fail_6mo_ei55_S6):,})", f"{hl.fail_6mo_ei55_S6 / n:.1%}")
     d.metric("Median cut that rescues a failing customer", money(hl.median_min_cut_failing) + "/mo")
@@ -533,9 +556,11 @@ Government of Canada, EI benefit amount (canada.ca/en/services/benefits/ei/ei-re
     with st.expander("Computed in Snowflake"):
         if warehouse.available():
             sf = snowflake_check(warehouse.fingerprint())
-            if "error" in sf:
-                st.warning(f"Snowflake check unavailable ({sf['error']}). Every number above comes from the engine "
-                           "and is unaffected.")
+            if "error" in sf:  # the connector's own message goes in the tooltip, not on screen
+                st.warning("Snowflake isn't reachable from this laptop right now. Every number above comes from the "
+                           "engine and is unaffected.")
+                st.caption("The same SQL (sql/) also runs offline in DuckDB "
+                           "(`python -m resilience.warehouse local-parity`).", help=f"Snowflake said: {sf['error']}")
             else:
                 line = (f"Snowflake judges' numbers match the engine on {sf['metrics_matched']:,}/{sf['accounts']:,} "
                         "accounts")

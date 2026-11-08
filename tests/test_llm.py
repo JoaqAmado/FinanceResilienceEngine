@@ -123,3 +123,20 @@ def test_retry_recovers_from_one_bad_output(keyed, monkeypatch):
     monkeypatch.setattr(genai, "Client", Client)
     story, status = llm.gemini_story(FACTS)
     assert story == GOOD and Models.calls == 2
+
+
+def test_timeout_is_not_retried(keyed, monkeypatch):
+    """A network that hangs: one timeout, not three in a row (the demo would freeze for 3x the timeout)."""
+    from google import genai
+
+    class ReadTimeout(Exception):
+        pass
+    attempts = []
+
+    class Hangs:
+        def __init__(self, *a, **k):
+            attempts.append(1)
+            raise ReadTimeout("timed out")
+    monkeypatch.setattr(genai, "Client", Hangs)
+    story, status = llm.gemini_story(FACTS)
+    assert story is None and status == "Gemini unavailable (ReadTimeout): template used" and len(attempts) == 1

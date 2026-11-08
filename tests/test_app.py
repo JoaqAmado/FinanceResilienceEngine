@@ -303,3 +303,112 @@ def test_rehearsal_buttons_keep_the_wording_rules_and_match_the_web_app(at):
     picker = (Path(__file__).resolve().parent.parent / "web" / "src" / "components" / "AccountPicker.tsx").read_text()
     web = dict(re.findall(r"\[(\d{5}), '([^']+)'\]", picker))
     assert web["20143"] == "spends more than comes in" and f"20143 · {web['20143']}" in labels
+
+
+# --------------------------------------------- regressions from the front-end review
+
+def _set(app, acct, preset="Laid off: EI 55%", **levers):
+    app.session_state["acct"] = acct
+    app.session_state["preset"] = preset
+    for k, v in {"income_pct": 55, "bills_pct": 0, "oneoff_x": 0.0, "job_loss": True, **levers}.items():
+        app.session_state[k] = v
+    for t in ("t_cap", "t_ww", "t_pens", "t_s6", "t_bfb"):
+        app.session_state[t] = levers.get(t, False)
+    return app.run()
+
+
+@needs_data
+def test_unknown_account_keeps_the_last_account_and_every_tab():
+    app = _fresh()                                                     # shows 20331
+    app.number_input(key="acct").set_value(12345).run()
+    assert not app.exception
+    assert [e.value for e in app.error if "12345" in e.value] == [
+        "account_id 12345 is not in the data. IDs run 20111 to 99984 with gaps. Still showing account 20331."]
+    assert _runway(app) == "5.1 mo"                                    # Live still renders the last account
+    assert "1,578 of 4,500" in " ".join(m.label for m in app.metric)  # Portfolio tab rendered
+    assert any(m.value.lstrip().startswith("**Judges' numbers**") for m in app.markdown)  # Method tab rendered
+
+
+@needs_data
+def test_loan_in_arrears_verdict_offers_a_hardship_deferral_not_credit():
+    app = _fresh()
+    app.number_input(key="acct").set_value(75489).run()
+    text = " ".join(m.value for m in app.markdown)
+    assert "**Already overdrawn: clear the debt with cash or a hardship deferral first**" in text
+    assert "cash or credit" not in text and "no new credit" in text
+    _set(app, 20331, t_cap=True, t_ww=True, t_s6=True)
+    app.slider(key="target").set_value(9).run()
+    text = " ".join(m.value for m in app.markdown)
+    assert "income or a hardship deferral" in text and "income or credit" not in text
+
+
+@needs_data
+def test_goal_caption_names_the_shock_the_fund_is_sized_on():
+    app = _fresh()
+    _set(app, 77743, "Furnace dies: 1× spending", income_pct=100, job_loss=False, oneoff_x=1.0)
+    captions = " ".join(c.value for c in app.caption)
+    assert "exactly the buffer that lasts 6 months of a job loss on EI 55% under the judges' formula" in captions
+    assert "passes this shock" not in captions
+    _set(app, 20331, t_s6=True)
+    captions = " ".join(c.value for c in app.caption)
+    assert "exactly the buffer that passes this shock with your reality checks" in captions
+    assert "passes this shock under the judges' formula" not in captions
+
+
+@needs_data
+def test_gemini_failure_is_not_retried_on_every_rerun(monkeypatch):
+    from resilience import llm
+    calls = []
+
+    def hangs(f, timeout_s=12.0):
+        calls.append(timeout_s)
+        return None, "Gemini unavailable (ReadTimeout): template used"
+    monkeypatch.setattr(llm, "available", lambda: True)
+    monkeypatch.setattr(llm, "gemini_story", hangs)
+    app = _fresh()
+    app.toggle(key="t_ai").set_value(True).run()
+    app.slider(key="target").set_value(7).run()
+    app.slider(key="target").set_value(8).run()
+    assert not app.exception and len(calls) == 1
+    assert any("template" in c.value for c in app.caption if c.value.startswith("Reality check:"))
+
+
+@needs_data
+def test_gemini_reality_check_has_one_full_stop(monkeypatch):
+    from resilience import llm
+    from resilience.narrative import template_story
+    monkeypatch.setattr(llm, "available", lambda: True)
+    monkeypatch.setattr(llm, "gemini_story", lambda f, timeout_s=12.0: (
+        dict(template_story(f), reality_check=template_story(f)["reality_check"] + "."), "Gemini (test)"))
+    app = _fresh()
+    app.toggle(key="t_ai").set_value(True).run()
+    line = [c.value for c in app.caption if c.value.startswith("Reality check:")][0]
+    assert ".." not in line and "Gemini (test)" in line
+
+
+@needs_data
+def test_snowflake_failure_shows_a_short_line_not_the_connector_error(monkeypatch):
+    from resilience import warehouse
+    monkeypatch.setattr(warehouse, "available", lambda: True)
+    monkeypatch.setattr(warehouse, "fingerprint", lambda: "app-test-broken-login")  # no cached result reused
+    monkeypatch.setattr(warehouse, "scrub", lambda text: text)
+
+    def broken(engine=None):
+        raise RuntimeError("390144 (28000): Failed to login: Login error: JWT token is invalid.")
+    monkeypatch.setattr(warehouse, "verify", broken)
+    app = _fresh()
+    assert not app.exception
+    box = [e for e in app.expander if e.label == "Computed in Snowflake"][0]
+    shown = " ".join(w.value for w in box.warning) + " ".join(c.value for c in box.caption)
+    assert "unaffected" in shown and "JWT" not in shown and "390144" not in shown
+
+
+@needs_data
+def test_zero_delta_and_one_month_badge():
+    app = _fresh()
+    _set(app, 77743, "Custom", income_pct=100, job_loss=False, oneoff_x=1.0, t_s6=True)
+    real = [m for m in app.metric if m.label == "Runway with selected checks"][0]
+    assert real.value == "0.0 mo" and not real.delta                  # no green '+0.0 mo vs judges'
+    _set(app, 20331)
+    app.slider(key="target").set_value(1).run()
+    assert [s.value for s in app.success if s.value.startswith("SURVIVES")] == ["SURVIVES 1 MONTH"]

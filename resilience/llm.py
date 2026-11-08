@@ -141,6 +141,8 @@ def gemini_story(f: dict, timeout_s: float = 12.0) -> tuple[dict | None, str]:
             candidate = json.loads(resp.text)
         except Exception as e:  # network, quota, bad JSON: never break the demo
             last_err = e
+            if "Timeout" in type(e).__name__:  # a network that hangs won't answer a retry either
+                break
             continue
         if valid_story(candidate, f):
             story = candidate
