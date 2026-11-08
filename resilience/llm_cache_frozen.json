@@ -1,0 +1,4 @@
+{
+ "about": "Rehearsed LLM shock intents (read-only at runtime). Written by `python -m resilience.shock_parser freeze`.",
+ "entries": {}
+}
