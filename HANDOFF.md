@@ -7,7 +7,7 @@ Read `CLAUDE.md` (rules, judge formulas, verified facts) before changing anythin
 - Pipeline builds `warehouse/tangerine.duckdb` in ~13 s; 10/10 SQL quality checks pass.
 - `pytest`: **46/46 pass** (incl. judge parity for all 4,500 accounts, ~4 min).
 - `findings.py` regenerates all reports and 6 figures. Headline: stress runway AUC 0.752 vs judge runway 0.639 (diff +0.113, CI [0.048, 0.180]).
-- Not a git repo yet. No image pushed to any registry.
+- Git: repo https://github.com/JoaqAmado/FinanceResilienceEngine, our work is on branch `Jason` (team branches: main, joaquin, marco). Raw CSVs are tracked in `data/`; `Tangerine/data/` is a git-ignored local duplicate. No Docker image pushed to any registry.
 - **Web app built** (90-day plan, FastAPI + plain HTML/JS): `app/main.py` (API), `app/plan90.py` (turns `engine.run()` into the prevent/survive plan, no new math), `app/static/` (page, CSS, JS, inline-SVG chart). Run `make app` or `docker compose up app` → http://localhost:8000. `tests/test_app.py` covers all 4,500 accounts × 6 presets; full suite now **57/57**.
 
 ## Folder map
