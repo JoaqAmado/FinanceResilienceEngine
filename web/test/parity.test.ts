@@ -6,7 +6,8 @@
  *
  * Exact equality for runway months, flags, verdicts, steps and every string; money values
  * within 1e-6 (the summary also counts how many are bit-for-bit identical). The early-warning
- * light (resilience/warning.py) is checked exactly too: values, rules, points, status and text.
+ * light (resilience/warning.py) is checked exactly too: values, rules, points, status and text. So is the
+ * 2025 backtest evidence (resilience/evidence.py): every table rebuilt from per-account inputs, and every line.
  */
 import { readFileSync } from 'node:fs';
 import { isDeepStrictEqual } from 'node:util';
@@ -50,6 +51,30 @@ import {
   calendarPath,
   computeLight,
   creditAdvice,
+  evidenceLines,
+  evidenceScore,
+  evidenceSummary,
+  HEADLINE_LIST_PCT,
+  irregularCaveat,
+  irregularLine,
+  irregularTable,
+  LIGHT_TIE_BREAK,
+  liftLine,
+  liftTable,
+  LIST_PCTS,
+  listSize,
+  PASS_MONTHS,
+  passedLine,
+  RANKINGS,
+  riskOrder,
+  S6_HISTORY,
+  S6_HORIZON,
+  S6_ORIGINS,
+  s6Check,
+  s6Line,
+  WATCH_POINTS,
+  WILSON_Z,
+  wilson,
   decodeAccounts,
   decodeBacktest,
   facts,
@@ -72,7 +97,19 @@ import {
   tierRateText,
   withShock,
 } from '../src/engine';
-import type { Account, AccountsFile, Light, PortfolioFile, RuleCode, RunwayResult, Shock } from '../src/engine';
+import type {
+  Account,
+  AccountsFile,
+  EvidenceScore,
+  IrregularRow,
+  LiftRow,
+  Light,
+  PortfolioFile,
+  RuleCode,
+  RunwayResult,
+  S6Row,
+  Shock,
+} from '../src/engine';
 
 type PyResult = [number | null, boolean, number, number, number, number, number, boolean];
 type PyGoal = [number, number, number, number, number | null, string];
@@ -151,6 +188,25 @@ interface Vectors {
   lightTiers: PyTier[];
   /** Rule.fires on each cut and one double either side: [code, value, fired] */
   lightCuts: [RuleCode, number, boolean][];
+  evidence: {
+    constants: Record<string, number | number[] | string[]>;
+    /** [id, I, S, B]: the judges' numbers at the snapshot on the light's rows */
+    snapshot: [number, number, number, number][];
+    /** [id, points, minBalOverS, irregular, runwayEi55, runwayEi55Exact, bufferMonths, passesEi55, wentOverdrawn]; null = +inf */
+    scores: [number, number, number, boolean, number | null, number | null, number | null, boolean, boolean][];
+    order: Record<string, number[]>;
+    lift: LiftRow[];
+    summary: Record<string, string | number>;
+    irregular: IrregularRow[];
+    /** [B, I, S, S6, nextSpending] */
+    halfyears: [number, number, number, number | null, number][];
+    s6: S6Row[];
+    lines: Record<string, string>;
+    /** [k, n, lo, hi] */
+    wilson: [number, number, number | null, number | null][];
+    /** [pct, accounts, size] */
+    listSize: [number, number, number][];
+  };
 }
 /** [status, rowsUsed, points, [[value, raw, fired, valueText] per rule], badge, backtestLine, line, spendingNote] */
 type PyLight = [
@@ -506,6 +562,116 @@ describe('parity with the Python engine', () => {
       c.same(`${x} :.0%`, pyPercent0(x), pct0);
     }
     c.done();
+  });
+
+  describe('2025 backtest evidence (resilience/evidence.py)', () => {
+    const E = V.evidence;
+    const bt = decodeBacktest(portfolio.early_warning);
+    const inf = (v: number | null) => (v === null ? Infinity : v);
+    // the population and the light's inputs at the snapshot come from the light backtest vectors
+    const scores: EvidenceScore[] = (() => {
+      const judges = new Map(E.snapshot.map(([id, I, S, B]) => [id, { I, S, B }]));
+      const out: EvidenceScore[] = [];
+      for (const row of V.lightBacktest.rows) {
+        const [id, rowsUsed, daysBelowZero, min, cash, cv, trend, recentSpending, lastMonth, observed, went] = row;
+        const raw = { min_bal_over_S: min, cash_share: cash, inc_cv: cv, bal_trend: trend };
+        const l = computeLight(id, { rowsUsed, daysBelowZero, recentSpending, lastMonth, raw }, bt, V.lightBacktest.snapshot);
+        if (l.status !== RATED || !observed) continue;
+        const j = judges.get(id);
+        if (!j) throw new Error(`account ${id} is in the backtest but has no snapshot I, S, B`);
+        const light = {
+          points: l.points as number,
+          minBalOverS: l.rules.find((r) => r.rule.code === 'min_bal_over_S')!.value,
+          irregular: l.rules.find((r) => r.rule.code === 'inc_cv')!.fired,
+        };
+        out.push(evidenceScore(id, light, j.I, j.S, j.B, went));
+      }
+      return out;
+    })();
+    const P = portfolio.evidence;
+
+    it('constants', () => {
+      const c = new Checker('evidence constants');
+      const ts: Record<string, number | readonly number[] | readonly string[]> = {
+        PASS_MONTHS,
+        WATCH_POINTS,
+        LIGHT_TIE_BREAK,
+        LIST_PCTS,
+        HEADLINE_LIST_PCT,
+        WILSON_Z,
+        S6_ORIGINS,
+        S6_HISTORY,
+        S6_HORIZON,
+        RANKINGS,
+      };
+      c.deep('constant names', Object.keys(ts).sort(), Object.keys(E.constants).sort());
+      for (const [k, v] of Object.entries(ts)) c.deep(k, Array.isArray(v) ? [...v] : v, E.constants[k]);
+      for (const [p, n, k] of E.listSize) c.same(`listSize(${p}, ${n})`, listSize(p, n), k);
+      for (const [k, n, lo, hi] of E.wilson) {
+        const [a, b] = wilson(k, n);
+        c.same(`wilson(${k}, ${n}) low`, Number.isNaN(a) ? null : a, lo);
+        c.same(`wilson(${k}, ${n}) high`, Number.isNaN(b) ? null : b, hi);
+      }
+      c.done();
+    });
+
+    it('every backtest account: points, runway, buffer months, pass and outcome', () => {
+      const c = new Checker('evidence scores');
+      c.same('population', scores.length, E.scores.length);
+      c.same('3,847 accounts', scores.length, 3847);
+      scores.forEach((s, i) => {
+        const [id, points, mb, irregular, rw, exact, buf, passes, went] = E.scores[i];
+        const L = `${id}`;
+        c.same(`${L} id`, s.id, id);
+        c.same(`${L} points`, s.points, points);
+        c.same(`${L} minBalOverS`, s.minBalOverS, mb);
+        c.same(`${L} irregular`, s.irregular, irregular);
+        c.same(`${L} runwayEi55`, s.runwayEi55, inf(rw));
+        c.same(`${L} runwayEi55Exact`, s.runwayEi55Exact, inf(exact));
+        c.same(`${L} bufferMonths`, s.bufferMonths, inf(buf));
+        c.same(`${L} passesEi55`, s.passesEi55, passes);
+        c.same(`${L} wentOverdrawn`, s.wentOverdrawn, went);
+      });
+      for (const r of RANKINGS) c.deep(`order ${r}`, riskOrder(scores, r), E.order[r]);
+      c.done();
+    });
+
+    it('lift chart, passed-but-overdrawn and the 2x2, rebuilt = Python = portfolio.json', () => {
+      const c = new Checker('evidence tables');
+      const lift = liftTable(scores);
+      c.deep('lift = Python', lift, E.lift);
+      c.deep('lift = portfolio.json', lift, P.lift);
+      const s = evidenceSummary(scores, bt.snapshot, bt.labelYear);
+      c.deep('summary = Python', s, E.summary);
+      const { headline_list_pct, lift: _l, irregular: _i, s6: _s, ...fileSummary } = P;
+      c.deep('summary = portfolio.json', s, fileSummary);
+      c.same('headline list', headline_list_pct, HEADLINE_LIST_PCT);
+      const irr = irregularTable(scores);
+      c.deep('2x2 = Python', irr, E.irregular);
+      c.deep('2x2 = portfolio.json', irr, P.irregular);
+      // the pinned headline numbers
+      const at10 = lift.find((r) => r.list_pct === 10)!;
+      c.deep('10% list', [at10.list_accounts, at10.light, at10.ei55_runway, at10.buffer_months, at10.events], [385, 47, 25, 29, 75]);
+      c.deep('passed / flagged', [s.passed_ei55, s.passed_and_flagged], [28, 17]);
+      c.same('lift line', liftLine(lift, s), E.lines.lift);
+      c.same('passed line', passedLine(s), E.lines.passed);
+      c.same('2x2 line', irregularLine(irr, s), E.lines.irregular);
+      c.same('2x2 caveat', irregularCaveat(irr), E.lines.irregular_caveat);
+      c.done();
+    });
+
+    it('half-year spending checked forward, rebuilt = Python = portfolio.json, and every line', () => {
+      const c = new Checker('evidence s6');
+      const rows = E.halfyears.map(([B, I, S, S6, nextSpending]) => ({ B, I, S, S6, nextSpending }));
+      const check = s6Check(rows);
+      c.deep('s6 = Python', check, E.s6);
+      c.deep('s6 = portfolio.json', check, P.s6.rows);
+      c.deep('origins', P.s6.origins, [...S6_ORIGINS]);
+      c.same('horizon', P.s6.horizon, S6_HORIZON);
+      c.same('s6 line', s6Line(check), E.lines.s6);
+      c.deep('every line from portfolio.json', evidenceLines(P), E.lines);
+      c.done();
+    });
   });
 
   describe('early-warning light (resilience/warning.py)', () => {

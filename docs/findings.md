@@ -15,6 +15,21 @@ The judges' formula comes first. Reality checks are labelled and sit beside it, 
 The chart tables behind these rows are in `artifacts/` (written by `python -m resilience.portfolio`).
 The [method](method.md) page defines every term, and the [model card](model_card.md) lists the data's limits.
 
+## 2025 backtest: the judges' test misses people
+
+The early-warning light's backtest: every score taken at the 2024-12 snapshot, on the 3,847 accounts rated then
+and still active in 2025, of which 75 first went overdrawn in 2025.
+
+| | |
+|---|---|
+| Of those 75, passed the judges' EI 55% test at the snapshot | 28 (the light had flagged 17 of them, 2+ points) |
+| Overdrafts caught by a 10% watch-list (385 accounts) | light 47 · judges' EI 55% runway 25 · buffer months 29 |
+| Second finding, small numbers: went overdrawn in 2025 | irregular money in that passes the EI test: 14 of 376 (3.7%, 95% interval 2.2–6.2%) · steady money in that fails it: 17 of 1,072 (1.6%, 1.0–2.5%) |
+| **Half-year spending, checked forward** (4 as-of months, 12,681 account half-years): of the 6,652 that fail the 6-month EI test on the money out that followed, missed by | the judges' median month S: 2,406 · half-year S6: 1,003 (false alarms: S 720 · S6 1,579) |
+
+The tables are in `artifacts/` (written by `python -m resilience.evidence`); both apps chart them on the
+Portfolio tab.
+
 ## How each figure is computed
 
 All functions are in `resilience/`. "Failing" means a judges' runway under 6 months on the EI 55% twist
@@ -43,3 +58,27 @@ All functions are in `resilience/`. "Failing" means a judges' runway under 6 mon
   before `loan_start`, against the loan outcome (B or D = defaulted, A or C = repaid or on track). The repaying
   borrowers are the A and C loans, and `ever_negative` is false for every one of them. On the customer card it is
   the `pre_loan_overdraft` flag (`core.account_flags`). Table: `artifacts/preloan_overdraft.csv`.
+
+### The 2025 backtest
+
+All functions are in `resilience/evidence.py`. The population and the outcome are the early-warning light's
+backtest (`warning.backtest_frame`). Every score reads the rows the light reads: each account's full months up to
+the snapshot, with the partial opening month left out. The judges' I, S and B come from `core.baseline_metrics`
+on those rows, and an account passes the judges' EI test when its published runway (`core.portfolio_runway`) is
+6 months or more.
+
+- **Passed the judges' test.** `summary()`: the 75 accounts that went overdrawn, how many passed, and how many of
+  those had 2+ points on the light (where both apps show it as a warning). Keeping the partial opening month in
+  I, S and B, as the live card does, 34 of the 75 had passed, the light flagged 22 of them, and the EI runway
+  catches 23 on the 10% list, so leaving it out is the cautious choice. Table: `artifacts/backtest_summary.csv`.
+- **Watch-lists.** `lift_table()`: watch-lists of 1–30% of the backtest population, highest risk first. The light
+  ranks by points, then by the lowest balance relative to spending (`points - 1e-6 × min_bal_over_S`, as the
+  backtest did). The runway ranks shortest first, before rounding. Buffer months rank fewest first. Remaining
+  ties go to the lowest `account_id`. Table: `artifacts/backtest_lift.csv`.
+- **Irregular money in.** `irregular_table()`: the light's own rule (money in: std ÷ mean > 0.5 over its 6
+  months) against passing or failing the judges' EI test, with Wilson 95% intervals. It rests on 14 and 17
+  overdrafts and says who to watch, not why. Table: `artifacts/backtest_irregular.csv`.
+- **Half-year spending, checked forward.** `s6_check()`: at each of 2023-12, 2024-06, 2024-12 and 2025-06, every
+  account with a row 12 months earlier and all 6 months after it. I, S, B and S6 use only the rows up to that
+  month. The test fails when B − (6 months of spending − 6 × 0.55 × I) is below zero: on the money out that
+  actually followed (a real fail), on 6 × S and on 6 × S6. Table: `artifacts/s6_halfyear_check.csv`.

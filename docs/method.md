@@ -82,6 +82,7 @@ Each tier's evidence is a backtest: the rules taken at 2024-12, and the outcome 
 .venv/bin/python -m resilience 98952 --income 0.55 --pension-aware --cap --waiting-week
 .venv/bin/python -m resilience.portfolio           # chart tables -> artifacts/*.csv
 .venv/bin/python -m resilience.warning             # early-warning tiers -> artifacts/early_warning_tiers.csv
+.venv/bin/python -m resilience.evidence            # 2025 backtest evidence -> artifacts/backtest_*.csv, s6_halfyear_check.csv
 ```
 
 Use fractions (`--income 0.55`), not percentages. `--income-cap` is a reality check and needs a job loss.

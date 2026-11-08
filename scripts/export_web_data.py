@@ -7,6 +7,7 @@ Writes
                                          the early-warning light's rule inputs today (resilience.warning)
     web/public/data/portfolio.json       headline numbers + the chart tables of resilience.portfolio,
                                          + the early-warning light's 2025 backtest tiers
+                                         + the 2025 backtest evidence of resilience.evidence
     web/public/data/history/<id>.json    monthly money_in, money_out, month_end_balance per account
     web/test/vectors.json                outputs of the PYTHON engine that web/test/parity.test.ts
                                          must reproduce exactly
@@ -29,6 +30,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from resilience import core as C  # noqa: E402
+from resilience import evidence as EV  # noqa: E402
 from resilience import warning as W  # noqa: E402
 from resilience.narrative import facts, template_story  # noqa: E402
 from resilience.portfolio import build_all  # noqa: E402
@@ -318,6 +320,53 @@ def light_tier_cases() -> list[list]:
     return [[p, n, k, W.Tier(p, n, k).rate_text, W.Tier(p, n, k).line()] for p, n, k in sorted(cases)]
 
 
+# ------------------------------------------------------------------ backtest evidence
+
+def inf_or_none(v: float) -> float | None:
+    """Evidence scores: +inf (no shortfall, no spending) is written as null."""
+    return None if math.isinf(v) else float(v)
+
+
+def evidence_file(ev: dict) -> dict:
+    """portfolio.json["evidence"]: the tables the Portfolio tab charts, and what its lines read."""
+    return {**ev["summary"], "headline_list_pct": EV.HEADLINE_LIST_PCT, "lift": records(ev["lift"]),
+            "irregular": records(ev["irregular"]),
+            "s6": {"origins": list(EV.S6_ORIGINS), "horizon": EV.S6_HORIZON, "rows": records(ev["s6"])}}
+
+
+def evidence_case(ev: dict) -> dict:
+    """Per-account inputs and expected outputs, so the TS port rebuilds every evidence table itself.
+
+    snapshot rows: the judges' I, S, B at the snapshot on the light's rows; the light's own inputs at the snapshot
+    are vec["lightBacktest"]["rows"]. scores: [id, points, minBalOverS, irregular, runwayEi55, runwayEi55Exact,
+    bufferMonths, passesEi55, wentOverdrawn] (null = +inf). halfyears: [B, I, S, S6, nextSpending].
+    """
+    sc = ev["scores"].sort_index()
+    rng = np.random.default_rng(SEED + 2)  # its own stream: the other vectors' draws stay as they were
+    wilson_cases = [(0, 1), (1, 1), (0, 50), (19, 472), (15, 961), (14, 376), (17, 1072), (7, 15), (75, 3847)]
+    wilson_cases += [(int(k), int(n)) for n in rng.integers(1, 5000, 60) for k in rng.integers(0, n + 1, 1)]
+    h = ev["halfyears"]
+    return {
+        "constants": {"PASS_MONTHS": EV.PASS_MONTHS, "WATCH_POINTS": EV.WATCH_POINTS,
+                      "LIGHT_TIE_BREAK": EV.LIGHT_TIE_BREAK, "LIST_PCTS": list(EV.LIST_PCTS),
+                      "HEADLINE_LIST_PCT": EV.HEADLINE_LIST_PCT, "WILSON_Z": EV.WILSON_Z,
+                      "S6_ORIGINS": list(EV.S6_ORIGINS), "S6_HISTORY": EV.S6_HISTORY, "S6_HORIZON": EV.S6_HORIZON,
+                      "RANKINGS": list(EV.RANKINGS)},
+        "snapshot": [[int(a), float(r.I), float(r.S), float(r.B)] for a, r in sc.iterrows()],
+        "scores": [[int(a), int(r.points), float(r.min_bal_over_S), bool(r.irregular), inf_or_none(r.runway_ei55),
+                    inf_or_none(r.runway_ei55_exact), inf_or_none(r.buffer_months), bool(r.passes_ei55),
+                    bool(r.went_overdrawn)] for a, r in sc.iterrows()],
+        "order": {r: [int(a) for a in EV.risk_order(sc, r)] for r in EV.RANKINGS},
+        "lift": records(ev["lift"]), "summary": ev["summary"], "irregular": records(ev["irregular"]),
+        "halfyears": [[float(b), float(i), float(s), fnum(s6), float(x)] for b, i, s, s6, x in
+                      zip(h["B"], h["I"], h["S"], h["S6"], h["next_spending"])],
+        "s6": records(ev["s6"]),
+        "lines": EV.lines(ev),
+        "wilson": [[k, n, *[fnum(x) for x in EV.wilson(k, n)]] for k, n in wilson_cases],
+        "listSize": [[p, n, EV.list_size(p, n)] for p in (1, 5, 10, 25, 30, 50) for n in (0, 1, 3, 5, 199, 3847)],
+    }
+
+
 # ------------------------------------------------------------------ cases
 
 def story_case(acct: int, r: pd.Series, preset: str, N: int, toggles: tuple) -> dict:
@@ -377,6 +426,7 @@ def main() -> None:
 
     light_today = W.light_table(monthly)               # snapshot = the last month in the data
     light_bt = W.backtest(monthly)
+    evid = EV.build_evidence(monthly, C.load_loans())
     if set(light_today.index) != set(ids):
         raise SystemExit("the early-warning light and the engine cover different accounts")
     exported = m.join(light_today[list(LIGHT_INPUTS)].add_prefix("light_"))
@@ -392,7 +442,8 @@ def main() -> None:
     headlines = records(tables.pop("headlines"))[0]
     port = {"version": 1, "headlines": headlines, **{k: records(v) for k, v in tables.items()},
             "runway_columns": [c for c in acc_table.columns if c.startswith("runway_")],
-            "early_warning": backtest_file(light_bt, str(monthly["month"].max()))}
+            "early_warning": backtest_file(light_bt, str(monthly["month"].max())),
+            "evidence": evidence_file(evid)}
     port_bytes = dump(DATA_OUT / "portfolio.json", port)
 
     hist_dir = DATA_OUT / "history"
@@ -506,6 +557,7 @@ def main() -> None:
     vec["meta"]["light_backtest_row_layout"] = ("[id, rows_used, days_below_zero, min_bal_over_S_raw, cash_share_raw, "
                                                 "inc_cv_raw, bal_trend_raw, recent_spending, last_month, "
                                                 "observedInLabelYear, wentOverdrawn]")
+    vec["evidence"] = evidence_case(evid)
 
     vec["meta"]["counts"] = {
         "applyShock": len(ids) * len(SHOCKS), "flags": len(ids), "calendarPath": len(cal), "plans": len(plans),
@@ -513,13 +565,14 @@ def main() -> None:
         "lightToday": len(vec["lightToday"]), "lightBacktest": len(vec["lightBacktest"]["rows"]),
         "lightValueText": len(vec["lightValueText"]), "lightTiers": len(vec["lightTiers"]),
         "lightCuts": len(vec["lightCuts"]),
+        "evidenceScores": len(vec["evidence"]["scores"]), "evidenceHalfyears": len(vec["evidence"]["halfyears"]),
     }
     vec_bytes = dump(VECTORS, vec)
 
     mb = lambda n: f"{n / 1e6:.1f} MB"  # noqa: E731
     print(f"accounts.json   {len(ids)} accounts, {mb(acc_bytes)}")
     print(f"portfolio.json  headlines + {len(tables)} tables + early-warning tiers "
-          f"({light_bt.population:,} accounts, {light_bt.events} went overdrawn), {mb(port_bytes)}")
+          f"({light_bt.population:,} accounts, {light_bt.events} went overdrawn) + backtest evidence, {mb(port_bytes)}")
     print(f"history/        {monthly['account_id'].nunique()} files, {mb(hist_bytes)}")
     print(f"vectors.json    {vec['meta']['counts']}, {mb(vec_bytes)}")
 

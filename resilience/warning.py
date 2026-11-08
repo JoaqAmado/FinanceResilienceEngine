@@ -245,15 +245,24 @@ class Backtest:
                              "rate": [t.rate for t in self.tiers]})
 
 
-def backtest(monthly: pd.DataFrame, snapshot: str = BACKTEST_SNAPSHOT,
-             label_year: str = BACKTEST_LABEL_YEAR) -> Backtest:
-    """Rules at `snapshot`, outcome = any days below zero in `label_year` (rows after the snapshot)."""
+def backtest_frame(monthly: pd.DataFrame, snapshot: str = BACKTEST_SNAPSHOT,
+                   label_year: str = BACKTEST_LABEL_YEAR) -> pd.DataFrame:
+    """The backtest population: light_table rows at `snapshot` for the accounts rated then and still observed
+    in `label_year`, plus `went_overdrawn` (any day below zero in a `label_year` row after the snapshot)."""
     lt = light_table(monthly, snapshot)
     ms = usable_months(monthly)
     fut = ms[(ms["month"] > snapshot) & ms["month"].str.startswith(label_year)]
     went = fut.groupby("account_id")["days_below_zero"].sum() > 0
-    pop = lt[(lt["status"] == RATED) & lt.index.isin(fut["account_id"].unique())]
-    y = went.reindex(pop.index, fill_value=False).astype(bool)
+    pop = lt[(lt["status"] == RATED) & lt.index.isin(fut["account_id"].unique())].copy()
+    pop["went_overdrawn"] = went.reindex(pop.index, fill_value=False).astype(bool)
+    return pop
+
+
+def backtest(monthly: pd.DataFrame, snapshot: str = BACKTEST_SNAPSHOT,
+             label_year: str = BACKTEST_LABEL_YEAR) -> Backtest:
+    """Rules at `snapshot`, outcome = any days below zero in `label_year` (rows after the snapshot)."""
+    pop = backtest_frame(monthly, snapshot, label_year)
+    y = pop["went_overdrawn"]
     pts = pop["points"].astype(int)
     tiers = tuple(Tier(p, int((pts == p).sum()), int(((pts == p) & y).sum())) for p in range(MAX_POINTS + 1))
     return Backtest(snapshot, label_year, tiers)

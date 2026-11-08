@@ -97,6 +97,53 @@ export interface PortfolioFile {
   preloan_overdraft: Record<string, string | number | null>[];
   runway_columns: string[];
   early_warning: EarlyWarningFile;
+  evidence: EvidenceFile;
+}
+
+/** One watch-list size: accounts on it, and how many that went overdrawn each ranking puts on it. */
+export interface LiftRow {
+  list_pct: number;
+  list_accounts: number;
+  light: number;
+  ei55_runway: number;
+  buffer_months: number;
+  events: number;
+}
+
+/** One cell of the irregular-money-in 2x2 (null = an empty cell). */
+export interface IrregularRow {
+  irregular_money_in: 'yes' | 'no';
+  judges_ei55: 'passes' | 'fails';
+  accounts: number;
+  went_overdrawn: number;
+  rate: number | null;
+  ci_low: number | null;
+  ci_high: number | null;
+}
+
+/** The 6-month EI test on one spending basis against the money out that followed. */
+export interface S6Row {
+  spending_basis: 'S' | 'S6';
+  account_halfyears: number;
+  real_fails: number;
+  flagged: number;
+  missed_real_fails: number;
+  false_alarms: number;
+}
+
+/** portfolio.json["evidence"]: the 2025 backtest evidence (resilience.evidence.build_evidence). */
+export interface EvidenceFile {
+  snapshot: string;
+  label_year: string;
+  accounts: number;
+  went_overdrawn: number;
+  passed_ei55: number;
+  passed_and_flagged: number;
+  watch_points: number;
+  headline_list_pct: number;
+  lift: LiftRow[];
+  irregular: IrregularRow[];
+  s6: { origins: string[]; horizon: number; rows: S6Row[] };
 }
 
 /** portfolio.json["early_warning"]: the early-warning light's backtest (resilience.warning.backtest). */

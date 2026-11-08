@@ -6,6 +6,7 @@
  *   - the portfolio drill-down bands reproduce resilience/portfolio.py's table
  *   - a scenario survives the URL-hash round trip
  *   - the early-warning light renders on the customer card (server-rendered markup)
+ *   - the Portfolio tab shows the 2025 backtest evidence first, with the lines Python writes
  */
 import { readFileSync } from 'node:fs';
 import { createElement } from 'react';
@@ -13,6 +14,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { CustomerCard } from '../src/components/CustomerCard';
 import { EarlyWarningLight } from '../src/components/EarlyWarningLight';
+import { Portfolio } from '../src/components/Portfolio';
 import {
   BASELINE,
   FURNACE,
@@ -24,6 +26,7 @@ import {
   computeLight,
   decodeAccounts,
   decodeBacktest,
+  evidenceLines,
   makeShock,
   npRound,
   pyFixed,
@@ -351,5 +354,45 @@ describe('early-warning light on the customer card', () => {
         "over the same 6 months: $9.19. That is not the card's S (the median over all history), so these months " +
         "can differ from the Buffer's.",
     );
+  });
+});
+
+describe('portfolio tab: 2025 backtest evidence', () => {
+  const unescape = (h: string) =>
+    h.replace(/&#x27;/g, "'").replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+  const data = {
+    accounts,
+    byId: new Map(accounts.map((a) => [a.id, a] as const)),
+    ids: accounts.map((a) => a.id).sort((a, b) => a - b),
+    portfolio,
+    earlyWarning: decodeBacktest(portfolio.early_warning),
+    loadMs: 0,
+  };
+  const html = renderToStaticMarkup(createElement(Portfolio, { data, onOpen: () => {} }));
+  const text = unescape(html.replace(/<[^>]+>/g, ''));
+
+  it('leads with the lift chart, then the 2x2, and shows every evidence line', () => {
+    const heads = [...html.matchAll(/<h2[^>]*>(.*?)<\/h2>/g)].map((m) => unescape(m[1].replace(/<[^>]+>/g, '')));
+    expect(heads.slice(0, 2)).toEqual([
+      "1 · The judges' test misses people: who went overdrawn in 2025",
+      '2 · A second finding: irregular money in',
+    ]);
+    expect(heads).toHaveLength(6);
+    for (const [key, line] of Object.entries(evidenceLines(portfolio.evidence))) {
+      expect(text, key).toContain(line);
+    }
+    // the same sentences tests/test_evidence.py pins on the Python side
+    expect(text).toContain(
+      'On a 10% watch-list (385 accounts), the light catches 47 of the 75 accounts that went overdrawn in 2025; ' +
+        "the judges' EI 55% runway catches 25 and buffer months 29.",
+    );
+    expect(text).toContain('the light had flagged 17 of them (2+ points).');
+  });
+
+  it('the 2x2 table and the numbers table carry every cell', () => {
+    expect(text).toContain('14 of 376 · 3.7% (2.2–6.2%)');
+    expect(text).toContain('17 of 1,072 · 1.6% (1.0–2.5%)');
+    expect(text).toContain('47 of 75');
+    expect([...html.matchAll(/<tr><th scope="row">\d+%<\/th>/g)]).toHaveLength(30);
   });
 });

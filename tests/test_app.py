@@ -149,6 +149,20 @@ def test_portfolio_labels_are_integers():
     assert "1,578 of 4,500" in labels and ".0" not in labels.replace("4,500", "")
 
 
+@needs_data
+def test_portfolio_shows_the_2025_backtest_evidence():
+    from resilience import evidence as E
+    app = _fresh()
+    assert not app.exception
+    want = E.lines(E.build_evidence())
+    captions = " ".join(c.value for c in app.caption)
+    for key in ("passed", "lift", "irregular", "irregular_caveat", "s6"):
+        assert want[key] in captions, key
+    heads = [m.value for m in app.markdown if m.value.startswith("#### ")]
+    assert heads[:2] == ["#### 1 · The judges' test misses people: who went overdrawn in 2025",
+                         "#### 2 · A second finding: irregular money in"]
+
+
 # --------------------------------------------- regressions from the re-verification pass
 
 @needs_data

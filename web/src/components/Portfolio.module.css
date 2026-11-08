@@ -270,3 +270,11 @@
   color: var(--bad-ink);
   font-weight: 800;
 }
+
+.numbers summary {
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 650;
+  color: var(--ink-2);
+  min-height: 32px;
+}

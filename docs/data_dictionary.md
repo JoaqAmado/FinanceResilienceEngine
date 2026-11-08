@@ -179,8 +179,9 @@ reality checks, plans and flags use.
 
 ## Generated chart tables (`artifacts/`)
 
-Written by `python -m resilience.portfolio` (all but the last) and `python -m resilience.warning`
-(`early_warning_tiers.csv`). Runways use the engine's encoding: no shortfall is `inf`.
+Written by `python -m resilience.portfolio`, `python -m resilience.warning` (`early_warning_tiers.csv`) and
+`python -m resilience.evidence` (`backtest_summary.csv`, `backtest_lift.csv`, `backtest_irregular.csv`,
+`s6_halfyear_check.csv`). Runways use the engine's encoding: no shortfall is `inf`.
 
 ### `artifacts/accounts.csv`
 
@@ -279,3 +280,57 @@ The early-warning light's backtest ([method](method.md)).
 | `accounts` | accounts in the backtest with that many points |
 | `went_overdrawn` | of those, accounts with any day below zero in the outcome year |
 | `rate` | `went_overdrawn` ÷ `accounts` |
+
+### `artifacts/backtest_summary.csv`
+
+One row: the backtest's population and the overdrafts the judges' test passed ([findings](findings.md)).
+
+| Column | Meaning |
+|---|---|
+| `snapshot` | the month every score is taken at |
+| `label_year` | the outcome year |
+| `accounts` | accounts in the backtest |
+| `went_overdrawn` | of those, accounts with any day below zero in the outcome year |
+| `passed_ei55` | of those that went overdrawn, accounts that passed the judges' EI test at the snapshot |
+| `passed_and_flagged` | of those that passed, accounts the light had flagged |
+| `watch_points` | the points from which the light counts as flagged (`WATCH_POINTS`) |
+
+### `artifacts/backtest_lift.csv`
+
+One row per watch-list size.
+
+| Column | Meaning |
+|---|---|
+| `list_pct` | the list's size, as a percent of the backtest population |
+| `list_accounts` | accounts on the list |
+| `light` | accounts that went overdrawn on the light's list |
+| `ei55_runway` | the same for the judges' EI runway, shortest first |
+| `buffer_months` | the same for buffer months, fewest first |
+| `events` | accounts that went overdrawn in the whole backtest |
+
+### `artifacts/backtest_irregular.csv`
+
+The irregular-money-in two-by-two.
+
+| Column | Meaning |
+|---|---|
+| `irregular_money_in` | `yes` when the light's irregular-money-in rule fires at the snapshot |
+| `judges_ei55` | `passes` or `fails` the judges' EI test at the snapshot |
+| `accounts` | accounts in the cell |
+| `went_overdrawn` | of those, accounts with any day below zero in the outcome year |
+| `rate` | `went_overdrawn` ÷ `accounts` |
+| `ci_low` | lower end of the Wilson interval for `rate` |
+| `ci_high` | upper end of that interval |
+
+### `artifacts/s6_halfyear_check.csv`
+
+The six-month EI test on the judges' S and on half-year S6, against the money out that followed.
+
+| Column | Meaning |
+|---|---|
+| `spending_basis` | `S` (the judges' median month) or `S6` (typical half-year spending) |
+| `account_halfyears` | account and as-of-month pairs checked |
+| `real_fails` | of those, pairs that fail the test on the money out that actually followed |
+| `flagged` | pairs that fail the test on this spending basis |
+| `missed_real_fails` | real fails this basis did not flag |
+| `false_alarms` | flags that were not real fails |

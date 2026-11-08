@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from resilience import evidence as E
 from resilience import warehouse
 from resilience import warning as W
 from resilience.core import (
@@ -28,7 +29,9 @@ from resilience.core import (
     account_flags,
     apply_shock,
     backup_ladder,
+    baseline_metrics,
     build_metrics,
+    load_loans,
     load_monthly,
     portfolio_runway,
     runway,
@@ -142,6 +145,19 @@ def figures(m):
     end = f"{calendar.month_abbr[int(DATA_END_MONTH[5:])]} {DATA_END_MONTH[:4]}"
     mb = round((DATA_DIR / "transactions.csv").stat().st_size / 1e6, -2)
 
+    loans = load_loans()
+    ev = E.build_evidence(ms, loans)
+    es, lift = ev["summary"], ev["lift"].set_index("list_pct").loc[E.HEADLINE_LIST_PCT]
+    irr_a = E.irregular_cell(ev["irregular"], "yes", "passes")
+    irr_b = E.irregular_cell(ev["irregular"], "no", "fails")
+    s6 = ev["s6"].set_index("spending_basis")
+    rate = lambda c: f"{c['rate'] * 100:.1f}%, "  # noqa: E731
+    span = lambda c: f"{c['ci_low'] * 100:.1f}–{c['ci_high'] * 100:.1f}%"  # noqa: E731
+    pop = W.backtest_frame(ms)  # the same population with the partial opening month kept in I, S and B
+    kept = E.score_frame(pop, baseline_metrics(ms[ms["month"] <= es["snapshot"]], loans))
+    ks, kl = E.summary(kept), E.lift_table(kept).set_index("list_pct").loc[E.HEADLINE_LIST_PCT]
+    org = E.S6_ORIGINS
+
     return {
         "readme": [
             f"Tangerine's {n:,} accounts",
@@ -160,6 +176,31 @@ def figures(m):
             f"only {no_rung:,} can't cut their way there",
             f"{int(pre.loc['yes', 'defaulted (B/D)'])} of {int(pre.loc['yes'].sum())} in this data "
             f"(none of the {int(repaying.sum()):,} repaying borrowers ever went negative)",
+            # the 2025 backtest (resilience/evidence.py)
+            f"every score taken at the {es['snapshot']} snapshot, on the {es['accounts']:,} accounts rated then",
+            f"and still active in {es['label_year']}, of which {es['went_overdrawn']} first went overdrawn in "
+            f"{es['label_year']}.",
+            f"| Of those {es['went_overdrawn']}, passed the judges' EI {EI_PCT}% test at the snapshot | "
+            f"{es['passed_ei55']} (the light had flagged {es['passed_and_flagged']} of them, {es['watch_points']}+ points) |",
+            f"| Overdrafts caught by a {E.HEADLINE_LIST_PCT}% watch-list ({int(lift.list_accounts):,} accounts) | "
+            f"light {lift.light} · judges' EI {EI_PCT}% runway {lift.ei55_runway} · buffer months {lift.buffer_months} |",
+            f"went overdrawn in {es['label_year']} | irregular money in that passes the EI test: "
+            f"{irr_a.went_overdrawn} of {irr_a.accounts:,} ({rate(irr_a)}95% interval {span(irr_a)}) · steady money in "
+            f"that fails it: {irr_b.went_overdrawn} of {irr_b.accounts:,} ({rate(irr_b)}{span(irr_b)}) |",
+            f"({len(org)} as-of months, {s6.loc['S', 'account_halfyears']:,} account half-years): of the "
+            f"{s6.loc['S', 'real_fails']:,} that fail the {E.S6_HORIZON}-month EI test",
+            f"| the judges' median month S: {s6.loc['S', 'missed_real_fails']:,} · half-year S6: "
+            f"{s6.loc['S6', 'missed_real_fails']:,} (false alarms: S {s6.loc['S', 'false_alarms']:,} · "
+            f"S6 {s6.loc['S6', 'false_alarms']:,}) |",
+            f"those had {E.WATCH_POINTS}+ points on the light",
+            f"I, S and B, as the live card does, {ks['passed_ei55']} of the {ks['went_overdrawn']} had passed, the light "
+            f"flagged {ks['passed_and_flagged']} of them, and the EI runway",
+            f"catches {kl.ei55_runway} on the {E.HEADLINE_LIST_PCT}% list",
+            f"watch-lists of {E.LIST_PCTS[0]}–{E.LIST_PCTS[-1]}% of the backtest population",
+            f"the light's own rule ({W.RULES[2].fires_when} over its {W.WINDOW_ROWS}",
+            f"It rests on {irr_a.went_overdrawn} and {irr_b.went_overdrawn}",
+            f"at each of {', '.join(org[:-1])} and {org[-1]}, every",
+            f"account with a row {E.S6_HISTORY} months earlier and all {E.S6_HORIZON} months after it",
         ],
         "docs/model_card.md": [
             f"re-dated to {str(ms['month'].min())[:4]}–{DATA_END_MONTH[:4]}",

@@ -4,16 +4,21 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
+  ErrorBar,
   LabelList,
+  Line,
+  LineChart,
+  ReferenceDot,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from 'recharts';
 import type { TooltipContentProps, XAxisTickContentProps } from 'recharts';
-import { pyFixed } from '../engine';
-import type { PortfolioFile } from '../engine';
-import { COLORS } from '../lib/colors';
+import { RULES, WINDOW_ROWS, evidenceLines, pyFixed } from '../engine';
+import type { IrregularRow, LiftRow, PortfolioFile } from '../engine';
+import { COLORS, DASH } from '../lib/colors';
 import { count, money, monthsOf, pct1, pctValue, rwText } from '../lib/format';
 import type { AppData } from '../lib/load';
 import { INCOME_LABELS, failsSix, portfolioRows } from '../lib/portfolio';
@@ -80,6 +85,78 @@ function BandTooltip({ active, payload }: TooltipContentProps) {
       </span>
       <span>Median buffer: {r.median_buffer_months === null ? 'n/a' : pyFixed(r.median_buffer_months, 1)} months</span>
       <span className={s.tipHint}>Click to list these accounts</span>
+    </div>
+  );
+}
+
+/** The lift chart's three rankings: the light is the lead line; the judges' runway keeps its blue. */
+const LIFT_SERIES = [
+  { key: 'light', label: 'Early-warning light', color: COLORS.accent, dash: '', width: 3 },
+  { key: 'ei55_runway', label: "Judges' EI 55% runway, shortest first", color: COLORS.judges, dash: DASH.reality, width: 2 },
+  { key: 'buffer_months', label: 'Buffer months, fewest first', color: COLORS.plan, dash: DASH.base, width: 2 },
+] as const;
+
+function LiftTooltip({ active, payload }: TooltipContentProps) {
+  const r = payload?.[0]?.payload as LiftRow | undefined;
+  if (!active || !r) return null;
+  return (
+    <div className={s.tooltip}>
+      <strong>
+        {r.list_pct}% watch-list · {count(r.list_accounts)} accounts
+      </strong>
+      {LIFT_SERIES.map((x) => (
+        <span key={x.key}>
+          <i className={s.key} style={{ background: x.color }} /> {x.label}: {count(r[x.key])} of {count(r.events)}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+interface CellBar {
+  label: string;
+  long: string;
+  pct: number | null;
+  err: [number, number];
+  row: IrregularRow;
+  compared: boolean;
+}
+
+function cellBars(rows: readonly IrregularRow[]): CellBar[] {
+  return rows.map((r) => {
+    const who = r.irregular_money_in === 'yes' ? 'Irregular' : 'Steady';
+    const pct = r.rate === null ? null : r.rate * 100;
+    const err: [number, number] =
+      r.rate === null || r.ci_low === null || r.ci_high === null
+        ? [0, 0]
+        : [(r.rate - r.ci_low) * 100, (r.ci_high - r.rate) * 100];
+    return {
+      label: `${who} · ${r.judges_ei55}`,
+      long: `${who} money in, ${r.judges_ei55} the judges' EI 55% test`,
+      pct,
+      err,
+      row: r,
+      compared: (r.irregular_money_in === 'yes') === (r.judges_ei55 === 'passes'),
+    };
+  });
+}
+
+function CellTooltip({ active, payload }: TooltipContentProps) {
+  const b = payload?.[0]?.payload as CellBar | undefined;
+  if (!active || !b) return null;
+  const r = b.row;
+  return (
+    <div className={s.tooltip}>
+      <strong>{b.long}</strong>
+      <span>
+        {count(r.went_overdrawn)} of {count(r.accounts)} went overdrawn
+        {r.rate === null ? '' : ` (${pctValue(r.rate * 100)})`}
+      </span>
+      {r.ci_low !== null && r.ci_high !== null && (
+        <span>
+          95% interval {pyFixed(r.ci_low * 100, 1)}–{pctValue(r.ci_high * 100)}
+        </span>
+      )}
     </div>
   );
 }
@@ -158,6 +235,35 @@ export function Portfolio({ data, onOpen }: Props) {
   const preYesTotal = yesRow
     ? Object.values(yesRow).reduce<number>((a, v) => a + (typeof v === 'number' ? v : 0), 0)
     : 0;
+  const E = P.evidence;
+  const lines = evidenceLines(E);
+  const lastLift = E.lift.length - 1;
+  const head = E.lift.find((r) => r.list_pct === E.headline_list_pct);
+  const liftStep = E.went_overdrawn <= 100 ? 25 : Math.ceil(E.went_overdrawn / 100) * 25;
+  const liftTicks = Array.from({ length: Math.floor(E.went_overdrawn / liftStep) + 1 }, (_, i) => i * liftStep);
+  if (liftTicks[liftTicks.length - 1] !== E.went_overdrawn) liftTicks.push(E.went_overdrawn);
+  const cellTick = ({ x, y, payload }: XAxisTickContentProps) => {
+    const [who, test] = String(payload.value).split(' · ');
+    return (
+      <g transform={`translate(${Number(x)},${Number(y)})`}>
+        <text textAnchor="middle" dy={14} fill={COLORS.ink2} fontWeight={600}>
+          {who}
+        </text>
+        <text textAnchor="middle" dy={30} fill={COLORS.muted}>
+          {test} EI 55%
+        </text>
+      </g>
+    );
+  };
+  const bars = cellBars(E.irregular);
+  const irrRule = RULES.find((r) => r.code === 'inc_cv');
+  const cellText = (irr: 'yes' | 'no', judges: 'passes' | 'fails') => {
+    const r = E.irregular.find((x) => x.irregular_money_in === irr && x.judges_ei55 === judges);
+    if (!r) return 'n/a';
+    const share = r.rate === null ? '' : ` · ${pctValue(r.rate * 100)}`;
+    const ci = r.ci_low === null || r.ci_high === null ? '' : ` (${pyFixed(r.ci_low * 100, 1)}–${pctValue(r.ci_high * 100)})`;
+    return `${count(r.went_overdrawn)} of ${count(r.accounts)}${share}${ci}`;
+  };
 
   return (
     <div className={s.portfolio}>
@@ -191,9 +297,195 @@ export function Portfolio({ data, onOpen }: Props) {
         in January {count(hl.fail_6mo_ei55_january_path)}.
       </p>
 
+      <section className={s.panel} aria-labelledby="lift-title">
+        <h2 id="lift-title" className={s.h2}>
+          1 · The judges' test misses people: who went overdrawn in {E.label_year}
+        </h2>
+        <p className={s.caption}>
+          Every account rated at the {E.snapshot} snapshot and still active in {E.label_year} ({count(E.accounts)}), ranked
+          by each score as it stood then. For a watch-list of each size: how many of the {count(E.went_overdrawn)} who
+          went overdrawn in {E.label_year} it holds.
+        </p>
+        <ul className={s.legend} aria-label="Legend">
+          {LIFT_SERIES.map((x) => (
+            <li key={x.key}>
+              <svg width="22" height="10" aria-hidden="true">
+                <line x1="1" y1="5" x2="21" y2="5" stroke={x.color} strokeWidth={x.width} strokeDasharray={x.dash} />
+              </svg>
+              {x.label}
+            </li>
+          ))}
+        </ul>
+        <div className={s.chartTall}>
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={E.lift} margin={{ top: 16, right: 36, bottom: 8, left: 0 }}>
+              <CartesianGrid stroke={COLORS.grid} vertical={false} />
+              <XAxis
+                dataKey="list_pct"
+                type="number"
+                domain={[E.lift[0]?.list_pct ?? 1, E.lift[lastLift]?.list_pct ?? 30]}
+                ticks={[1, 5, 10, 15, 20, 25, 30]}
+                tickFormatter={(v: number) => `${v}%`}
+                tickLine={false}
+                stroke={COLORS.axis}
+                tick={{ fill: COLORS.muted }}
+                label={{ value: 'watch-list size, % of the backtest accounts', position: 'insideBottom', offset: -4, fill: COLORS.muted }}
+                height={44}
+              />
+              <YAxis
+                domain={[0, E.went_overdrawn]}
+                ticks={liftTicks}
+                tickLine={false}
+                axisLine={false}
+                width={36}
+                tick={{ fill: COLORS.muted }}
+              />
+              <Tooltip content={LiftTooltip} cursor={{ stroke: COLORS.axis, strokeWidth: 1 }} isAnimationActive={false} />
+              <ReferenceLine
+                x={E.headline_list_pct}
+                stroke={COLORS.axis}
+                strokeDasharray="3 3"
+                label={{ value: `${E.headline_list_pct}% list`, position: 'insideTopLeft', fill: COLORS.muted }}
+              />
+              {LIFT_SERIES.map((x) => (
+                <Line
+                  key={x.key}
+                  type="linear"
+                  dataKey={x.key}
+                  name={x.label}
+                  stroke={x.color}
+                  strokeWidth={x.width}
+                  strokeDasharray={x.dash}
+                  dot={false}
+                  activeDot={{ r: 5, stroke: COLORS.surface, strokeWidth: 2 }}
+                  animationDuration={500}
+                />
+              ))}
+              {head &&
+                LIFT_SERIES.map((x) => (
+                  <ReferenceDot
+                    key={x.key}
+                    x={head.list_pct}
+                    y={head[x.key]}
+                    r={4}
+                    fill={x.color}
+                    stroke={COLORS.surface}
+                    strokeWidth={2}
+                    label={{ value: count(head[x.key]), position: 'left', fill: COLORS.ink, fontWeight: 700 }}
+                  />
+                ))}
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+        <p className={s.caption}>
+          <strong>{lines.passed}</strong> {lines.lift} Every score reads the same full months as the light; the light is a
+          watch flag beside the runway, not a credit score.
+        </p>
+        <details className={s.numbers}>
+          <summary>Show the numbers</summary>
+          <div className={s.tableScroll}>
+            <table className={s.table}>
+              <thead>
+                <tr>
+                  <th scope="col">Watch-list</th>
+                  <th scope="col" className={s.r}>
+                    Accounts
+                  </th>
+                  {LIFT_SERIES.map((x) => (
+                    <th key={x.key} scope="col" className={s.r}>
+                      {x.label}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {E.lift.map((r) => (
+                  <tr key={r.list_pct}>
+                    <th scope="row">{r.list_pct}%</th>
+                    <td className={s.r}>{count(r.list_accounts)}</td>
+                    {LIFT_SERIES.map((x) => (
+                      <td key={x.key} className={s.r}>
+                        {count(r[x.key])} of {count(r.events)}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </details>
+      </section>
+
+      <section className={s.panel} aria-labelledby="irregular-title">
+        <h2 id="irregular-title" className={s.h2}>
+          2 · A second finding: irregular money in
+        </h2>
+        <p className={s.caption}>
+          Share that went overdrawn in {E.label_year}, by irregular money in (the light's rule
+          {irrRule ? `: ${irrRule.firesWhen}` : ''}, over its {WINDOW_ROWS} months) and the judges' EI 55% test at the
+          snapshot, with 95% intervals.
+        </p>
+        <div className={s.chart}>
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={bars} margin={{ top: 16, right: 8, bottom: 8, left: 0 }}>
+              <CartesianGrid stroke={COLORS.grid} vertical={false} />
+              <XAxis dataKey="label" tickLine={false} stroke={COLORS.axis} tick={cellTick} interval={0} height={48} />
+              <YAxis
+                tickFormatter={(v: number) => `${v}%`}
+                tickLine={false}
+                axisLine={false}
+                width={44}
+                tick={{ fill: COLORS.muted }}
+              />
+              <Tooltip content={CellTooltip} cursor={{ fill: 'rgba(15,23,42,0.05)' }} isAnimationActive={false} />
+              <Bar dataKey="pct" radius={[4, 4, 0, 0]} maxBarSize={44} animationDuration={500}>
+                {bars.map((b) => (
+                  <Cell key={b.label} fill={b.compared ? COLORS.accent : COLORS.histIn} />
+                ))}
+                <ErrorBar dataKey="err" width={8} strokeWidth={1.5} stroke={COLORS.ink2} direction="y" />
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+        <div className={s.twoByTwo}>
+          <table className={s.table}>
+            <thead>
+              <tr>
+                <th scope="col">Money in</th>
+                <th scope="col" className={s.r}>
+                  Passes EI 55%
+                </th>
+                <th scope="col" className={s.r}>
+                  Fails EI 55%
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row">Irregular</th>
+                <td className={s.r}>
+                  <strong>{cellText('yes', 'passes')}</strong>
+                </td>
+                <td className={s.r}>{cellText('yes', 'fails')}</td>
+              </tr>
+              <tr>
+                <th scope="row">Steady</th>
+                <td className={s.r}>{cellText('no', 'passes')}</td>
+                <td className={s.r}>
+                  <strong>{cellText('no', 'fails')}</strong>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p className={s.caption}>
+          {lines.irregular} {lines.irregular_caveat}
+        </p>
+      </section>
+
       <section className={s.panel} aria-labelledby="bands-title">
         <h2 id="bands-title" className={s.h2}>
-          1 · The more money comes in, the thinner the cushion
+          3 · The more money comes in, the thinner the cushion
         </h2>
         <p className={s.caption}>
           Share of each monthly money-in band that can't last 6 months. Click a band (or use the buttons) to list its
@@ -349,7 +641,7 @@ export function Portfolio({ data, onOpen }: Props) {
       <div className={s.twoUp}>
         <section className={s.panel} aria-labelledby="s6-title">
           <h2 id="s6-title" className={s.h2}>
-            2 · A typical month isn't a typical half-year
+            4 · A typical month isn't a typical half-year
           </h2>
           <p className={s.caption}>
             Accounts the judges' formula calls safe, grouped by their judges' EI runway, re-run on each account's own
@@ -398,11 +690,12 @@ export function Portfolio({ data, onOpen }: Props) {
             Spending peaks in January and June, which a median month never sees. The 6-8 band is the grey zone shown on
             the live twist.
           </p>
+          <p className={s.caption}>{lines.s6}</p>
         </section>
 
         <section className={s.panel} aria-labelledby="cut-title">
           <h2 id="cut-title" className={s.h2}>
-            3 · Most failing customers are one moderate change away
+            5 · Most failing customers are one moderate change away
           </h2>
           <p className={s.caption}>
             Accounts that fail 6 months on the judges' EI 55%, by the monthly cut that gets them back to 6 months, as a
@@ -443,7 +736,7 @@ export function Portfolio({ data, onOpen }: Props) {
 
       <section className={s.panel} aria-labelledby="preloan-title">
         <h2 id="preloan-title" className={s.h2}>
-          4 · Overdrawn before the loan → default, every time (in this data)
+          6 · Overdrawn before the loan → default, every time (in this data)
         </h2>
         <div className={s.twoByTwo}>
           <table className={s.table}>

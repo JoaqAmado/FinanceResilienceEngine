@@ -28,14 +28,16 @@ from resilience import (
     grey_zone_note,
     load_monthly,
 )
+from resilience import evidence as EV
 from resilience import llm, warehouse
 from resilience.narrative import facts, template_story
 from resilience.portfolio import build_all
-from resilience.warning import WINDOW_ROWS, account_light, backtest
+from resilience.warning import RULES, WINDOW_ROWS, account_light, backtest
 
 st.set_page_config(page_title="Twin Runway · Tangerine Resilience Engine", page_icon="🍊", layout="wide")
 
 ORANGE, SLATE, GREY = "#F47920", "#334155", "#94A3B8"
+AQUA = "#1BAF7A"  # a third series beside orange and slate (the web app's backup-plan aqua)
 st.markdown("<style>[data-testid='stMetricValue']{font-size:1.65rem}</style>", unsafe_allow_html=True)
 REHEARSAL = {20331: "lender red flag", 20143: "high earner", 88269: "looks safe, isn't",
              98952: "retiree", 77743: "furnace wipes buffer"}
@@ -71,6 +73,13 @@ def portfolio() -> dict[str, pd.DataFrame]:
 def warning_backtest():
     """The early-warning light's 2025 backtest tiers, computed once."""
     return backtest(monthly())
+
+
+@st.cache_data(show_spinner="Computing the 2025 backtest…")
+def backtest_evidence() -> dict:
+    """The 2025 backtest evidence (resilience.evidence): chart tables and the lines both apps show."""
+    ev = EV.build_evidence(monthly())
+    return {k: ev[k] for k in ("lift", "irregular", "summary", "s6")} | {"lines": EV.lines(ev)}
 
 
 @st.cache_data(ttl=3600, show_spinner="Checking the judges' numbers in Snowflake…")
@@ -383,7 +392,58 @@ with tab_port:
     c.metric(f"… on half-year spending ({int(hl.fail_6mo_ei55_S6):,})", f"{hl.fail_6mo_ei55_S6 / n:.1%}")
     d.metric("Median cut that rescues a failing customer", money(hl.median_min_cut_failing) + "/mo")
 
-    st.markdown("#### 1 · The higher the income, the thinner the cushion")
+    EVD = backtest_evidence()
+    es, lift, lines = EVD["summary"], EVD["lift"], EVD["lines"]
+    st.markdown(f"#### 1 · The judges' test misses people: who went overdrawn in {es['label_year']}")
+    fig = go.Figure()
+    head = lift[lift.list_pct == EV.HEADLINE_LIST_PCT].iloc[0]
+    for col, name, color, dash, place in (("light", "Early-warning light", ORANGE, "solid", "middle left"),
+                                          ("ei55_runway", "Judges' EI 55% runway, shortest first", SLATE, "dash",
+                                           "bottom left"),
+                                          ("buffer_months", "Buffer months, fewest first", AQUA, "dot", "top left")):
+        fig.add_scatter(x=lift.list_pct, y=lift[col], name=name, mode="lines", line=dict(color=color, width=2.5, dash=dash),
+                        customdata=lift.list_accounts, hovertemplate=f"{name}<br>%{{x}}% list (%{{customdata:,}} accounts): "
+                        "%{y} caught<extra></extra>")
+        fig.add_scatter(x=[head.list_pct], y=[head[col]], mode="markers+text", text=[f"{int(head[col])}"],
+                        textposition=place, marker=dict(color=color, size=9, line=dict(color="white", width=2)),
+                        textfont=dict(color=SLATE), showlegend=False, hoverinfo="skip")
+    fig.add_vline(x=EV.HEADLINE_LIST_PCT, line=dict(color=GREY, dash="dot", width=1))
+    fig.add_annotation(x=EV.HEADLINE_LIST_PCT, y=int(head.events), yanchor="top", showarrow=False, xshift=4,
+                       xanchor="left", text=f"{EV.HEADLINE_LIST_PCT}% list ({int(head.list_accounts):,} accounts)",
+                       font=dict(color=SLATE))
+    fig.update_layout(height=360, margin=dict(l=0, r=24, t=10, b=0), legend=dict(orientation="h", y=1.12),
+                      xaxis=dict(title="Watch-list size, % of the backtest accounts", ticksuffix="%"),
+                      yaxis=dict(title=f"on the list, of {int(head.events)} overdrafts", range=[0, int(head.events)]),
+                      hovermode="x unified")
+    st.plotly_chart(fig)
+    st.caption(f"{lines['passed']} {lines['lift']} Every score is taken at the {es['snapshot']} snapshot on the same "
+               f"full months the light reads ({es['accounts']:,} accounts rated then and still active in "
+               f"{es['label_year']}). The light is a watch flag beside the runway, not a credit score.")
+    with st.expander("Show the numbers"):
+        st.dataframe(lift.rename(columns={"list_pct": "list %", "list_accounts": "accounts on the list",
+                                          "light": "light", "ei55_runway": "judges' EI 55% runway",
+                                          "buffer_months": "buffer months", "events": "went overdrawn"}),
+                     hide_index=True)
+
+    st.markdown("#### 2 · A second finding: irregular money in")
+    irr = EVD["irregular"]
+    labels = [f"{'Irregular' if r.irregular_money_in == 'yes' else 'Steady'} money in, {r.judges_ei55} EI 55%"
+              f"<br>{r.went_overdrawn:,} of {r.accounts:,}" for r in irr.itertuples()]
+    fig = go.Figure(go.Bar(
+        x=labels, y=irr.rate * 100, marker_color=[ORANGE if (r.irregular_money_in, r.judges_ei55) in
+                                                  (("yes", "passes"), ("no", "fails")) else GREY for r in irr.itertuples()],
+        error_y=dict(type="data", symmetric=False, array=(irr.ci_high - irr.rate) * 100,
+                     arrayminus=(irr.rate - irr.ci_low) * 100, color=SLATE, thickness=1.5),
+        hovertemplate="%{x}<br>%{y:.1f}% went overdrawn<extra></extra>"))
+    fig.update_layout(height=320, yaxis_title=f"% overdrawn in {es['label_year']} (95% interval)",
+                      margin=dict(l=0, r=0, t=10, b=0))
+    fig.update_xaxes(type="category")
+    st.plotly_chart(fig)
+    irr_rule = next(r for r in RULES if r.code == "inc_cv")
+    st.caption(f"{lines['irregular']} {lines['irregular_caveat']} Irregular = the light's rule "
+               f"({irr_rule.fires_when}, over its {WINDOW_ROWS} months).")
+
+    st.markdown("#### 3 · The more money comes in, the thinner the cushion")
     ib = P["income_bands"]
     fig = go.Figure()
     fig.add_bar(x=ib.income_band, y=ib.fail_6mo_ei55_pct, name="Judges' EI 55%", marker_color=SLATE,
@@ -401,7 +461,7 @@ with tab_port:
 
     col1, col2 = st.columns(2)
     with col1:
-        st.markdown("#### 2 · A typical month isn't a typical half-year")
+        st.markdown("#### 4 · A typical month isn't a typical half-year")
         cal = P["s6_calibration"]
         fig = go.Figure(go.Bar(x=cal.judge_runway_months, y=cal.fail_6mo_on_S6_pct, marker_color=ORANGE,
                                text=cal.fail_6mo_on_S6_pct.map("{:.1f}%".format), textposition="outside"))
@@ -411,8 +471,9 @@ with tab_port:
         st.plotly_chart(fig)
         st.caption("Accounts the judges' formula calls safe, re-run on each account's own typical half-year spending. "
                    "Spending peaks in January and June, which a median month never sees.")
+        st.caption(lines["s6"])
     with col2:
-        st.markdown("#### 3 · Most failing customers are one moderate change away")
+        st.markdown("#### 5 · Most failing customers are one moderate change away")
         ch = P["cut_histogram"]
         fig = go.Figure(go.Bar(x=ch.cut_as_share_of_spending, y=ch.accounts, marker_color=SLATE,
                                text=ch.accounts, textposition="outside"))
@@ -421,7 +482,7 @@ with tab_port:
         fig.update_xaxes(type="category")
         st.plotly_chart(fig)
 
-    st.markdown("#### 4 · Overdrawn before the loan → default, every time (in this data)")
+    st.markdown("#### 6 · Overdrawn before the loan → default, every time (in this data)")
     st.dataframe(P["preloan_overdraft"], hide_index=True)
     st.caption("27 of 27 borrowers who were overdrawn before their loan defaulted; none of the 606 who repaid or are "
                "on track ever went below zero. Small sample, and loan status looks tied to overdraft by construction: "
