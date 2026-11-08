@@ -390,6 +390,83 @@ def data_dictionary_markdown(cols: pd.DataFrame, thresholds: pd.DataFrame) -> st
     return "\n".join(out) + "\n"
 
 
+# ── F0: who the data lets us test (4,500 accounts → 682 loans → outcomes) ────
+def loan_outcome_counts(profile: pd.DataFrame) -> dict[str, int]:
+    status = profile.loc[profile.has_loan, "loan_status"].value_counts()
+    counts = {
+        "accounts": len(profile),
+        "loans": int(profile.has_loan.sum()),
+        "paid_back": int(status.get("A", 0)),       # A: finished, repaid
+        "paying_ok": int(status.get("C", 0)),       # C: running, no problems
+        "stopped_paying": int(status.get("B", 0)),  # B: finished, not repaid
+        "behind": int(status.get("D", 0)),          # D: running, in debt
+    }
+    counts["no_loan"] = counts["accounts"] - counts["loans"]
+    counts["defaulted"] = counts["stopped_paying"] + counts["behind"]
+    return counts
+
+
+def fig_loan_outcomes(c: dict[str, int]) -> str:
+    LIGHT, DARK = "#e4e3dd", "#6f6e69"
+    fig, ax = plt.subplots(figsize=(11, 3.9))
+    ax.grid(False)
+    for s in ("left", "bottom"):
+        ax.spines[s].set_visible(False)
+    ax.set_xticks([]), ax.set_yticks([])
+    h, y_top, y_bot = 0.42, 1.15, 0.0
+
+    def seg(y, left, width, color, text, ink):
+        ax.barh(y, width, left=left, height=h, color=color, edgecolor=SURFACE, linewidth=2)
+        ax.text(left + width / 2, y, text, ha="center", va="center", fontsize=9.5, color=ink, linespacing=1.3)
+
+    total, loans = c["accounts"], c["loans"]
+    split = c["no_loan"] / total
+    seg(y_top, 0, split, LIGHT, f"{c['no_loan']:,} accounts with no loan ({split:.0%})\n"
+        "no repayment outcome, so they can't test a warning sign", INK_2)
+    seg(y_top, split, 1 - split, DARK, f"{loans:,} took\na loan ({1 - split:.0%})", "white")
+
+    # Zoom: the loan slice opens up into the full-width bar below
+    ax.fill([split, 1, 1, 0], [y_top - h / 2, y_top - h / 2, y_bot + h / 2, y_bot + h / 2],
+            color=DARK, alpha=0.08, lw=0)
+
+    x = 0
+    for n, color, text, ink in [
+        (c["paid_back"], LIGHT, f"{c['paid_back']:,} paid back in full", INK),
+        (c["paying_ok"], "#cfcec7", f"{c['paying_ok']:,} still paying, on time", INK),
+        (c["defaulted"], ALERT, f"{c['defaulted']}\ndefaulted", INK),
+    ]:
+        seg(y_bot, x, n / loans, color, text, ink)
+        x += n / loans
+    # The default breakdown doesn't fit in the narrow segment: note it just below, right-aligned to it
+    ax.text(1.0, y_bot - h / 2 - 0.06, f"{c['stopped_paying']} stopped paying · {c['behind']} behind on payments",
+            ha="right", va="top", fontsize=9, color=INK_2)
+
+    ax.text(-0.01, y_top, f"All {total:,}\naccounts", ha="right", va="center", fontsize=10, color=INK)
+    ax.text(-0.01, y_bot, f"The {loans:,}\nloans", ha="right", va="center", fontsize=10, color=INK)
+    ax.set_xlim(-0.11, 1.0)
+    ax.set_ylim(y_bot - h / 2 - 0.22, y_top + h / 2 + 0.05)
+    fig.suptitle(f"Who we can test: {loans:,} of {total:,} accounts took a loan, and {c['defaulted']} of them defaulted",
+                 x=0.01, ha="left", fontsize=13, fontweight="bold", color=INK)
+    return _finish(fig, "f0_accounts_loans_outcomes.png",
+                   "A loan's repayment record is the only 'did they get into trouble?' outcome in the data, so the "
+                   "682 loans are the test group for F1, F2, F3 and F10. Defaulted = loan status B or D.")
+
+
+def loan_outcomes_markdown(c: dict[str, int], figure: str) -> list[str]:
+    return [
+        "## F0 · Who the data lets us test", "",
+        "Only borrowers have a known outcome (did they repay?), so warning signs are tested on the loans.", "",
+        "| Group | Accounts | Share | Source |", "|---|---:|---:|---|",
+        f"| all accounts | {c['accounts']:,} | 100% | `mart_customer_profile` |",
+        f"| no loan | {c['no_loan']:,} | {c['no_loan'] / c['accounts']:.1%} | `mart_customer_profile` |",
+        f"| took a loan | {c['loans']:,} | {c['loans'] / c['accounts']:.1%} | `mart_customer_profile` |",
+        f"| loans paid back in full (status A) | {c['paid_back']:,} | {c['paid_back'] / c['loans']:.1%} of loans | `mart_customer_profile` |",
+        f"| loans still paying on time (status C) | {c['paying_ok']:,} | {c['paying_ok'] / c['loans']:.1%} of loans | `mart_customer_profile` |",
+        f"| loans defaulted (status B or D) | {c['defaulted']:,} | {c['defaulted'] / c['loans']:.1%} of loans | `mart_customer_profile` |",
+        "", f"![F0]({figure})", "",
+    ]
+
+
 def main() -> int:
     config.FIGURES_DIR.mkdir(parents=True, exist_ok=True)
     d = load()
@@ -397,7 +474,9 @@ def main() -> int:
     overall = preloan.is_defaulted.mean()
 
     auc_table, diffs = stress_vs_judge(preloan)
+    outcomes = loan_outcome_counts(d["mart_customer_profile"])
     figures = {
+        "f0": fig_loan_outcomes(outcomes),
         "f1": fig_preloan_overdraft(drivers),
         "f2": fig_volatility_vs_buffer(drivers, overall),
         "f4": fig_balance_slide(d["mart_balance_slide_summary"]),
@@ -405,8 +484,10 @@ def main() -> int:
         "f10_auc": fig_auc(auc_table),
         "f10_quartiles": fig_stress_quartiles(drivers, overall),
     }
-    (config.REPORTS_DIR / "findings.md").write_text(
-        findings_markdown(d["mart_findings"], auc_table, diffs, figures), encoding="utf-8")
+    md = findings_markdown(d["mart_findings"], auc_table, diffs, figures)
+    head, sep, rest = md.partition("\n## ")  # put F0 first: it explains every sample size that follows
+    md = head + "\n" + "\n".join(loan_outcomes_markdown(outcomes, figures["f0"])) + "\n" + sep.lstrip("\n") + rest
+    (config.REPORTS_DIR / "findings.md").write_text(md, encoding="utf-8")
 
     picks = pick_showcase(d["mart_customer_profile"], d["mart_shock_runways"], d["mart_balance_slide"])
     (config.REPORTS_DIR / "showcase.md").write_text(showcase_markdown(picks), encoding="utf-8")
