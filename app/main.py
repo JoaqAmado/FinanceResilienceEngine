@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import bisect
 import sys
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 # Make `app` and `tangerine` importable however this file is started (VS Code Run button, python app/main.py, uvicorn).
@@ -34,7 +35,14 @@ SHOWCASE = {
     "Negative buffer": 66692,
 }
 
-app = FastAPI(title="Tangerine 90-day resilience plan", version="1.0")
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    # Load (and on a fresh clone, first build) the warehouse before serving, so no request waits or races on it.
+    engine.account_ids()
+    yield
+
+
+app = FastAPI(title="Tangerine 90-day resilience plan", version="1.0", lifespan=lifespan)
 app.mount("/static", StaticFiles(directory=STATIC), name="static")
 
 

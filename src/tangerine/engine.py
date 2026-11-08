@@ -15,6 +15,7 @@ Our numbers sit beside them, clearly labelled, and never replace them.
 from __future__ import annotations
 
 import math
+import threading
 from dataclasses import asdict, dataclass, field
 from functools import lru_cache
 from typing import Any
@@ -102,11 +103,26 @@ def _python_value(v: Any) -> Any:
     return v
 
 
+def ensure_warehouse() -> None:
+    """Build the warehouse on first use if it's missing (a fresh git clone has only the raw CSVs)."""
+    from tangerine import pipeline
+
+    with _BUILD_LOCK:
+        if not config.WAREHOUSE_PATH.exists():
+            print(f"Warehouse not found - building it from {config.DATA_DIR} (one time, ~15 s)...")
+            if not pipeline.build():
+                raise RuntimeError("Warehouse build failed: see the quality-check output above.")
+
+
+_BUILD_LOCK = threading.Lock()
+
+
 @lru_cache(maxsize=1)
 def _profiles() -> dict[int, dict[str, Any]]:
     """Load mart_customer_profile once into {account_id: profile}."""
     from tangerine.pipeline import connect
 
+    ensure_warehouse()
     con = connect(read_only=True)
     try:
         df = con.execute("select * from marts.mart_customer_profile").df()

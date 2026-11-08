@@ -26,8 +26,9 @@ services:
     build: .
     entrypoint: ["python", "-m", "tangerine.engine"]
     command: ["20111"]
-    volumes:
-      - ./warehouse:/app/warehouse:ro
+    volumes:                         # data + writable warehouse: builds the warehouse on first use if missing
+      - ./data:/app/data:ro
+      - ./warehouse:/app/warehouse
 
   notebook:            # JupyterLab on http://localhost:8888
     build: .
@@ -40,5 +41,6 @@ services:
     build: .
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000
     ports: ["8000:8000"]
-    volumes:
-      - ./warehouse:/app/warehouse:ro
+    volumes:                         # data + writable warehouse: a fresh clone builds the warehouse on first start
+      - ./data:/app/data:ro
+      - ./warehouse:/app/warehouse

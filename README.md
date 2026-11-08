@@ -30,37 +30,53 @@ for when the shock hits). Everything is built from the customer's own transactio
 
 ## 1. Quick start
 
-### Get the data
-The nine official CSVs go in **`Tangerine/data/`** (the datathon pack). `transactions.csv` (~100 MB) is too big for
-GitHub and is git-ignored, so copy it from the datathon pack into `Tangerine/data/` yourself. Nothing in this
-project ever writes to `Tangerine/data/`.
-
-### Option A: Docker (same result on any laptop)
-Start Docker Desktop, then from this folder:
-
+### Get the code and data
 ```bash
-docker compose build                 # once
-docker compose run --rm pipeline     # build warehouse/tangerine.duckdb from the CSVs (~5 s) + quality checks
-docker compose run --rm test         # 46 tests: quality checks, judge parity, engine
-docker compose run --rm findings     # reports/findings.md, showcase.md, data_dictionary.md, figures/
-docker compose run --rm engine 20111 --shock furnace_1_month   # one account from the command line
-docker compose up notebook           # JupyterLab at http://localhost:8888
+git clone -b Jason https://github.com/JoaqAmado/FinanceResilienceEngine.git
+cd FinanceResilienceEngine
 ```
-If you have `make`, `make all` runs build → pipeline → test → findings.
+The nine official CSVs are already in **`data/`** (nothing in this project writes there). If you instead have the
+datathon pack unzipped as `Tangerine/data/`, that works too. The **warehouse** (`warehouse/tangerine.duckdb`) is
+not in git: it is built from the CSVs automatically the first time you run anything (~15 s, once).
 
-### Option B: Plain Python (3.12+)
+### Option A: Plain Python (3.12+), easiest
+Same commands on Windows, macOS and Linux:
 ```bash
+python -m venv .venv
+# Windows:  .venv\Scripts\activate        macOS/Linux:  source .venv/bin/activate
 pip install -r requirements.txt
+pip install -e .                     # makes `tangerine` and `app` importable: no PYTHONPATH needed
+
+python app/main.py                   # the 90-day plan web app → open http://localhost:8001
 ```
-PowerShell:
-```powershell
-$env:PYTHONPATH = "src"
-python -m tangerine.pipeline
-python -m pytest -q
-python -m tangerine.findings
+Other commands:
+```bash
+python -m tangerine.pipeline         # (re)build the warehouse + quality checks
+python -m pytest -q                  # 59 tests: quality checks, judge parity, engine, app
+python -m tangerine.findings         # reports/findings.md, showcase.md, data_dictionary.md, figures/
 python -m tangerine.engine 20111 --shock job_loss_plus_bills
 ```
-bash / zsh: the same commands, with `export PYTHONPATH=src` on the first line.
+
+### Option B: Docker (same result on any laptop)
+Start Docker Desktop, then from this folder:
+```bash
+docker compose up --build app        # the web app → http://localhost:8000 (builds the warehouse on first start)
+docker compose run --rm pipeline     # (re)build the warehouse + quality checks
+docker compose run --rm test         # 59 tests
+docker compose run --rm findings     # regenerate reports/
+docker compose run --rm engine 20111 --shock furnace_1_month
+docker compose up notebook           # JupyterLab at http://localhost:8888
+```
+If you have `make`, `make all` runs build → pipeline → test → findings, and `make app` starts the web app.
+
+### Troubleshooting
+- **`No module named 'tangerine'`**: run `pip install -e .` once inside your virtual environment.
+- **`No module named 'fastapi'` / `'duckdb'`**: you're on a different Python than the one you installed into.
+  Activate `.venv` first (VS Code: *Python: Select Interpreter* → `.venv`).
+- **Port already in use**: another copy is running. Stop it, or start on another port: `PORT=8002 python app/main.py`
+  (PowerShell: `$env:PORT=8002; python app/main.py`).
+- **Account "doesn't exist"**: IDs run 20111–99984 with gaps. Use the 🎲 button, or take the `account_id`
+  column (not `loan_id` or `client_id`) from the CSVs.
 
 **`ModuleNotFoundError: No module named 'duckdb'` in a notebook?** The notebook kernel is a different Python
 from the one you installed into (e.g. Anaconda vs python.org). Install into the kernel's Python: run
