@@ -30,9 +30,9 @@ from tangerine.engine import PRESETS, Shock, UnknownAccount
 
 STATIC = Path(__file__).parent / "static"
 
-# Twist cards shown in the app. 'EI for 6 months' had the same runway as 'Job loss' and 'Job loss + bills'
-# is now built with the adjusters, so both stay in the engine (findings/tests) but not on the page.
-APP_PRESETS = ["no_shock", "job_loss_ei55", "bills_up_15", "furnace_1_month"]
+# Quick-pick cards shown in the app. Bills and repairs are typed in as numbers instead (bills as % of H, which is
+# the judges' rule, or $/month; repair in $). All presets stay in the engine for the findings and tests.
+APP_PRESETS = ["no_shock", "job_loss_ei55"]
 HORIZON_MONTHS = 12
 
 # Rehearsed accounts from reports/showcase.md, offered as quick picks in the page.

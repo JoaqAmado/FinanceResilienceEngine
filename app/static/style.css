@@ -218,3 +218,11 @@ table.months { width: 100%; border-collapse: collapse; font-size: .88rem; font-v
 @media (max-width: 960px) { .phases { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 560px) { .phases { grid-template-columns: 1fr; } }
 @media print { .phases { grid-template-columns: 1fr 1fr; } .phase { break-inside: avoid; } }
+
+/* Typed shock inputs (bills %, $/month; repair $) */
+.custom-title { display: block; color: var(--accent); font-weight: 600; font-size: .9rem; margin-top: 4px; }
+.unit-row { display: flex; gap: 8px; align-items: center; }
+.unit-row input[type=number] { flex: 1; min-width: 0; font-size: 1rem; }
+.unit-row select { min-width: 0; flex: 0 0 auto; }
+.unit-row .prefix { color: var(--text); font-weight: 600; }
+.field small { min-height: 1.2em; }

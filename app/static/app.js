@@ -10,13 +10,12 @@ const el = (tag, cls, text) => {
   return n;
 };
 
-const PRESET_LABELS = {
-  no_shock: "No shock", job_loss_ei55: "Job loss (EI 55%)", bills_up_15: "Bills +15%", furnace_1_month: "Furnace repair",
-};
+const PRESET_LABELS = { no_shock: "No shock", job_loss_ei55: "Job loss (EI 55%)" };
 
 let activePreset = "job_loss_ei55";
 let timer = null;
 let accountIds = [];
+let lastProfile = null;
 
 // ── Errors ──────────────────────────────────────────────────────────────────
 function showError(message, suggestions = []) {
@@ -34,14 +33,31 @@ function showError(message, suggestions = []) {
 // ── Controls ────────────────────────────────────────────────────────────────
 function syncOutputs() {
   $("income-out").textContent = `${$("income").value}%`;
+  updateHints();
 }
 
-// After a twist card runs, show its numbers in the adjusters so the user can tweak from there.
+// Live help under the two number boxes, using the current customer's own numbers.
+function updateHints() {
+  const p = lastProfile;
+  if (!p) return;
+  const v = Math.max(0, Number($("bills").value) || 0);
+  const H = p.typical_household_bills;
+  if ($("bills-unit").value === "pct") {
+    $("bills-hint").textContent = H > 0
+      ? `= ${money((v / 100) * H)}/month on this customer's ${money(H)} of bills (judges' card: 15%)`
+      : "This customer has $0 household bills, so a % does nothing: switch to $ per month.";
+  } else {
+    $("bills-hint").textContent = `For reference, +15% of this customer's bills = ${money(0.15 * H)}/month`;
+  }
+  $("oneoff-hint").textContent = `Judges' furnace example = one month of spending: ${money(p.typical_spending)}`;
+}
+
+// After a quick-pick card runs, show its numbers in the boxes so the user can tweak from there.
 function fillAdjusters(d) {
   $("income").value = Math.round(d.shock.income_factor * 100);
   $("duration").value = d.shock.duration_months == null ? "" : String(d.shock.duration_months);
-  $("bills").value = Math.round(d.judge_runway.spending_after - d.profile.typical_spending);
-  $("oneoff").value = Math.round(d.judge_runway.one_off_cost);
+  $("bills").value = 0;
+  $("oneoff").value = 0;
   syncOutputs();
 }
 
@@ -52,11 +68,14 @@ function markPreset(name) {
 
 function query() {
   if (activePreset) return `preset=${encodeURIComponent(activePreset)}`;
+  const bills = Math.max(0, Number($("bills").value) || 0);
   const p = new URLSearchParams({
     income_factor: Number($("income").value) / 100,
-    bills_increase_amount: Math.max(0, Number($("bills").value) || 0),
     one_off_cost: Math.max(0, Number($("oneoff").value) || 0),
   });
+  // % of bills uses the judges' own rule (S + pct x H); $ per month adds a fixed amount.
+  if ($("bills-unit").value === "pct") p.set("bills_increase_pct", bills / 100);
+  else p.set("bills_increase_amount", bills);
   if ($("duration").value) p.set("duration_months", $("duration").value);
   return p.toString();
 }
@@ -98,8 +117,8 @@ function render(d) {
   const p = d.profile;
   $("results").hidden = false;
   $("shock-desc").textContent = `Account ${d.account_id} · shock: ${d.shock.description}`;
-  $("bills-hint").textContent = `+15% of this account's bills = ${money(0.15 * p.typical_household_bills)}`;
-  $("oneoff-hint").textContent = `Furnace card = one month of spending, ${money(p.typical_spending)}`;
+  lastProfile = p;
+  updateHints();
 
   $("profile").replaceChildren(
     tile("Typical income (I)", money(p.typical_income), "/month"),
@@ -240,7 +259,7 @@ async function init() {
     b.addEventListener("click", () => { $("account").value = id; load(); });
     return b;
   }));
-  for (const id of ["income", "bills", "oneoff", "duration"]) {
+  for (const id of ["income", "bills", "bills-unit", "oneoff", "duration"]) {
     $(id).addEventListener("input", () => { syncOutputs(); markPreset(null); loadSoon(); });
   }
   $("random").addEventListener("click", () => {

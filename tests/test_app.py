@@ -135,3 +135,16 @@ def test_page_and_meta():
     meta = client.get("/api/meta").json()
     assert meta["account_count"] == 4500
     assert list(meta["presets"]) == APP_PRESETS
+
+
+def test_typed_numbers_match_the_judges_cards():
+    """Typing 15 (% of bills) or one month of spending ($) gives the same runway as the judges' preset cards."""
+    for account_id in SHOWCASE.values():
+        p = engine.get_profile(account_id)
+        typed_bills = client.get(f"/api/plan/{account_id}", params={"bills_increase_pct": 0.15}).json()
+        card_bills = engine.run(account_id, "bills_up_15", horizon=HORIZON_MONTHS)
+        assert typed_bills["judge_runway"] == card_bills["judge_runway"]
+        typed_repair = client.get(f"/api/plan/{account_id}",
+                                  params={"one_off_cost": p["typical_spending"]}).json()
+        card_repair = engine.run(account_id, "furnace_1_month", horizon=HORIZON_MONTHS)
+        assert typed_repair["judge_runway"]["months"] == card_repair["judge_runway"]["months"]

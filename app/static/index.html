@@ -36,12 +36,12 @@
       </div>
 
       <div class="field">
-        <span>Twist cards</span>
+        <span>Start from</span>
         <div id="presets" class="chips"></div>
       </div>
 
-      <details id="custom" class="custom" open>
-        <summary>Adjust the shock</summary>
+      <div id="custom" class="custom">
+        <span class="custom-title">Set the shock</span>
         <div class="sliders">
           <label class="field">
             <span>Income kept <output id="income-out">100%</output></span>
@@ -57,18 +57,27 @@
               <option value="12">12 months</option>
             </select>
           </label>
-          <label class="field">
-            <span>Bills increase ($ per month)</span>
-            <input id="bills" type="number" min="0" step="10" value="0" inputmode="decimal">
+          <div class="field">
+            <label for="bills">Bills increase</label>
+            <div class="unit-row">
+              <input id="bills" type="number" min="0" step="1" value="0" inputmode="decimal">
+              <select id="bills-unit" aria-label="Bills increase unit">
+                <option value="pct">% of bills</option>
+                <option value="amount">$ per month</option>
+              </select>
+            </div>
             <small id="bills-hint">&nbsp;</small>
-          </label>
-          <label class="field">
-            <span>Surprise repair ($ one-off)</span>
-            <input id="oneoff" type="number" min="0" step="100" value="0" inputmode="decimal">
+          </div>
+          <div class="field">
+            <label for="oneoff">Surprise repair (furnace, car, roof…)</label>
+            <div class="unit-row">
+              <span class="prefix" aria-hidden="true">$</span>
+              <input id="oneoff" type="number" min="0" step="100" value="0" inputmode="decimal">
+            </div>
             <small id="oneoff-hint">&nbsp;</small>
-          </label>
+          </div>
         </div>
-      </details>
+      </div>
       <div id="error" class="error" role="alert" hidden>
         <p id="error-msg"></p>
         <div id="error-suggest" class="chips"></div>
