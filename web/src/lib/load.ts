@@ -3,8 +3,8 @@
  * React renders); each account's month history is fetched only when that account is opened.
  */
 import { useEffect, useState } from 'react';
-import { decodeAccounts } from '../engine';
-import type { Account, AccountHistory, AccountsFile, PortfolioFile } from '../engine';
+import { decodeAccounts, decodeBacktest } from '../engine';
+import type { Account, AccountHistory, AccountsFile, Backtest, PortfolioFile } from '../engine';
 
 const BASE = import.meta.env.BASE_URL;
 
@@ -14,6 +14,8 @@ export interface AppData {
   /** every account_id, ascending */
   ids: number[];
   portfolio: PortfolioFile;
+  /** the early-warning light's backtest tiers (portfolio.json early_warning) */
+  earlyWarning: Backtest;
   /** time from first request to decoded data, ms */
   loadMs: number;
 }
@@ -36,7 +38,8 @@ export function loadAppData(): Promise<AppData> {
       const accounts = decodeAccounts(file);
       const byId = new Map(accounts.map((a) => [a.id, a] as const));
       const ids = accounts.map((a) => a.id).sort((a, b) => a - b);
-      return { accounts, byId, ids, portfolio, loadMs: performance.now() - t0 };
+      const earlyWarning = decodeBacktest(portfolio.early_warning);
+      return { accounts, byId, ids, portfolio, earlyWarning, loadMs: performance.now() - t0 };
     });
   }
   return appData;

@@ -29,6 +29,14 @@ export const ACCOUNT_FIELDS = [
   'owner_age',
   'owner_gender',
   'cal',
+  'light_rows_used',
+  'light_days_below_zero',
+  'light_min_bal_over_S_raw',
+  'light_cash_share_raw',
+  'light_inc_cv_raw',
+  'light_bal_trend_raw',
+  'light_recent_spending',
+  'light_last_month',
 ] as const satisfies readonly (keyof Account)[];
 
 /** accounts.json: one row per account, values in the order of `fields`. */
@@ -88,4 +96,15 @@ export interface PortfolioFile {
   cut_histogram: { cut_as_share_of_spending: string; accounts: number }[];
   preloan_overdraft: Record<string, string | number | null>[];
   runway_columns: string[];
+  early_warning: EarlyWarningFile;
+}
+
+/** portfolio.json["early_warning"]: the early-warning light's backtest (resilience.warning.backtest). */
+export interface EarlyWarningFile {
+  snapshot: string;
+  label_year: string;
+  /** the month accounts.json's light inputs were taken at (the last month in the data) */
+  today: string;
+  /** points 0..4: accounts with that many points at the snapshot, and how many went overdrawn */
+  tiers: { points: number; accounts: number; went_overdrawn: number }[];
 }

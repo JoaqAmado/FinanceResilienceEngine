@@ -61,7 +61,7 @@ export function Live({ data, scenario, dispatch, searchRef }: Props) {
         />
       </div>
       <div className={s.customer}>
-        <CustomerCard acct={acct} baseline={model.baseline} />
+        <CustomerCard acct={acct} baseline={model.baseline} earlyWarning={data.earlyWarning} />
       </div>
       <div className={s.judges}>
         <JudgesPanel

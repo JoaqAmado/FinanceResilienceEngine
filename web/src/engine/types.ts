@@ -33,6 +33,19 @@ export interface Account {
   owner_gender: string | null;
   /** median spending per calendar month, January first (null = no full month seen) */
   cal: (number | null)[];
+  /** early-warning light inputs today (resilience.warning.light_table): months used after the opening month */
+  light_rows_used: number;
+  /** days below zero summed over those months */
+  light_days_below_zero: number;
+  /** the 4 rule inputs over the last 6 of those months, before clipping (null = undefined) */
+  light_min_bal_over_S_raw: number | null;
+  light_cash_share_raw: number | null;
+  light_inc_cv_raw: number | null;
+  light_bal_trend_raw: number | null;
+  /** median money out over those 6 months: the rules' month of spending, not S (null with no months) */
+  light_recent_spending: number | null;
+  /** the last of those months, the end of the window (null with no months) */
+  light_last_month: string | null;
 }
 
 export type SpendingBasis = 'S' | 'S6';

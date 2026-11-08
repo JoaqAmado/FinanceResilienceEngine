@@ -3,8 +3,10 @@
     .venv/bin/python scripts/export_web_data.py
 
 Writes
-    web/public/data/accounts.json        every account's engine inputs (columnar: fields + rows)
-    web/public/data/portfolio.json       headline numbers + the chart tables of resilience.portfolio
+    web/public/data/accounts.json        every account's engine inputs (columnar: fields + rows), including
+                                         the early-warning light's rule inputs today (resilience.warning)
+    web/public/data/portfolio.json       headline numbers + the chart tables of resilience.portfolio,
+                                         + the early-warning light's 2025 backtest tiers
     web/public/data/history/<id>.json    monthly money_in, money_out, month_end_balance per account
     web/test/vectors.json                outputs of the PYTHON engine that web/test/parity.test.ts
                                          must reproduce exactly
@@ -27,6 +29,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from resilience import core as C  # noqa: E402
+from resilience import warning as W  # noqa: E402
 from resilience.narrative import facts, template_story  # noqa: E402
 from resilience.portfolio import build_all  # noqa: E402
 
@@ -44,10 +47,17 @@ TARGETS = (3, 6, 12)
 ACCOUNT_FIELDS = ("id", "I", "F", "S", "B", "H", "P", "Pn", "S6", "flexible_median", "bank_fees_median",
                   "transfers_out_other_median", "loan_payments_median", "so_other", "H_SO", "months_of_data",
                   "first_month", "last_month", "loan_status", "pre_loan_negative", "ever_negative",
-                  "owner_age", "owner_gender", "cal")
-NULLABLE = {"S6", "loan_status", "owner_age", "owner_gender"}
-STRINGS = {"first_month", "last_month", "loan_status", "owner_gender"}
+                  "owner_age", "owner_gender", "cal") + tuple(f"light_{c}" for c in (
+                      # the early-warning light's inputs today (resilience.warning.light_table): the TS port
+                      # clips, fills, fires the rules and writes the text from these exact doubles
+                      "rows_used", "days_below_zero", "min_bal_over_S_raw", "cash_share_raw", "inc_cv_raw",
+                      "bal_trend_raw", "recent_spending", "last_month"))
+LIGHT_INPUTS = tuple(f[len("light_"):] for f in ACCOUNT_FIELDS if f.startswith("light_"))
+NULLABLE = {"S6", "loan_status", "owner_age", "owner_gender", "light_min_bal_over_S_raw", "light_cash_share_raw",
+            "light_inc_cv_raw", "light_bal_trend_raw", "light_recent_spending", "light_last_month"}
+STRINGS = {"first_month", "last_month", "loan_status", "owner_gender", "light_last_month"}
 BOOLS = {"pre_loan_negative", "ever_negative"}
+INTS = {"months_of_data", "light_rows_used"}
 
 # Shocks the vectors cover. Keys are stable names the TS test uses.
 SHOCKS = {
@@ -114,7 +124,7 @@ def account_row(acct: int, r: pd.Series) -> list:
             out.append([fnum(r[f"cal_{m:02d}"]) for m in range(1, 13)])
         elif f in BOOLS:
             out.append(bool(r[f]))
-        elif f == "months_of_data":
+        elif f in INTS:
             out.append(int(r[f]))
         elif f in STRINGS:
             v = r[f]
@@ -219,6 +229,95 @@ def dump(path: Path, obj, indent: int | None = None) -> int:
     return len(text.encode("utf-8"))
 
 
+# ------------------------------------------------------------------ early-warning light
+
+def light_js(lt: W.Light) -> list:
+    """[status, rowsUsed, points, rules, badge, backtestLine, line, spendingNote]; rules = [[value, raw, fired,
+    valueText]] in RULES order, empty when there is not enough history."""
+    return [lt.status, lt.rows_used, lt.points,
+            [[float(r.value), fnum(r.raw), bool(r.fired), r.value_text] for r in lt.rules],
+            lt.badge, lt.backtest_line, lt.line, lt.spending_note]
+
+
+def light_inputs(lt_row: pd.Series) -> list:
+    """The light's inputs as accounts.json holds them: rows_used, days_below_zero, the 4 raw values,
+    recent_spending, last_month."""
+    last = lt_row["last_month"]
+    return ([int(lt_row["rows_used"]), float(lt_row["days_below_zero"])]
+            + [fnum(lt_row[f"{r.code}_raw"]) for r in W.RULES]
+            + [fnum(lt_row["recent_spending"]), last if isinstance(last, str) else None])
+
+
+def backtest_file(bt: W.Backtest, today: str) -> dict:
+    """portfolio.json["early_warning"]: what the card's backtest line and tier table read, and `today`, the
+    snapshot T the accounts.json light inputs were taken at (an account whose window ends earlier is stale)."""
+    return {"snapshot": bt.snapshot, "label_year": bt.label_year, "today": today,
+            "tiers": [{"points": t.points, "accounts": t.accounts, "went_overdrawn": t.went_overdrawn}
+                      for t in bt.tiers]}
+
+
+def light_backtest_case(monthly: pd.DataFrame, ids: list[int], bt: W.Backtest) -> dict:
+    """Every account's light inputs at the backtest snapshot plus its outcome, so the TS port can rebuild
+    the tier table from per-account rules (and the not-enough-history branch, absent today, is covered)."""
+    snap = W.light_table(monthly, bt.snapshot)
+    ms = W.usable_months(monthly)
+    fut = ms[(ms["month"] > bt.snapshot) & ms["month"].str.startswith(bt.label_year)]
+    observed = set(int(a) for a in fut["account_id"].unique())
+    went = fut.groupby("account_id")["days_below_zero"].sum() > 0
+    rows, lights, tally = [], [], [[0, 0] for _ in range(W.MAX_POINTS + 1)]
+    for a in ids:
+        r = snap.loc[a]
+        lt = W.light_from_row(a, r, bt)
+        o, y = a in observed, bool(went.get(a, False))
+        rows.append([a, *light_inputs(r), o, y])
+        lights.append(light_js(lt))
+        if lt.status == W.RATED and o:
+            tally[lt.points][0] += 1
+            tally[lt.points][1] += int(y)
+    # this re-derivation of the population and outcome must agree with resilience.warning.backtest
+    assert [tuple(x) for x in tally] == [(t.accounts, t.went_overdrawn) for t in bt.tiers], (tally, bt.tiers)
+    return {"snapshot": bt.snapshot, "labelYear": bt.label_year, "population": bt.population, "events": bt.events,
+            "tiers": [[t.points, t.accounts, t.went_overdrawn, t.rate_text, t.line()] for t in bt.tiers],
+            "rows": rows, "lights": lights}
+
+
+def light_value_text_cases() -> list[list]:
+    """Rule.value_text on cuts, near-cuts, ties, signed zeros, clip edges, NaN and random values."""
+    rng = np.random.default_rng(SEED + 1)  # its own stream: the other vectors' draws stay as they were
+    out = []
+    for rule in W.RULES:
+        c = rule.cut
+        xs = [c, -c, 0.0, -0.0, 1.0, -1.0, 0.005, 0.015, 0.125, 0.0625, 2.675, 1.005, 0.9504, 0.5026, 0.4975,
+              1.234, -0.1004, -0.25, 24.0, -5.0, 3.0, -3.0, 50.0, 4094.1240478781287, -194.73116741800078,
+              1e6, 1e-9, -1e-9, float("nan")]
+        xs += [c + s * 10.0 ** -k for k in range(2, 9) for s in (1, -1)]
+        xs += [c + s * 0.5 * 10.0 ** -k for k in range(2, 7) for s in (1, -1)]
+        xs += [float(v) for v in rng.uniform(-5, 30, 40)] + [float(v) for v in rng.uniform(-1, 1, 40)]
+        out += [[rule.code, fnum(x), rule.value_text(x)] for x in xs]
+    return out
+
+
+def light_cut_cases() -> list[list]:
+    """Rule.fires on each cut and one double either side: [code, value, fired]. The cuts sit inside the
+    clip ranges, so a raw value there is the value the rule tests (light_table clips and fills nothing)."""
+    out = []
+    for rule in W.RULES:
+        lo, hi = {"min_bal_over_S": W.MIN_BAL_CLIP, "bal_trend": W.BAL_TREND_CLIP}.get(rule.code, (-np.inf, np.inf))
+        for x in (rule.cut, float(np.nextafter(rule.cut, -np.inf)), float(np.nextafter(rule.cut, np.inf))):
+            assert lo < x < hi, (rule.code, x)
+            out.append([rule.code, x, rule.fires(x)])
+    return out
+
+
+def light_tier_cases() -> list[list]:
+    """Tier.rate_text and Tier.line on the 0.01 boundary, ties, thousands separators and empty tiers."""
+    cases = {(p, n, k) for n in range(0, 61) for k in sorted({0, 1, 2, 5, n}) if k <= n for p in range(5)
+             if (n + k + p) % 3 == 0 or n <= 2}
+    cases |= {(0, 2390, 2), (1, 833, 18), (2, 463, 33), (3, 146, 15), (4, 15, 7), (2, 100, 1), (2, 1000, 9),
+              (2, 1000, 10), (3, 12345, 1234), (1, 1600, 1), (1, 16, 1), (0, 8, 1), (4, 1_000_000, 9999)}
+    return [[p, n, k, W.Tier(p, n, k).rate_text, W.Tier(p, n, k).line()] for p, n, k in sorted(cases)]
+
+
 # ------------------------------------------------------------------ cases
 
 def story_case(acct: int, r: pd.Series, preset: str, N: int, toggles: tuple) -> dict:
@@ -276,16 +375,24 @@ def main() -> None:
     for name, s in PRESET_SHOCKS.items():  # the app divides slider percents by 100
         assert s.income_multiplier in (1.0, 0.55) and s.bills_increase_pct in (0.0, 0.15), name
 
+    light_today = W.light_table(monthly)               # snapshot = the last month in the data
+    light_bt = W.backtest(monthly)
+    if set(light_today.index) != set(ids):
+        raise SystemExit("the early-warning light and the engine cover different accounts")
+    exported = m.join(light_today[list(LIGHT_INPUTS)].add_prefix("light_"))
+
     # ------------------------------------------------ public data
     DATA_OUT.mkdir(parents=True, exist_ok=True)
     acc_bytes = dump(DATA_OUT / "accounts.json",
-                     {"version": 1, "fields": list(ACCOUNT_FIELDS), "rows": [account_row(a, rows[a]) for a in ids]})
+                     {"version": 1, "fields": list(ACCOUNT_FIELDS),
+                      "rows": [account_row(a, exported.loc[a]) for a in ids]})
 
     tables = build_all(m)
     acc_table = tables.pop("accounts")
     headlines = records(tables.pop("headlines"))[0]
     port = {"version": 1, "headlines": headlines, **{k: records(v) for k, v in tables.items()},
-            "runway_columns": [c for c in acc_table.columns if c.startswith("runway_")]}
+            "runway_columns": [c for c in acc_table.columns if c.startswith("runway_")],
+            "early_warning": backtest_file(light_bt, str(monthly["month"].max()))}
     port_bytes = dump(DATA_OUT / "portfolio.json", port)
 
     hist_dir = DATA_OUT / "history"
@@ -381,15 +488,38 @@ def main() -> None:
     vec["stories"] = stories
     vec["format"] = format_cases(m, rng)
 
+    vec["lightConstants"] = {
+        "WINDOW_ROWS": W.WINDOW_ROWS, "MIN_BAL_CUT": W.MIN_BAL_CUT, "MIN_BAL_CLIP": list(W.MIN_BAL_CLIP),
+        "MIN_BAL_MISSING": W.MIN_BAL_MISSING, "CASH_SHARE_CUT": W.CASH_SHARE_CUT, "INCOME_CV_CUT": W.INCOME_CV_CUT,
+        "BAL_TREND_CUT": W.BAL_TREND_CUT, "BAL_TREND_CLIP": list(W.BAL_TREND_CLIP),
+        "BACKTEST_SNAPSHOT": W.BACKTEST_SNAPSHOT, "BACKTEST_LABEL_YEAR": W.BACKTEST_LABEL_YEAR,
+        "MAX_POINTS": W.MAX_POINTS, "RATED": W.RATED, "ALREADY_OVERDRAWN": W.ALREADY_OVERDRAWN,
+        "NOT_ENOUGH_HISTORY": W.NOT_ENOUGH_HISTORY, "STALE": W.STALE,
+        "rules": [[r.code, r.label, r.fires_when, r.op, r.cut] for r in W.RULES]}
+    vec["lightToday"] = [light_js(W.light_from_row(a, light_today.loc[a], light_bt)) for a in ids]
+    vec["lightBacktest"] = light_backtest_case(monthly, ids, light_bt)
+    vec["lightValueText"] = light_value_text_cases()
+    vec["lightTiers"] = light_tier_cases()
+    vec["lightCuts"] = light_cut_cases()
+    vec["meta"]["light_layout"] = ("[status, rowsUsed, points, [[value, raw, fired, valueText] per rule], badge, "
+                                   "backtestLine, line, spendingNote]")
+    vec["meta"]["light_backtest_row_layout"] = ("[id, rows_used, days_below_zero, min_bal_over_S_raw, cash_share_raw, "
+                                                "inc_cv_raw, bal_trend_raw, recent_spending, last_month, "
+                                                "observedInLabelYear, wentOverdrawn]")
+
     vec["meta"]["counts"] = {
         "applyShock": len(ids) * len(SHOCKS), "flags": len(ids), "calendarPath": len(cal), "plans": len(plans),
         "balancePath": len(bal), "stories": len(stories), "format": len(vec["format"]),
+        "lightToday": len(vec["lightToday"]), "lightBacktest": len(vec["lightBacktest"]["rows"]),
+        "lightValueText": len(vec["lightValueText"]), "lightTiers": len(vec["lightTiers"]),
+        "lightCuts": len(vec["lightCuts"]),
     }
     vec_bytes = dump(VECTORS, vec)
 
     mb = lambda n: f"{n / 1e6:.1f} MB"  # noqa: E731
     print(f"accounts.json   {len(ids)} accounts, {mb(acc_bytes)}")
-    print(f"portfolio.json  headlines + {len(tables)} tables, {mb(port_bytes)}")
+    print(f"portfolio.json  headlines + {len(tables)} tables + early-warning tiers "
+          f"({light_bt.population:,} accounts, {light_bt.events} went overdrawn), {mb(port_bytes)}")
     print(f"history/        {monthly['account_id'].nunique()} files, {mb(hist_bytes)}")
     print(f"vectors.json    {vec['meta']['counts']}, {mb(vec_bytes)}")
 

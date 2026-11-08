@@ -34,8 +34,9 @@ work: Chrome blocks module scripts and `fetch()` on `file://`.
     0..max(24, 2 × runway). It has a $0 line, the month the buffer hits $0, hover tooltips and a table view.
   - **Plans**: the job-loss-proof fund with a progress bar, the backup ladder, credit advice (none for loans in
     arrears or default), and the template story.
-  - **Customer card**: I, S, F, H, P, B, pension, warning flags, and the month history (loaded only when the account
-    is opened).
+  - **Customer card**: I, S, F, H, P, B, pension, warning flags, the early-warning light (0–4 points from four
+    transparent rules, with the 2025 backtest line for that many points; the rules and tier table open below it;
+    it never changes the judges' runway), and the month history (loaded only when the account is opened).
 - **Portfolio**: headline tiles (recomputed live and checked against the Python export), income bands (click a band
   to list its accounts, sort by runway, click one to open it in the live twist), half-year calibration, cut
   histogram, pre-loan 2×2.
@@ -47,15 +48,18 @@ Keys: `/` account box · `1`–`4` twist cards · `R` reset levers to the card �
 
 ## How the TypeScript engine stays identical to the Python one
 
-`src/engine/` is a line-by-line port of `resilience/core.py` and `resilience/narrative.py`. Nothing in the UI
-recomputes a formula; it calls the engine.
+`src/engine/` is a line-by-line port of `resilience/core.py`, `resilience/narrative.py` and
+`resilience/warning.py`. Nothing in the UI recomputes a formula; it calls the engine.
 
 1. `scripts/export_web_data.py` (in the repo root) runs the **Python** engine and writes:
    - `public/data/accounts.json`: every account's inputs at full float precision, with `null` for NaN/inf
-   - `public/data/portfolio.json`: the headlines and chart tables
+     (including the early-warning light's 4 raw rule inputs, rows used, days below zero, and the window's
+     median money out and last month)
+   - `public/data/portfolio.json`: the headlines and chart tables, and the early-warning backtest tiers
    - `public/data/history/<id>.json`: each account's monthly history
    - `test/vectors.json`: the Python engine's outputs for every account under 13 shocks, plus plans, ladders,
-     flags, calendar paths and stories on a sample
+     flags, calendar paths and stories on a sample; the early-warning light for every account today and at the
+     2024-12 backtest snapshot (with each account's 2025 outcome, so the test rebuilds the tier table)
 2. `test/parity.test.ts` runs the TypeScript engine on the same inputs and requires exact equality for every
    runway, flag, verdict, plan step and story string. Money values must match to within 1e-6, and in practice
    all of them are bit-for-bit identical. Rounding uses numpy's rule (`np.round` = `rint(x·10)/10`, ties to even),
@@ -68,6 +72,7 @@ recomputes a formula; it calls the engine.
    - the portfolio bands reproduce `resilience/portfolio.py`
    - the pitch script's rehearsal numbers come out right
    - the URL hash round-trips
+   - the early-warning light renders on the customer card with the same sentence as `app.py`
 
 When the Python engine changes, regenerate and re-test:
 

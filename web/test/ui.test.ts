@@ -5,17 +5,25 @@
  *   - the hero number's Intl formatting (NumberFlow) prints the same digits as Python's :.1f
  *   - the portfolio drill-down bands reproduce resilience/portfolio.py's table
  *   - a scenario survives the URL-hash round trip
+ *   - the early-warning light renders on the customer card (server-rendered markup)
  */
 import { readFileSync } from 'node:fs';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
+import { CustomerCard } from '../src/components/CustomerCard';
+import { EarlyWarningLight } from '../src/components/EarlyWarningLight';
 import {
+  BASELINE,
   FURNACE,
   LAID_OFF_EI,
   DOUBLE_WHAMMY,
   PRESETS,
   applyShock,
   calendarPath,
+  computeLight,
   decodeAccounts,
+  decodeBacktest,
   makeShock,
   npRound,
   pyFixed,
@@ -246,5 +254,102 @@ describe('live screen model', () => {
       expect(at(a.id).greyNote).not.toBe(null);
       expect(at(a.id, { levers: { ...CARD_LEVERS.ei, incomePct: 60 } }).greyNote).toBe(null);
     }
+  });
+});
+
+describe('early-warning light on the customer card', () => {
+  const byId = new Map(accounts.map((a) => [a.id, a]));
+  const bt = decodeBacktest(portfolio.early_warning);
+  const unescape = (h: string) =>
+    h.replace(/&#x27;/g, "'").replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+  const text = (h: string) => unescape(h.replace(/<[^>]+>/g, ''));
+  const card = (id: number) => {
+    const acct = byId.get(id)!;
+    return renderToStaticMarkup(createElement(CustomerCard, { acct, baseline: applyShock(acct, BASELINE), earlyWarning: bt }));
+  };
+  /** the flag-style line, without its aria-hidden points icon */
+  const line = (html: string) => {
+    const m = html.match(/<p[^>]*data-testid="early-warning-line"[^>]*>(.*?)<\/p>/);
+    expect(m, 'early-warning line rendered').not.toBe(null);
+    return text(m![1].replace(/^<span[^>]*aria-hidden="true"[^>]*>.*?<\/span>/, ''));
+  };
+  const column = (html: string, table: number, col: number) =>
+    [...html.matchAll(/<table>(.*?)<\/table>/g)][table][1]
+      .split('<tbody>')[1]
+      .split('</tr>')
+      .filter((r) => r.includes('<td'))
+      .map((r) => text(r.split(/<t[hd][^>]*>/)[col + 1]));
+
+  it('77743 (the default account): 3/4, the three rules that fired, the 3-point backtest line', () => {
+    const html = card(77743);
+    // the same sentence tests/test_app.py pins on the Streamlit card
+    expect(line(html)).toBe(
+      'Early-warning light 3/4: lowest balance under half a month of spending; almost all spending is cash; ' +
+        'irregular money in. In the 2025 backtest, 15 of 146 accounts with 3 points went overdrawn (10.3%).',
+    );
+    expect(column(html, 0, 1)).toEqual(['0.04 months of spending', '99.9% of spending', '1.13', '+0.49 months of spending per month']);
+    expect(column(html, 0, 3)).toEqual(['! fired', '! fired', '! fired', 'not fired']);
+    expect(column(html, 1, 1)).toEqual(['2,390', '833', '463', '146', '15']);
+    expect(column(html, 1, 2)).toEqual(['2', '18', '33', '15', '7']);
+    expect(column(html, 1, 3)).toEqual(['0.08%', '2.2%', '7.1%', '10.3%', '46.7%']);
+    expect(text(html)).toContain('3 this account');
+    expect([...html.matchAll(/aria-current="true"/g)].length).toBe(1);
+    const caption = text(html.match(/<p class="[^"]*caption[^"]*">(.*?)<\/p>/)?.[1] ?? html);
+    // the backtest needed 6 months after the opening month (7+ counting it), as app.py's caption says
+    expect(caption).toContain('on the 3,847 accounts with 6+ months after the opening month that had never gone below zero');
+    expect(caption).not.toContain('months of history');
+    expect(caption).toContain('75 of them went overdrawn in 2025');
+    // the light sits after the warning flags and before the month history
+    expect(html.indexOf('Read these first')).toBeLessThan(html.indexOf('early-warning-line'));
+    expect(html.indexOf('early-warning-line')).toBeLessThan(html.indexOf('Loading month history'));
+  });
+
+  it('20331 (rehearsal account): already overdrawn, points and rules but no backtest rate', () => {
+    const html = card(20331);
+    const l = line(html);
+    expect(l.startsWith('Early-warning light 2/4: lowest balance under half a month of spending; irregular money in. ')).toBe(true);
+    expect(l).toContain('Already overdrawn before');
+    expect(l).not.toContain('In the 2025 backtest');
+    expect(html).not.toContain('aria-current'); // no tier row is marked as this account's
+    // the judges' number is untouched
+    const live = buildLive(byId.get(20331)!, { ...DEFAULT_SCENARIO, id: 20331, card: 'ei', levers: CARD_LEVERS.ei });
+    expect(live.judge.months).toBe(5.1);
+  });
+
+  it('not enough history: no points, no rule table, no rate', () => {
+    const raw = { min_bal_over_S: 0.1, cash_share: 1, inc_cv: 2, bal_trend: -1 };
+    const light = computeLight(1, { rowsUsed: 5, daysBelowZero: 0, recentSpending: 100, lastMonth: bt.today, raw }, bt);
+    const html = renderToStaticMarkup(createElement(EarlyWarningLight, { light, backtest: bt }));
+    // the same sentence as app.py (tests/test_app.py pins it there): the card renders the engine's line
+    const sentence =
+      'Early-warning light: Not enough history: the light needs 6 months after the opening month and this ' +
+      'account has 5, so no points or backtest rate.';
+    expect(light.line).toBe(sentence);
+    expect(line(html)).toBe(light.line);
+    expect([...html.matchAll(/<table>/g)].length).toBe(1); // only the tier table
+    expect(html).not.toContain('early-warning-spending');
+  });
+
+  it('99477 (activity stops 2024-03): points from its last 6 months, no backtest rate', () => {
+    const html = card(99477);
+    expect(text(html)).toContain('Account activity stops in 2024-03: the buffer may be out of date.');
+    expect(line(html)).toBe(
+      'Early-warning light 3/4: almost all spending is cash; irregular money in; balance sliding more than 10% ' +
+        "of a month's spending per month. Activity stops in 2024-03: the points are from the account's last 6 " +
+        'months up to then, so no backtest rate is shown (the backtest only followed accounts that were still active).',
+    );
+    expect(html).not.toContain('aria-current'); // no tier row is marked as this account's
+  });
+
+  it("55819: the rules' month of spending is named and priced, beside the card's Buffer", () => {
+    const html = card(55819);
+    expect(text(html)).toContain('0.3 months of spending'); // the Buffer, on S
+    expect(column(html, 0, 1)[0]).toBe('116.96 months of spending'); // rule 1, on the window's median money out
+    const note = text(html.match(/<p[^>]*data-testid="early-warning-spending"[^>]*>(.*?)<\/p>/)?.[1] ?? '');
+    expect(note).toBe(
+      "In the lowest-balance and balance-trend rules, a month of spending is this account's median money out " +
+        "over the same 6 months: $9.19. That is not the card's S (the median over all history), so these months " +
+        "can differ from the Buffer's.",
+    );
   });
 });

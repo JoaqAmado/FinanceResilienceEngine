@@ -31,6 +31,7 @@ from resilience import (
 from resilience import llm, warehouse
 from resilience.narrative import facts, template_story
 from resilience.portfolio import build_all
+from resilience.warning import WINDOW_ROWS, account_light, backtest
 
 st.set_page_config(page_title="Twin Runway · Tangerine Resilience Engine", page_icon="🍊", layout="wide")
 
@@ -64,6 +65,12 @@ def monthly() -> pd.DataFrame:
 @st.cache_data(show_spinner="Computing portfolio findings…")
 def portfolio() -> dict[str, pd.DataFrame]:
     return build_all(metrics())
+
+
+@st.cache_data(show_spinner=False)
+def warning_backtest():
+    """The early-warning light's 2025 backtest tiers, computed once."""
+    return backtest(monthly())
 
 
 @st.cache_data(ttl=3600, show_spinner="Checking the judges' numbers in Snowflake…")
@@ -186,6 +193,29 @@ with tab_live:
                f"loan: {r.loan_status if pd.notna(r.loan_status) else 'none'}")
     for _, note in account_flags(r):
         st.warning(note, icon="⚠️")
+    ew_bt = warning_backtest()
+    ew = account_light(monthly(), int(acct), ew_bt)
+    (st.warning if ew.points is not None and ew.points >= 2 else st.info)(ew.line, icon="🚦")
+    with st.expander("Early-warning light · the 4 rules (a watch flag beside the runway, not a credit score)"):
+        if ew.rules:
+            st.dataframe(pd.DataFrame({
+                "rule": [x.rule.label for x in ew.rules],
+                "this account": [x.value_text for x in ew.rules],
+                "fires when": [x.rule.fires_when for x in ew.rules],
+                "fired": ["⚠️ fired" if x.fired else "not fired" for x in ew.rules],
+            }), hide_index=True)
+            st.caption(ew.spending_note)
+        st.dataframe(pd.DataFrame({
+            "points": [t.points for t in ew_bt.tiers],
+            "accounts": [f"{t.accounts:,}" for t in ew_bt.tiers],
+            f"went overdrawn in {ew_bt.label_year}": [f"{t.went_overdrawn:,}" for t in ew_bt.tiers],
+            "share": [t.rate_text for t in ew_bt.tiers],
+        }), hide_index=True)
+        st.caption(f"Points = how many rules fire on the account's last {WINDOW_ROWS} months of data (the opening month is left out). "
+                   f"Backtest: rules taken at the end of {ew_bt.snapshot} on the {ew_bt.population:,} accounts with "
+                   f"{WINDOW_ROWS}+ months after the opening month that had never gone below zero and were still active in "
+                   f"{ew_bt.label_year}; {ew_bt.events} of them went overdrawn in {ew_bt.label_year}. "
+                   "The light never changes the judges' runway.")
 
     hist = monthly()
     h = hist[hist.account_id == acct]

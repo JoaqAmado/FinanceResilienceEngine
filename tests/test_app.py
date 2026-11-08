@@ -176,3 +176,74 @@ def test_no_ei_claim_advice_on_a_non_job_loss_card_for_loan_in_default():
     app.radio(key="preset").set_value("Furnace dies: 1× spending").run()
     text = " ".join(m.value for m in app.markdown)
     assert "no new credit" in text and "EI claim" not in text
+
+
+# --------------------------------------------- early-warning light
+
+@needs_data
+def test_early_warning_light_renders_beside_the_runway():
+    app = _fresh()
+    app.number_input(key="acct").set_value(77743).run()
+    assert not app.exception
+    line = [w.value for w in app.warning if w.value.startswith("Early-warning light")]
+    assert line == ["Early-warning light 3/4: lowest balance under half a month of spending; almost all spending is "
+                    "cash; irregular money in. In the 2025 backtest, 15 of 146 accounts with 3 points went "
+                    "overdrawn (10.3%)."]
+    box = [e for e in app.expander if e.label.startswith("Early-warning light")][0]
+    rules, tiers = box.dataframe[0].value, box.dataframe[1].value
+    assert list(rules["fired"]) == ["⚠️ fired", "⚠️ fired", "⚠️ fired", "not fired"]
+    assert list(tiers["share"]) == ["0.08%", "2.2%", "7.1%", "10.3%", "46.7%"]
+    caption = box.caption[-1].value
+    assert "3,847 accounts" in caption and "75 of them went overdrawn" in caption
+    # the backtest needed 6 rows after the opening month (7+ months counting it), not 6 months of history
+    assert "accounts with 6+ months after the opening month that had never gone below zero" in caption
+    assert "months of history" not in caption
+
+
+@needs_data
+def test_early_warning_light_says_already_overdrawn_without_a_rate():
+    app = _fresh()                                                     # 20331 by default
+    line = [x.value for x in [*app.warning, *app.info] if x.value.startswith("Early-warning light")]
+    assert len(line) == 1 and "2/4" in line[0] and "Already overdrawn before" in line[0]
+    assert "In the 2025 backtest" not in line[0]                      # no tier rate for an account outside it
+    assert _runway(app) == "5.1 mo"                                    # the judges' number is untouched
+
+
+@needs_data
+def test_early_warning_light_gives_a_stale_account_no_backtest_rate():
+    app = _fresh()
+    app.number_input(key="acct").set_value(99477).run()                # activity stops 2024-03
+    assert not app.exception
+    warnings = [w.value for w in app.warning]
+    assert "Account activity stops in 2024-03: the buffer may be out of date." in warnings
+    line = [w for w in warnings if w.startswith("Early-warning light")]
+    assert len(line) == 1 and line[0].startswith("Early-warning light 3/4: ")
+    assert "Activity stops in 2024-03: the points are from the account's last 6 months up to then" in line[0]
+    assert "In the 2025 backtest" not in line[0]
+
+
+@needs_data
+def test_early_warning_light_names_its_own_month_of_spending():
+    app = _fresh()
+    app.number_input(key="acct").set_value(55819).run()
+    assert not app.exception
+    assert [m for m in app.metric if m.label == "Buffer (B)"][0].delta == "0.3 months of spending"
+    box = [e for e in app.expander if e.label.startswith("Early-warning light")][0]
+    assert list(box.dataframe[0].value["this account"])[0] == "116.96 months of spending"
+    assert box.caption[0].value == ("In the lowest-balance and balance-trend rules, a month of spending is this "
+                                    "account's median money out over the same 6 months: $9.19. That is not the "
+                                    "card's S (the median over all history), so these months can differ from "
+                                    "the Buffer's.")
+
+
+@needs_data
+def test_early_warning_light_not_enough_history_names_the_light(monkeypatch):
+    # no shipped account is short today, so the app is given one: opening month + 5 rows
+    from resilience import warning as W
+    monkeypatch.setattr(W, "account_light", lambda monthly, a, bt, snapshot=None: W.Light(
+        int(a), W.NOT_ENOUGH_HISTORY, 5, None, (), None, "2025-12", 100.0))
+    app = _fresh()
+    assert not app.exception
+    line = [x.value for x in app.info if "Not enough history" in x.value]
+    assert line == ["Early-warning light: Not enough history: the light needs 6 months after the opening month "
+                    "and this account has 5, so no points or backtest rate."]

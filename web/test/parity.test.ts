@@ -5,31 +5,53 @@
  *     npm test
  *
  * Exact equality for runway months, flags, verdicts, steps and every string; money values
- * within 1e-6 (the summary also counts how many are bit-for-bit identical).
+ * within 1e-6 (the summary also counts how many are bit-for-bit identical). The early-warning
+ * light (resilience/warning.py) is checked exactly too: values, rules, points, status and text.
  */
 import { readFileSync } from 'node:fs';
 import { isDeepStrictEqual } from 'node:util';
 import { afterAll, describe, expect, it } from 'vitest';
 import {
+  ALREADY_OVERDRAWN,
+  BACKTEST_LABEL_YEAR,
+  BACKTEST_SNAPSHOT,
+  BAL_TREND_CLIP,
+  BAL_TREND_CUT,
   BASELINE,
+  CASH_SHARE_CUT,
   DOUBLE_WHAMMY,
   EI_2026_MAX_MONTHLY,
   EI_2026_MAX_WEEKLY,
   FURNACE,
+  INCOME_CV_CUT,
   LAID_OFF_EI,
   LAID_OFF_EI_CAPPED,
+  MAX_POINTS,
+  MIN_BAL_CLIP,
+  MIN_BAL_CUT,
+  MIN_BAL_MISSING,
+  NOT_ENOUGH_HISTORY,
   NO_SHORTFALL_LABEL,
   PRESETS,
+  RATED,
+  RULES,
   RUNWAY_CAP_MONTHS,
+  STALE,
   WEEKS_PER_MONTH,
+  WINDOW_ROWS,
   accountFlags,
+  accountLight,
   applyShock,
+  backtestEvents,
+  backtestPopulation,
   backupLadder,
   backupPlan,
   balancePath,
   calendarPath,
+  computeLight,
   creditAdvice,
   decodeAccounts,
+  decodeBacktest,
   facts,
   goalPlan,
   goalShockFor,
@@ -43,10 +65,14 @@ import {
   pyG,
   pyPercent0,
   pyRound,
+  ruleFires,
+  ruleValueText,
   templateStory,
+  tierLine,
+  tierRateText,
   withShock,
 } from '../src/engine';
-import type { Account, AccountsFile, PortfolioFile, RunwayResult, Shock } from '../src/engine';
+import type { Account, AccountsFile, Light, PortfolioFile, RuleCode, RunwayResult, Shock } from '../src/engine';
 
 type PyResult = [number | null, boolean, number, number, number, number, number, boolean];
 type PyGoal = [number, number, number, number, number | null, string];
@@ -110,7 +136,50 @@ interface Vectors {
     story: unknown;
   }[];
   format: [number, string, string, string, string, number, number, string][];
+  lightConstants: Record<string, number | string | number[]> & { rules: [string, string, string, string, number][] };
+  lightToday: PyLight[];
+  lightBacktest: {
+    snapshot: string;
+    labelYear: string;
+    population: number;
+    events: number;
+    tiers: PyTier[];
+    rows: PyLightRow[];
+    lights: PyLight[];
+  };
+  lightValueText: [RuleCode, number | null, string][];
+  lightTiers: PyTier[];
+  /** Rule.fires on each cut and one double either side: [code, value, fired] */
+  lightCuts: [RuleCode, number, boolean][];
 }
+/** [status, rowsUsed, points, [[value, raw, fired, valueText] per rule], badge, backtestLine, line, spendingNote] */
+type PyLight = [
+  string,
+  number,
+  number | null,
+  [number, number | null, boolean, string][],
+  string,
+  string,
+  string,
+  string | null,
+];
+/** [id, rows_used, days_below_zero, min_bal_over_S_raw, cash_share_raw, inc_cv_raw, bal_trend_raw, recent_spending,
+ * last_month, observed, went] */
+type PyLightRow = [
+  number,
+  number,
+  number,
+  number | null,
+  number | null,
+  number | null,
+  number | null,
+  number | null,
+  string | null,
+  boolean,
+  boolean,
+];
+/** [points, accounts, wentOverdrawn, rateText, line] */
+type PyTier = [number, number, number, string, string];
 
 const read = (rel: string) => JSON.parse(readFileSync(new URL(rel, import.meta.url), 'utf8'));
 const V: Vectors = read('./vectors.json');
@@ -176,6 +245,29 @@ class Checker {
     this.money(`${label}.spendingAfter`, r.spendingAfter, e[5]);
     this.money(`${label}.oneOff`, r.oneOff, e[6]);
     this.same(`${label}.capped`, r.capped, e[7]);
+  }
+
+  light(label: string, l: Light, e: PyLight) {
+    const [status, rowsUsed, points, rules, badge, backtestLine, line, spendingNote] = e;
+    this.same(`${label}.status`, l.status, status);
+    this.same(`${label}.rowsUsed`, l.rowsUsed, rowsUsed);
+    this.same(`${label}.points`, l.points, points);
+    this.same(`${label}.rules`, l.rules.length, rules.length);
+    l.rules.forEach((r, i) => {
+      const er = rules[i];
+      if (!er) return;
+      const L = `${label}.${r.rule.code}`;
+      this.same(`${L}.value`, r.value, er[0]); // exact: the same double, clipped and filled the same way
+      this.same(`${L}.raw`, r.raw, er[1]);
+      this.same(`${L}.fired`, r.fired, er[2]);
+      this.same(`${L}.valueText`, r.valueText, er[3]);
+    });
+    this.deep(`${label}.fired`, l.fired, l.rules.filter((r) => r.fired).map((r) => r.rule.label));
+    this.same(`${label}.tier`, l.tier?.points ?? null, status === RATED ? points : null);
+    this.same(`${label}.badge`, l.badge, badge);
+    this.same(`${label}.backtestLine`, l.backtestLine, backtestLine);
+    this.same(`${label}.line`, l.line, line);
+    this.same(`${label}.spendingNote`, l.spendingNote, spendingNote);
   }
 
   done() {
@@ -414,5 +506,113 @@ describe('parity with the Python engine', () => {
       c.same(`${x} :.0%`, pyPercent0(x), pct0);
     }
     c.done();
+  });
+
+  describe('early-warning light (resilience/warning.py)', () => {
+    const bt = decodeBacktest(portfolio.early_warning);
+    const tiersOf = (rows: PyTier[]) => rows.map(([p, n, k]) => [p, n, k]);
+
+    it('constants, cuts and rule wording', () => {
+      const c = new Checker('light constants');
+      const K = V.lightConstants;
+      const ts: Record<string, number | string | readonly number[]> = {
+        WINDOW_ROWS,
+        MIN_BAL_CUT,
+        MIN_BAL_CLIP,
+        MIN_BAL_MISSING,
+        CASH_SHARE_CUT,
+        INCOME_CV_CUT,
+        BAL_TREND_CUT,
+        BAL_TREND_CLIP,
+        BACKTEST_SNAPSHOT,
+        BACKTEST_LABEL_YEAR,
+        MAX_POINTS,
+        RATED,
+        ALREADY_OVERDRAWN,
+        NOT_ENOUGH_HISTORY,
+        STALE,
+      };
+      c.deep('constant names', Object.keys(ts).sort(), Object.keys(K).filter((k) => k !== 'rules').sort());
+      for (const [k, v] of Object.entries(ts)) c.deep(k, Array.isArray(v) ? [...v] : v, K[k]);
+      c.deep('rules', RULES.map((r) => [r.code, r.label, r.firesWhen, r.op, r.cut]), K.rules);
+      c.done();
+    });
+
+    it('every account today: values, rules fired, points, status and the card line', () => {
+      const c = new Checker('light today');
+      c.same('one light per account', V.lightToday.length, V.ids.length);
+      c.same('4,500 accounts', V.ids.length, 4500);
+      c.deep('portfolio.json tiers = Python backtest', bt.tiers.map((t) => [t.points, t.accounts, t.wentOverdrawn]),
+        tiersOf(V.lightBacktest.tiers));
+      c.same('snapshot', bt.snapshot, V.lightBacktest.snapshot);
+      c.same('label year', bt.labelYear, V.lightBacktest.labelYear);
+      V.ids.forEach((id, i) => c.light(`${id}`, accountLight(acct(id), bt), V.lightToday[i]));
+      c.done();
+    });
+
+    it('backtest snapshot: every account, and the tier table rebuilt from per-account rules', () => {
+      const c = new Checker('light backtest');
+      const B = V.lightBacktest;
+      c.same('rows', B.rows.length, V.ids.length);
+      const tally = Array.from({ length: MAX_POINTS + 1 }, (_, p) => ({ points: p, accounts: 0, wentOverdrawn: 0 }));
+      const statuses = new Set<string>();
+      B.rows.forEach((row, i) => {
+        const [id, rowsUsed, daysBelowZero, min, cash, cv, trend, recentSpending, lastMonth, observed, went] = row;
+        const raw = { min_bal_over_S: min, cash_share: cash, inc_cv: cv, bal_trend: trend };
+        const l = computeLight(id, { rowsUsed, daysBelowZero, recentSpending, lastMonth, raw }, bt, B.snapshot);
+        c.light(`${B.snapshot}/${id}`, l, B.lights[i]);
+        statuses.add(l.status);
+        // population: rated at the snapshot and still observed in the label year
+        if (l.status === RATED && observed) {
+          tally[l.points as number].accounts++;
+          if (went) tally[l.points as number].wentOverdrawn++;
+        }
+      });
+      c.deep('all four statuses covered', [...statuses].sort(), [ALREADY_OVERDRAWN, NOT_ENOUGH_HISTORY, RATED, STALE]);
+      c.deep('tiers rebuilt', tally.map((t) => [t.points, t.accounts, t.wentOverdrawn]), tiersOf(B.tiers));
+      const rebuilt = { snapshot: B.snapshot, labelYear: B.labelYear, today: B.snapshot, tiers: tally };
+      c.same('population', backtestPopulation(rebuilt), B.population);
+      c.same('events', backtestEvents(rebuilt), B.events);
+      c.same('population 3,847', B.population, 3847);
+      c.same('events 75', B.events, 75);
+      B.tiers.forEach(([, , , rateText, line], p) => {
+        c.same(`tier ${p} rateText`, tierRateText(tally[p]), rateText);
+        c.same(`tier ${p} line`, tierLine(tally[p], B.labelYear), line);
+      });
+      c.done();
+    });
+
+    it('value text and tier text: cuts, near-cuts, ties, empty tiers', () => {
+      const c = new Checker('light text');
+      const rule = new Map(RULES.map((r) => [r.code, r]));
+      for (const [code, raw, text] of V.lightValueText) {
+        c.same(`${code} ${raw}`, ruleValueText(rule.get(code)!, raw), text);
+      }
+      for (const [points, accounts, wentOverdrawn, rateText, line] of V.lightTiers) {
+        const t = { points, accounts, wentOverdrawn };
+        c.same(`${wentOverdrawn}/${accounts} rateText`, tierRateText(t), rateText);
+        c.same(`${points}: ${wentOverdrawn}/${accounts} line`, tierLine(t), line);
+      }
+      c.done();
+    });
+
+    it('rules fire strictly past the cut: the cut and one double either side', () => {
+      const c = new Checker('light cuts');
+      const rule = new Map(RULES.map((r) => [r.code, r]));
+      c.same('4 rules x 3 values', V.lightCuts.length, 12);
+      c.same('only the value past each cut fires', V.lightCuts.filter(([, , fired]) => fired).length, 4);
+      const neutral = { min_bal_over_S: 2.5, cash_share: 0.5, inc_cv: 0, bal_trend: 0 }; // no rule fires
+      for (const [code, x, fired] of V.lightCuts) {
+        c.same(`${code} ruleFires(${x})`, ruleFires(rule.get(code)!, x), fired);
+        // the same value through the card's path: raw -> clip/fill -> rule -> points
+        const inp = { rowsUsed: 6, daysBelowZero: 0, recentSpending: 1, lastMonth: bt.today, raw: { ...neutral, [code]: x } };
+        const l = computeLight(1, inp, bt);
+        const r = l.rules.find((q) => q.rule.code === code)!;
+        c.same(`${code} ${x} value`, r.value, x);
+        c.same(`${code} ${x} fired`, r.fired, fired);
+        c.same(`${code} ${x} points`, l.points, fired ? 1 : 0);
+      }
+      c.done();
+    });
   });
 });

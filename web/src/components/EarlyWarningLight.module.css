@@ -1,0 +1,78 @@
+/* The early-warning line reuses the customer card's .flag look (CustomerCard.module.css). */
+.light {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.details summary {
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--ink-3);
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+}
+
+.body {
+  display: grid;
+  gap: 8px;
+}
+
+.scroll {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+}
+
+.scroll table {
+  width: 100%;
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.scroll th,
+.scroll td {
+  padding: 0.25rem 0.5rem;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+
+.scroll thead th {
+  background: var(--sunken);
+  font-weight: 650;
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+
+.scroll tbody th {
+  font-weight: 600;
+}
+
+.fired {
+  color: var(--warn-ink);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.notFired {
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.mine {
+  background: var(--accent-soft);
+}
+
+.mineTag {
+  font-weight: 500;
+  color: var(--accent-ink);
+  white-space: nowrap;
+}
+
+.caption {
+  color: var(--muted);
+  font-size: 0.78rem;
+}

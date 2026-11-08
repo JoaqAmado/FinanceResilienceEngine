@@ -1,12 +1,13 @@
 import { useMemo } from 'react';
 import { Bar, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import type { TooltipContentProps } from 'recharts';
-import { accountFlags, pyFixed, runwayLabel } from '../engine';
-import type { Account, RunwayResult } from '../engine';
+import { accountFlags, accountLight, pyFixed, runwayLabel } from '../engine';
+import type { Account, Backtest, RunwayResult } from '../engine';
 import { COLORS } from '../lib/colors';
 import { axisMoney, money } from '../lib/format';
 import { useHistory } from '../lib/load';
 import s from './CustomerCard.module.css';
+import { EarlyWarningLight } from './EarlyWarningLight';
 import ui from './ui.module.css';
 
 const FLAG_TITLE: Record<string, string> = {
@@ -127,7 +128,15 @@ function Metric({ label, value, sub }: { label: string; value: string; sub?: str
   );
 }
 
-export function CustomerCard({ acct, baseline }: { acct: Account; baseline: RunwayResult }) {
+export function CustomerCard({
+  acct,
+  baseline,
+  earlyWarning,
+}: {
+  acct: Account;
+  baseline: RunwayResult;
+  earlyWarning: Backtest;
+}) {
   const flags = accountFlags(acct);
   const bufferMonths = acct.S > 0 ? `${pyFixed(acct.B / acct.S, 1)} months of spending` : undefined;
   const owner =
@@ -171,6 +180,7 @@ export function CustomerCard({ acct, baseline }: { acct: Account; baseline: Runw
           ))}
         </ul>
       )}
+      <EarlyWarningLight light={accountLight(acct, earlyWarning)} backtest={earlyWarning} />
       <HistoryChart id={acct.id} />
     </section>
   );
