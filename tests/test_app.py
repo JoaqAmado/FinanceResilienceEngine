@@ -1,4 +1,4 @@
-"""Headless run of the Streamlit app over every rehearsal and edge account and every twist card."""
+"""Headless run of the Streamlit app over every rehearsal and edge account and every twist."""
 from pathlib import Path
 
 import pytest
@@ -10,7 +10,15 @@ needs_data = pytest.mark.skipif(not (DATA_DIR / "monthly_summary.csv").exists(),
 
 ACCOUNTS = [20331, 20143, 88269, 98952, 77743,          # rehearsal
             32078, 20578, 26939, 20303, 20866, 21903]    # overdrawn, S=0, I=0, bills by SO, stale, minor
-PRESETS = ["Laid off: EI 55%", "Furnace dies: 1× spending", "Job loss + bills +15%"]
+PRESETS = ["Laid off: EI 55%", "Furnace dies: 1× spending", "Job loss + bills +15%"]  # the README twists
+
+
+def _chat(app, *messages):
+    """Type each message into the chat, as a judge would."""
+    for msg in messages:
+        app.chat_input(key="chat_box").set_value(msg).run()
+        assert not app.exception, (msg, app.exception)
+    return app
 
 
 @pytest.fixture(scope="module")
@@ -26,7 +34,6 @@ def at():
 def test_app_runs_every_twist_with_all_checks_on(at, acct):
     for preset in PRESETS:
         at.session_state["acct"] = acct
-        at.session_state["preset"] = preset
         for k, v in {"income_pct": 55 if "EI" in preset or "Job" in preset else 100,
                      "bills_pct": 15 if "bills" in preset else 0,
                      "oneoff_x": 1.0 if "Furnace" in preset else 0.0}.items():
@@ -41,7 +48,6 @@ def test_app_runs_every_twist_with_all_checks_on(at, acct):
 @needs_data
 def test_app_shows_judges_number_for_20331(at):
     at.session_state["acct"] = 20331
-    at.session_state["preset"] = "Laid off: EI 55%"
     at.session_state["income_pct"] = 55
     at.session_state["bills_pct"] = 0
     at.session_state["oneoff_x"] = 0.0
@@ -55,7 +61,6 @@ def test_app_shows_judges_number_for_20331(at):
 @needs_data
 def test_cap_does_not_touch_a_non_job_loss_twist(at):
     at.session_state["acct"] = 20143
-    at.session_state["preset"] = "Furnace dies: 1× spending"
     at.session_state["income_pct"] = 100
     at.session_state["bills_pct"] = 0
     at.session_state["oneoff_x"] = 1.0
@@ -85,7 +90,7 @@ def _story_headline(app):
 def test_custom_starts_from_no_shock():
     app = _fresh()
     app.session_state["acct"] = 72845
-    app.radio(key="preset").set_value("Custom").run()
+    _chat(app, "reset")
     app.radio(key="oneoff_mode").set_value("$ amount").run()
     app.number_input(key="oneoff_amt").set_value(6000.0).run()
     assert not app.exception
@@ -96,7 +101,7 @@ def test_custom_starts_from_no_shock():
 def test_furnace_one_off_survives_toggling_the_mode():
     app = _fresh()
     app.session_state["acct"] = 36427
-    app.radio(key="preset").set_value("Furnace dies: 1× spending").run()
+    _chat(app, "reset", "Furnace dies, repair = a month of spending")
     before = _runway(app)
     app.radio(key="oneoff_mode").set_value("$ amount").run()
     app.radio(key="oneoff_mode").set_value("× typical spending").run()
@@ -114,12 +119,13 @@ def test_label_follows_the_levers_not_the_card():
 
 
 @needs_data
-def test_new_account_resets_levers_to_the_card():
+def test_new_account_keeps_the_current_shock():
+    """Changed with the chat: switching account keeps the shock (it used to reset the levers to the twist card)."""
     app = _fresh()
     app.session_state["acct"] = 82232
     app.number_input(key="extra").set_value(250.0).run()
     app.number_input(key="acct").set_value(40462).run()
-    assert app.session_state["extra"] == 0.0
+    assert app.session_state["extra"] == 250.0 and app.session_state["income_pct"] == 55.0
 
 
 @needs_data
@@ -136,7 +142,7 @@ def test_overdrawn_and_loan_in_default_messages():
 def test_pay_cut_is_not_an_ei_job_loss():
     app = _fresh()
     app.session_state["acct"] = 79750
-    app.radio(key="preset").set_value("Custom").run()
+    _chat(app, "reset")
     app.slider(key="income_pct").set_value(70).run()
     assert not app.session_state["job_loss"]
     assert [t for t in app.toggle if t.key == "t_cap"][0].disabled
@@ -198,7 +204,7 @@ def test_portfolio_shows_realistic_cuts_dollar_cushions_and_the_reworded_caveats
 def test_pay_cut_goal_is_sized_on_the_deeper_cut():
     app = _fresh()
     app.session_state["acct"] = 20401
-    app.radio(key="preset").set_value("Custom").run()
+    _chat(app, "reset")
     app.slider(key="income_pct").set_value(30).run()
     fund = [m for m in app.metric if m.label.startswith("Job-loss-proof fund")][0]
     assert _runway(app) == "3.8 mo" and "already in place" not in str(fund.delta)
@@ -216,7 +222,7 @@ def test_card_identical_shock_keeps_the_card_name():
 def test_no_ei_claim_advice_on_a_non_job_loss_card_for_loan_in_default():
     app = _fresh()
     app.number_input(key="acct").set_value(91609).run()
-    app.radio(key="preset").set_value("Furnace dies: 1× spending").run()
+    _chat(app, "reset", "Furnace dies, repair = a month of spending")
     text = " ".join(m.value for m in app.markdown)
     assert "no new credit" in text and "EI claim" not in text
 
@@ -309,7 +315,6 @@ def test_rehearsal_buttons_keep_the_wording_rules_and_match_the_web_app(at):
 
 def _set(app, acct, preset="Laid off: EI 55%", **levers):
     app.session_state["acct"] = acct
-    app.session_state["preset"] = preset
     for k, v in {"income_pct": 55, "bills_pct": 0, "oneoff_x": 0.0, "job_loss": True, **levers}.items():
         app.session_state[k] = v
     for t in ("t_cap", "t_ww", "t_pens", "t_s6", "t_bfb"):
@@ -356,34 +361,14 @@ def test_goal_caption_names_the_shock_the_fund_is_sized_on():
 
 
 @needs_data
-def test_gemini_failure_is_not_retried_on_every_rerun(monkeypatch):
-    from resilience import llm
-    calls = []
-
-    def hangs(f, timeout_s=12.0):
-        calls.append(timeout_s)
-        return None, "Gemini unavailable (ReadTimeout): template used"
-    monkeypatch.setattr(llm, "available", lambda: True)
-    monkeypatch.setattr(llm, "gemini_story", hangs)
+def test_no_gemini_summary_toggle_or_text():
+    """The "Write this summary with Gemini" toggle is gone: the summary is always the template."""
     app = _fresh()
-    app.toggle(key="t_ai").set_value(True).run()
-    app.slider(key="target").set_value(7).run()
-    app.slider(key="target").set_value(8).run()
-    assert not app.exception and len(calls) == 1
-    assert any("template" in c.value for c in app.caption if c.value.startswith("Reality check:"))
-
-
-@needs_data
-def test_gemini_reality_check_has_one_full_stop(monkeypatch):
-    from resilience import llm
-    from resilience.narrative import template_story
-    monkeypatch.setattr(llm, "available", lambda: True)
-    monkeypatch.setattr(llm, "gemini_story", lambda f, timeout_s=12.0: (
-        dict(template_story(f), reality_check=template_story(f)["reality_check"] + "."), "Gemini (test)"))
-    app = _fresh()
-    app.toggle(key="t_ai").set_value(True).run()
+    assert not [t for t in app.toggle if t.key == "t_ai"]
+    shown = " ".join([*(m.value for m in app.markdown), *(c.value for c in app.caption), *(t.label for t in app.toggle)])
+    assert "Gemini" not in shown
     line = [c.value for c in app.caption if c.value.startswith("Reality check:")][0]
-    assert ".." not in line and "Gemini (test)" in line
+    assert ".." not in line and line.endswith("Summary: template (offline)")
 
 
 @needs_data
@@ -412,3 +397,121 @@ def test_zero_delta_and_one_month_badge():
     _set(app, 20331)
     app.slider(key="target").set_value(1).run()
     assert [s.value for s in app.success if s.value.startswith("SURVIVES")] == ["SURVIVES 1 MONTH"]
+
+
+# --------------------------------------------- the chat: the main input, one state with the sliders
+
+def _badge(app):
+    ok = [s.value for s in app.success if s.value == "All numbers consistent"]
+    bad = [w.value for w in app.warning if w.value.startswith("**Numbers disagree**")]
+    return ok, bad
+
+
+def _levers(app):
+    from resilience.shock_parser import STATE_KEYS
+    return {k: app.session_state[k] for k in STATE_KEYS}
+
+
+@needs_data
+@pytest.mark.parametrize("twist", ["LAID_OFF_EI", "FURNACE", "DOUBLE_WHAMMY"])
+def test_each_readme_twist_by_chat_matches_the_sliders_and_the_engine(twist):
+    from resilience import core
+    from resilience.consistency import rw_text
+    shock = getattr(core, twist)
+    for acct in (20331, 77743, 98952):
+        app = _fresh()
+        app.number_input(key="acct").set_value(acct).run()
+        _chat(app, "reset", shock.name)
+        by_chat = _runway(app)
+        engine = rw_text(core.apply_shock(core.build_metrics().loc[acct], shock))
+        slid = _set(_fresh(), acct, income_pct=round(shock.income_multiplier * 100),
+                    bills_pct=shock.bills_increase_pct * 100, oneoff_x=shock.one_off_multiple_of_S,
+                    job_loss=shock.job_loss)
+        assert by_chat == engine == _runway(slid), (twist, acct)
+        assert _badge(app) == (["All numbers consistent"], [])
+
+
+@needs_data
+def test_hint_chips_send_their_text():
+    from resilience.shock_parser import HINT_CHIPS
+    app = _fresh()
+    for chip in HINT_CHIPS:
+        app.button(key=f"chip_{chip}").click().run()
+        assert not app.exception, chip
+        assert _badge(app)[1] == [], chip
+    assert app.session_state["target"] == 9                       # the last chip
+    assert app.session_state["extra"] == 300.0                     # rent chip, kept by "must last 9 months"
+    replies = [x for x in app.session_state["chat"] if x["role"] == "assistant"]
+    assert len(replies) == len(HINT_CHIPS) and not any(x.get("clarify") for x in replies)
+    bubbles = [m.value for m in app.markdown if m.value.startswith("**Understood as:** ")]
+    assert len(bubbles) == len(HINT_CHIPS) - 1                      # 12 messages, the last 10 shown
+    assert any("source: golden phrase" in c.value for c in app.caption)
+
+
+@needs_data
+def test_chat_then_a_slider_nudge_stays_one_consistent_state():
+    app = _fresh()
+    _chat(app, "reset", "job loss on EI and bills up 15%")
+    assert app.session_state["bills_pct"] == 15.0 and app.session_state["job_loss"] is True
+    app.slider(key="bills_pct").set_value(25.0).run()
+    now = [x.value for x in app.markdown if x.value.startswith("**Current shock:**")][0]
+    assert "household bills +25%" in now
+    assert _badge(app) == (["All numbers consistent"], [])
+    _chat(app, "make it 10% instead")
+    assert app.session_state["bills_pct"] == 10.0 and _badge(app)[1] == []
+
+
+@needs_data
+def test_account_relative_dollar_shock_through_the_chat():
+    app = _fresh()
+    app.number_input(key="acct").set_value(98952).run()
+    _chat(app, "reset", "Income drops to $2,000 a month")
+    assert app.session_state["income_pct"] == pytest.approx(2000 / 3915.2 * 100, abs=1e-3)
+    bubble = [m.value for m in app.markdown if m.value.startswith("**Understood as:** ")][-1]
+    assert bubble.startswith("**Understood as:** Income drops to $2,000/mo (51.1% of your usual $3,915)")
+    assert any(c.value == "↳ income $2,000/mo ÷ usual $3,915/mo = 51.1% of money in" for c in app.caption)
+    assert _badge(app) == (["All numbers consistent"], [])
+
+
+@needs_data
+def test_chat_can_switch_account_and_keeps_the_shock():
+    app = _fresh()
+    _chat(app, "account 98952, keep the pension")
+    assert app.session_state["acct"] == 98952 and app.session_state["t_pens"] is True
+    assert app.session_state["income_pct"] == 55.0                # the default EI twist is kept
+    assert _badge(app) == (["All numbers consistent"], [])
+
+
+@needs_data
+@pytest.mark.parametrize("msg", ["what's the weather like?", "account 12345", "make it 20% instead"])
+def test_unparseable_input_leaves_the_state_unchanged(msg):
+    app = _fresh()
+    _chat(app, "Income drops to $2,000 a month")                  # no percent lever to change "instead"
+    before, acct, runway = _levers(app), app.session_state["acct"], _runway(app)
+    _chat(app, msg)
+    assert _levers(app) == before and app.session_state["acct"] == acct and _runway(app) == runway
+    assert [m.value for m in app.markdown if m.value.startswith("❓ ")]
+
+
+@needs_data
+@pytest.mark.parametrize("acct", ACCOUNTS + [75489, 91609, 99477, 55819])
+def test_badge_is_green_on_rehearsal_and_edge_accounts(acct):
+    app = _fresh()
+    app.number_input(key="acct").set_value(acct).run()
+    for msg in ("Laid off: EI at 55% of usual income", "reset", "Furnace dies", "reset",
+                "job loss, bills up 15%, with the 2026 EI cap and waiting week, half-year spending"):
+        _chat(app, msg)
+        assert _badge(app) == (["All numbers consistent"], []), (acct, msg)
+
+
+@needs_data
+def test_the_chat_shows_the_last_10_messages_and_what_can_i_type():
+    app = _fresh()
+    for i in range(7):
+        _chat(app, f"must last {i + 2} months")
+    assert len(app.session_state["chat"]) == 14 and len(app.chat_message) == 10
+    box = [e for e in app.expander if e.label == "What can I type?"][0]
+    assert box.proto.expanded is False
+    tune = [e for e in app.expander if e.label.startswith("Fine-tune")][0]
+    assert tune.proto.expanded is False and [s for s in tune.slider if s.key == "income_pct"]
+    assert not [r for r in app.radio if r.key == "preset"]          # the twist-card radio is gone

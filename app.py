@@ -5,11 +5,12 @@
 The judges' number always comes first and is computed exactly as the track brief
 defines it. Reality checks are labelled options shown next to it, never instead of it.
 Everything works offline: no API keys, no network.
+
+The twist is typed in a chat (resilience.shock_parser): golden phrases, then cached LLM answers, then an LLM when one
+is configured, then offline rules. The chat only sets the levers; the engine computes every number, and
+resilience.consistency checks on every rerun that every number on screen agrees.
 """
 from __future__ import annotations
-
-import math
-import time
 
 import pandas as pd
 import plotly.graph_objects as go
@@ -17,23 +18,33 @@ import streamlit as st
 
 from resilience import (
     EI_2026_MAX_MONTHLY,
+    LAID_OFF_EI,
     WAITING_WEEK_LABEL,
     Shock,
     account_flags,
     apply_shock,
-    credit_advice,
-    backup_ladder,
     build_metrics,
-    calendar_path,
-    goal_plan,
-    goal_shock_for,
+    credit_advice,
     grey_zone_note,
     load_monthly,
     loan_in_trouble,
 )
 from resilience import evidence as EV
-from resilience import llm, warehouse
-from resilience.narrative import facts, template_story
+from resilience import shock_llm, warehouse
+from resilience.consistency import check_view, money, rw_text
+from resilience.shock_parser import (
+    DEFAULT_TARGET,
+    HINT_CHIPS,
+    ONEOFF_AMT,
+    ONEOFF_X,
+    STATE_KEYS,
+    follow_up_hints,
+    judges_shock_from_state,
+    parse_shock,
+    shock_from_state,
+    shock_to_state,
+)
+from resilience.view import build_view
 from resilience.portfolio import build_all
 from resilience.portfolio import lines as portfolio_lines
 from resilience.warning import RULES, WINDOW_ROWS, account_light, backtest
@@ -57,15 +68,6 @@ st.markdown("""<style>
 </style>""", unsafe_allow_html=True)
 REHEARSAL = {20331: "lender red flag", 20143: "spends more than comes in", 88269: "looks safe, isn't",
              98952: "retiree", 77743: "furnace wipes buffer"}
-_X = "× typical spending"
-PRESETS = {
-    "Laid off: EI 55%": dict(income_pct=55, bills_pct=0, extra=0.0, oneoff_mode=_X, oneoff_x=0.0, oneoff_amt=0.0, job_loss=True),
-    "Furnace dies: 1× spending": dict(income_pct=100, bills_pct=0, extra=0.0, oneoff_mode=_X, oneoff_x=1.0, oneoff_amt=0.0, job_loss=False),
-    "Job loss + bills +15%": dict(income_pct=55, bills_pct=15, extra=0.0, oneoff_mode=_X, oneoff_x=0.0, oneoff_amt=0.0, job_loss=True),
-    # Custom starts from no shock at all, like the CLI: only the levers you set change anything
-    "Custom": dict(income_pct=100, bills_pct=0, extra=0.0, oneoff_mode=_X, oneoff_x=0.0, oneoff_amt=0.0, job_loss=False),
-}
-LEVERS = tuple(PRESETS["Custom"])
 
 
 # ------------------------------------------------------------------ data
@@ -108,66 +110,80 @@ def snowflake_check(settings_fingerprint: str) -> dict:
         return {"error": f"{type(e).__name__}: {warehouse.scrub(str(e))}"}
 
 
-def money(x: float) -> str:
-    x = 0.0 if abs(x) < 0.5 else x
-    return f"-${-x:,.0f}" if x < 0 else f"${x:,.0f}"
-
-
-def rw_text(res) -> str:
-    if res.no_shortfall:
-        return "No shortfall (120+)"
-    return "120.0 mo (cap)" if res.months >= 120 else f"{res.months:.1f} mo"
-
-
-def path_text(x: float) -> str:
-    return "No shortfall (120+)" if math.isinf(x) else f"{x:.1f} mo"
-
-
 # ------------------------------------------------------------- state
+# One source of truth: the lever keys below. The chat writes them, the Fine-tune sliders are bound to them, and the
+# engine's Shock is built from them (shock_parser.shock_from_state) on every rerun.
 
 ss = st.session_state
 ss.setdefault("acct", 20331)
-ss.setdefault("preset", "Laid off: EI 55%")
-for k, v in PRESETS["Laid off: EI 55%"].items():
+for k, v in shock_to_state(LAID_OFF_EI, DEFAULT_TARGET).items():
     ss.setdefault(k, v)
-ss.setdefault("target", 6)
+ss.setdefault("chat", [])
+ss.setdefault("pct_lever", "income_ei")
+ss.setdefault("chat_last", None)
+for k in ("income_pct", "bills_pct", "extra", "oneoff_x", "oneoff_amt", "cut_pct"):
+    ss[k] = float(ss[k])  # the sliders are float sliders; a test or an old session may hold an int
+ss["target"] = int(ss["target"])
+
+SOURCE_BADGE = {"golden": "golden phrase", "cache": "cached LLM answer", "rules": "offline rules", "none": "not parsed"}
+EXAMPLES = [
+    ("Job loss on EI", "Laid off, EI pays 55%"), ("Pay cut / reduced hours", "Pay cut 20%"),
+    ("Income in dollars", "Income drops to $2,000 a month"), ("Partner's job", "Partner loses their job"),
+    ("Household bills", "Bills up 15%"), ("Rent / new monthly cost", "Rent up $300 a month · baby, $900 a month more"),
+    ("Rent to an amount", "Rent goes to $1,800 a month"), ("One-off in dollars", "A $2,500 car repair"),
+    ("One-off in months of spending", "Furnace dies, repair = a month of spending"),
+    ("Spending cut", "Cut spending 25%"), ("Target", "Must last 9 months"), ("Another customer", "Account 20143"),
+    ("Reality checks", "With the 2026 EI cap · waiting week · keep pension · half-year spending · "
+                       "bills by standing order"),
+    ("Change the last percent", "Make it 20% instead"), ("Add to the one-off", "Add a $2,000 repair"),
+    ("Undo one lever", "Remove the bills increase · no job loss"), ("Start again", "Reset"),
+]
 
 
-def apply_preset() -> None:
-    for k, v in PRESETS[ss.preset].items():
-        ss[k] = v
+def lever_state() -> dict:
+    return {k: ss[k] for k in STATE_KEYS}
 
 
 def pick(acct: int) -> None:
-    ss.acct = acct
-    apply_preset()  # a new customer starts from the selected card's own values
+    ss.acct = acct  # a new customer keeps the current shock
 
 
-def shock_from(v) -> Shock:
-    """The Shock a set of lever values means (inactive one-off inputs don't count)."""
-    by_x = v["oneoff_mode"] == _X
-    return Shock(income_multiplier=v["income_pct"] / 100, bills_increase_pct=v["bills_pct"] / 100,
-                 extra_monthly_cost=float(v["extra"]), one_off_cost=0.0 if by_x else float(v["oneoff_amt"]),
-                 one_off_multiple_of_S=float(v["oneoff_x"]) if by_x else 0.0,
-                 job_loss=bool(v["job_loss"]) and v["income_pct"] < 100)
+def _shown_row():
+    m_ = metrics()
+    a = ss.acct if ss.acct in m_.index else ss.get("last_acct", next(iter(REHEARSAL)))
+    return int(a), m_.loc[a]
 
 
-def twist_label() -> str:
-    """The card's name only while the applied shock still equals the card; otherwise say what is applied."""
-    if ss.preset != "Custom" and shock_from(ss) == shock_from(PRESETS[ss.preset]):
-        return ss.preset
-    parts = []
-    if ss.income_pct != 100:
-        parts.append(f"{'job loss, EI' if ss.job_loss else 'income kept'} {ss.income_pct}%")
-    if ss.bills_pct:
-        parts.append(f"bills +{ss.bills_pct}%")
-    if ss.extra:
-        parts.append(f"+${ss.extra:,.0f}/mo")
-    if ss.oneoff_mode == _X and ss.oneoff_x:
-        parts.append(f"one-off {ss.oneoff_x:g}× spending")
-    if ss.oneoff_mode != _X and ss.oneoff_amt:
-        parts.append(f"one-off ${ss.oneoff_amt:,.0f}")
-    return "Custom: " + (", ".join(parts) if parts else "no shock")
+def source_badge(source: str) -> str:
+    if source == "llm":
+        return shock_llm.provider_name().capitalize()
+    return SOURCE_BADGE.get(source, source)
+
+
+def send(text: str | None = None) -> None:
+    """Parse one chat message and write the result into the lever keys (a callback, so it runs before the widgets)."""
+    text = ss.get("chat_box") if text is None else text
+    if not text or not str(text).strip():
+        return
+    acct, row = _shown_row()
+    res = parse_shock(str(text), row, shock_from_state(lever_state(), row), int(ss.target), metrics=metrics(),
+                      last_pct_lever=ss.get("pct_lever"))
+    ss.chat.append({"role": "user", "text": str(text)})
+    reply = {"role": "assistant", "source": res.source, "warnings": list(res.warnings), "resolved": list(res.resolved),
+             "hints": []}
+    if res.clarify:
+        reply["text"], reply["clarify"] = res.clarify, True
+    else:
+        if res.account_id is not None:
+            ss.acct, acct, row = res.account_id, res.account_id, metrics().loc[res.account_id]
+        state = shock_to_state(res.shock, res.target)
+        for k, v in state.items():
+            ss[k] = v
+        ss.pct_lever = res.pct_lever
+        ss.chat_last = {"shock": res.shock, "state": state, "account_id": acct, "understood_as": res.understood_as}
+        reply["text"] = res.understood_as
+        reply["hints"] = follow_up_hints(res, row)
+    ss.chat.append(reply)
 
 
 m = metrics()
@@ -185,8 +201,7 @@ tab_live, tab_port, tab_method = st.tabs(["Live twist", "Portfolio discoveries",
 with tab_live:
     c_id, _ = st.columns([1, 3])
     with c_id:
-        acct = st.number_input("account_id", min_value=1, max_value=999_999, step=1, key="acct",
-                               on_change=apply_preset)
+        acct = st.number_input("account_id", min_value=1, max_value=999_999, step=1, key="acct")
     st.write("Rehearsal accounts")
     cols = st.columns(len(REHEARSAL))  # full width, so the labels fit at 1440
     for c, (a, why) in zip(cols, REHEARSAL.items()):
@@ -254,64 +269,83 @@ with tab_live:
                       legend=dict(orientation="h", y=1.15), yaxis_title="CAD")
     st.plotly_chart(fig)
 
+    # ---------------------------------------------------------- chat: the main input
+    st.markdown("##### Describe the twist")
+    c_now, c_reset = st.columns([5, 1])
+    now_line = c_now.empty()
+    c_reset.button("↺ Reset", on_click=send, args=("reset",), help="Back to no shock and a 6-month target",
+                   width="stretch")
+    chips = st.columns(len(HINT_CHIPS))
+    for c, chip in zip(chips, HINT_CHIPS):
+        c.button(chip, on_click=send, args=(chip,), width="stretch", key=f"chip_{chip}")
+    with st.expander("What can I type?", expanded=False):
+        st.dataframe(pd.DataFrame({"to set": [a for a, _ in EXAMPLES], "type": [b for _, b in EXAMPLES]}),
+                     hide_index=True)
+        st.caption("Each message changes only what it mentions; everything else keeps its current value. "
+                   "Golden phrases and cached answers are instant and identical every time; anything else is read "
+                   "by an LLM when one is configured, or by the offline rules.")
+    for msg in ss.chat[-10:]:
+        with st.chat_message(msg["role"]):
+            if msg["role"] == "user":
+                st.write(msg["text"])
+                continue
+            st.markdown(("❓ " if msg.get("clarify") else "**Understood as:** ") + msg["text"])
+            for line in msg.get("resolved", []):
+                st.caption("↳ " + line)
+            for w in msg.get("warnings", []):
+                st.caption("⚠️ " + w)
+            st.caption(" · ".join([f"source: {source_badge(msg['source'])}", *msg.get("hints", [])]))
+    st.chat_input("Type a twist, e.g. “rent up $300 a month”", key="chat_box", on_submit=send)
+
     # ---------------------------------------------------------- 2. take a shock
     st.subheader("2 · Take a shock")
-    c_card, c_reset = st.columns([5, 1])
-    c_card.radio("Twist card", list(PRESETS), key="preset", horizontal=True, on_change=apply_preset)
-    c_reset.button("↺ Reset card", on_click=apply_preset, help="Put every lever back to the selected card's values",
-                   width="stretch")
-    s1, s2, s3, s4 = st.columns(4)
-    with s1:
-        st.slider("Income kept (%)", 0, 100, key="income_pct", help="EI pays 55% of usual income")
-        st.checkbox("This is a job loss on EI", key="job_loss", disabled=ss.income_pct >= 100,
-                    help="Off = a pay cut or reduced hours: no EI cap, waiting week or pension checks")
-    s2.slider("Household bills up (%)", 0, 50, key="bills_pct")
-    s3.number_input("Extra monthly cost ($)", min_value=0.0, step=100.0, key="extra",
-                    help="Rent up $X/mo goes here; H is $0 on 1,225 accounts")
-    with s4:
-        st.radio("One-off cost", [_X, "$ amount"], key="oneoff_mode", horizontal=True)
-        by_x = ss.oneoff_mode == _X
-        st.slider("× S (typical spending)", 0.0, 3.0, step=0.25, key="oneoff_x", disabled=not by_x)
-        st.number_input("One-off ($)", min_value=0.0, step=500.0, key="oneoff_amt", disabled=by_x)
-    N = st.slider("Must survive (months)", 1, 12, key="target")
+    badge = st.empty()
+    with st.expander("Fine-tune (the same levers as the chat)", expanded=False):
+        s1, s2, s3, s4 = st.columns(4)
+        with s1:
+            st.slider("Income kept (%)", 0.0, 100.0, step=1.0, key="income_pct", help="EI pays 55% of usual income")
+            st.checkbox("This is a job loss on EI", key="job_loss", disabled=ss.income_pct >= 100,
+                        help="Off = a pay cut or reduced hours: no EI cap, waiting week or pension checks")
+        with s2:
+            st.slider("Household bills up (%)", 0.0, 100.0, step=1.0, key="bills_pct")
+            st.slider("Cut non-fixed spending (%)", 0.0, 100.0, step=1.0, key="cut_pct",
+                      help="Card and cash spending the customer cuts")
+        s3.number_input("Extra monthly cost ($)", min_value=0.0, step=100.0, key="extra",
+                        help="Rent up $X/mo goes here; H is $0 on 1,225 accounts")
+        with s4:
+            st.radio("One-off cost", [ONEOFF_X, ONEOFF_AMT], key="oneoff_mode", horizontal=True)
+            by_x = ss.oneoff_mode == ONEOFF_X
+            st.slider("× S (typical spending)", 0.0, 12.0, step=0.25, key="oneoff_x", disabled=not by_x)
+            st.number_input("One-off ($)", min_value=0.0, step=500.0, key="oneoff_amt", disabled=by_x)
+        st.slider("Must survive (months)", 1, 24, key="target")
+    N = int(ss.target)
 
-    judge_shock = Shock(income_multiplier=ss.income_pct / 100, bills_increase_pct=ss.bills_pct / 100,
-                        extra_monthly_cost=ss.extra, one_off_cost=0.0 if by_x else ss.oneoff_amt,
-                        one_off_multiple_of_S=ss.oneoff_x if by_x else 0.0,
-                        job_loss=bool(ss.job_loss) and ss.income_pct < 100, name=twist_label())
-
+    judge_part = judges_shock_from_state(lever_state())
     st.markdown("**Reality checks** (our assumptions; the judges' number never changes)")
     t = list(st.columns([1, 2.6, 1.2])) + list(st.columns(2))  # room for the waiting-week label at 1440
-    job_loss = judge_shock.is_job_loss
-    can_pension = job_loss and r.Pn > 0
-    can_bills = r.H == 0 and r.H_SO > 0
-    cap = t[0].toggle(f"2026 EI cap (${EI_2026_MAX_MONTHLY:,.0f}/mo)", key="t_cap",
-                      help="$729/week max, canada.ca, 2026", disabled=not job_loss)
-    ww = t[1].toggle(WAITING_WEEK_LABEL, key="t_ww", help="No EI for the first week", disabled=not job_loss)
-    pens = t[2].toggle("Keep pension on job loss", key="t_pens", disabled=not can_pension)
-    s6 = t[3].toggle("Typical half-year spending", key="t_s6",
-                     help="Median 6-month spend ÷ 6, instead of the median month")
-    bfb = t[4].toggle("Bills paid by standing order", key="t_bfb", disabled=not can_bills)
-    # a disabled toggle keeps its old value, so only apply each check where it makes sense
-    cap, ww, pens, bfb = cap and job_loss, ww and job_loss, pens and can_pension, bfb and can_bills
-    real_shock = judge_shock.with_(income_cap_monthly=EI_2026_MAX_MONTHLY if cap else None, waiting_week=ww,
-                                   pension_aware=pens, spending_basis="S6" if s6 else "S", bills_fallback=bfb)
+    job_loss = judge_part.is_job_loss
+    t[0].toggle(f"2026 EI cap (${EI_2026_MAX_MONTHLY:,.0f}/mo)", key="t_cap",
+                help="$729/week max, canada.ca, 2026", disabled=not job_loss)
+    t[1].toggle(WAITING_WEEK_LABEL, key="t_ww", help="No EI for the first week", disabled=not job_loss)
+    t[2].toggle("Keep pension on job loss", key="t_pens", disabled=not (job_loss and r.Pn > 0))
+    t[3].toggle("Typical half-year spending", key="t_s6", help="Median 6-month spend ÷ 6, instead of the median month")
+    t[4].toggle("Bills paid by standing order", key="t_bfb", disabled=not (r.H == 0 and r.H_SO > 0))
 
-    judge = apply_shock(r, judge_shock)
-    real = apply_shock(r, real_shock)
-    jan = calendar_path(r, judge_shock)  # "each check alone": January path on the judges' twist
-    active = [name for name, on in (("2026 EI cap", cap), ("waiting week", ww), ("pension kept", pens),
-                                    ("half-year spending", s6), ("bills by standing order", bfb)) if on]
+    # every number below comes from this one view; resilience.consistency re-derives it independently
+    V = build_view(int(acct), r, lever_state(), chat=ss.chat_last)
+    judge_shock, real_shock, judge, real, jan = V["judge_shock"], V["engine_shock"], V["judge"], V["real"], V["jan"]
+    active = V["active"]
+    now_line.markdown(f"**Current shock:** {V['understood_as']}")
 
     L, R = st.columns(2)
     with L:
         st.markdown("##### Judges' formula")
-        st.metric("Runway", rw_text(judge))
-        if judge.survives(N):
+        st.metric("Runway", V["judge_text"])
+        if V["verdict"] == "survives":
             st.success(f"SURVIVES {N} MONTH{'' if N == 1 else 'S'}", icon="✅")
-        elif r.B <= 0:
+        elif V["verdict"] == "overdrawn":
             st.error(f"ALREADY OVERDRAWN: the buffer was {money(r.B)} before any shock, so runway is 0", icon="🛑")
-        elif judge.buffer_left <= 0:
+        elif V["verdict"] == "buffer_gone":
             st.error(f"BUFFER GONE: the one-off ({money(judge.one_off)}) is more than the buffer", icon="🛑")
         else:
             st.error(f"RUNS OUT IN {judge.months:.1f} MONTHS (needs {N})", icon="🛑")
@@ -324,30 +358,16 @@ with tab_live:
     with R:
         st.markdown("##### Reality check")
         delta = None
-        if (any((cap, ww, pens, s6, bfb)) and not (judge.no_shortfall or real.no_shortfall)
-                and real.months != judge.months):
+        if active and not (judge.no_shortfall or real.no_shortfall) and real.months != judge.months:
             delta = f"{real.months - judge.months:+.1f} mo vs judges"
         st.metric("Runway with selected checks", rw_text(real), delta)
-        rows = [("Half-year spending", apply_shock(r, judge_shock.with_(spending_basis="S6"))),
-                ("Starting in January (month by month)", jan)]
-        if judge_shock.is_job_loss:
-            rows += [("2026 EI cap", apply_shock(r, judge_shock.with_(income_cap_monthly=EI_2026_MAX_MONTHLY))),
-                     ("2026 cap + waiting week, once the waiver ends",
-                      apply_shock(r, judge_shock.with_(income_cap_monthly=EI_2026_MAX_MONTHLY, waiting_week=True)))]
-            if r.Pn > 0:
-                rows.append(("Pension kept", apply_shock(r, judge_shock.with_(pension_aware=True))))
-        st.dataframe(pd.DataFrame({"each check alone": [n for n, _ in rows],
-                                   "runway": [path_text(v) if isinstance(v, float) else rw_text(v) for _, v in rows]}),
-                     hide_index=True)
+        st.dataframe(pd.DataFrame({"each check alone": [n for n, _ in V["checks_alone"]],
+                                   "runway": [v for _, v in V["checks_alone"]]}), hide_index=True)
 
     # ---------------------------------------------------------- 3. make a plan
     st.subheader("3 · Make a plan")
     st.caption("Plans use the judges' numbers" + (f" plus your reality checks: {', '.join(active)}." if active else "."))
-    plan_shock = real_shock
-    goal_shock = goal_shock_for(plan_shock)
-    g = goal_plan(r, target_months=N, target_kind="ei_proof", shock=goal_shock)
-    conv = goal_plan(r, target_months=3)
-    lad = backup_ladder(r, plan_shock, target_months=N)
+    plan_shock, goal_shock, g, conv, lad = real_shock, V["goal_shock"], V["goal"], V["conv"], V["ladder"]
 
     P1, P2 = st.columns(2)
     with P1:
@@ -392,30 +412,21 @@ with tab_live:
         if lad.cash_or_credit_needed:
             st.write(credit_advice(r, lad.cash_or_credit_needed, job_loss=plan_shock.is_job_loss))
 
-    f = facts(int(acct), r, judge_shock, judge,
-              {"half-year spending": apply_shock(r, judge_shock.with_(spending_basis="S6")),
-               "starting in January": jan}, lad, g.target_buffer, g.shortfall, g.months_to_target, N,
-              plan_basis=", ".join(active))
-    use_ai = st.toggle("Write this summary with Gemini", key="t_ai", disabled=not llm.available(),
-                       help="Rewords the computed numbers only; falls back to the template if a number doesn't match"
-                       if llm.available() else "Set GEMINI_API_KEY to enable. The template works offline.")
-    story, source = None, "template (offline)"
-    if use_ai and llm.available():
-        if ss.get("gemini_down_until", 0) < time.time():
-            with st.spinner("Asking Gemini to reword the numbers…"):
-                story, source = llm.gemini_story(f, timeout_s=8)
-            if source.startswith("Gemini unavailable"):  # a hanging network: don't wait again on every rerun
-                ss["gemini_down_until"] = time.time() + 300
-        else:
-            source = "template (Gemini was unreachable; trying again in a few minutes)"
-    story = story or template_story(f)
+    story = V["story"]
     with st.container(border=True):
         st.markdown(f"**{story['headline']}**")
         st.write(story["what_changed"])
         for step in story["plan_steps"]:
             st.write("• " + step)
-        reality = str(story["reality_check"]).rstrip(". ")  # Gemini ends it with a full stop, the template doesn't
-        st.caption(f"Reality check: {reality}. {story['caveat']} · Summary: {source}")
+        reality = str(story["reality_check"]).rstrip(". ")
+        st.caption(f"Reality check: {reality}. {story['caveat']} · Summary: template (offline)")
+
+    issues = check_view(r, real_shock, N, V)
+    if issues:
+        badge.warning("**Numbers disagree** (shown, never hidden):\n\n" + "\n".join(f"- {i}" for i in issues),
+                      icon="⚠️")
+    else:
+        badge.success("All numbers consistent", icon="✅")
 
 # =========================================================== PORTFOLIO
 with tab_port:
