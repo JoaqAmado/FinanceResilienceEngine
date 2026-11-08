@@ -33,8 +33,12 @@
   gap: 8px 10px;
 }
 
+/* label, value and sub line share the row's tracks, so values line up even when a label wraps */
 .metric {
   display: grid;
+  grid-row: span 3;
+  grid-template-rows: subgrid;
+  row-gap: 0;
   min-width: 0;
 }
 

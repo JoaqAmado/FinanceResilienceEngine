@@ -4,6 +4,24 @@
   padding: 0 16px 24px;
 }
 
+/* hidden until a keyboard user tabs onto it */
+.skip {
+  position: absolute;
+  left: 16px;
+  top: -100px;
+  z-index: 10;
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.8rem;
+  font-weight: 650;
+}
+
+.skip:focus {
+  top: 8px;
+}
+
 .header {
   display: flex;
   flex-wrap: wrap;
@@ -97,13 +115,19 @@
 }
 
 .subhead {
+  flex-basis: 100%;
   color: var(--muted);
   font-size: 0.82rem;
-  margin: 2px 0 14px;
+  margin: -4px 0 8px;
 }
 
 .main {
   min-height: 60vh;
+}
+
+/* focused only by the skip link */
+.main:focus {
+  outline: none;
 }
 
 .loading,
@@ -143,15 +167,16 @@
   }
 
   .tabs {
-    flex-wrap: nowrap;
-    overflow-x: auto;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     max-width: 100%;
   }
 
   .tab {
     padding: 0.5rem 0.7rem;
     font-size: 0.88rem;
-    white-space: nowrap;
+    white-space: normal;
+    text-align: center;
   }
 
   .tools {
@@ -164,5 +189,6 @@
 
   .subhead {
     font-size: 0.76rem;
+    margin-top: -2px;
   }
 }

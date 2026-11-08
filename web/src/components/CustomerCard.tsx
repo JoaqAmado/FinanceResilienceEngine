@@ -88,7 +88,13 @@ function HistoryChart({ id }: { id: number }) {
       </figcaption>
       <div className={s.histChart}>
         <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={rows} stackOffset="sign" margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
+          <ComposedChart
+            data={rows}
+            stackOffset="sign"
+            margin={{ top: 4, right: 4, bottom: 0, left: 0 }}
+            title={`Month history of account ${id}`}
+            desc="Bars for money in and money out each month, a line for the month-end balance. The left and right arrow keys step through the months."
+          >
             <XAxis
               dataKey="month"
               ticks={years}
@@ -99,7 +105,7 @@ function HistoryChart({ id }: { id: number }) {
               interval={0}
               height={22}
             />
-            <YAxis tickFormatter={axisMoney} width={54} tickLine={false} axisLine={false} tick={{ fill: COLORS.muted }} />
+            <YAxis tickFormatter={axisMoney} width="auto" tickLine={false} axisLine={false} tick={{ fill: COLORS.muted }} />
             <Tooltip content={HistTooltip} isAnimationActive={false} />
             <Bar dataKey="moneyIn" stackId="flow" fill={COLORS.histIn} isAnimationActive={false} />
             <Bar dataKey="moneyOut" stackId="flow" fill={COLORS.histOut} isAnimationActive={false} />
@@ -144,7 +150,7 @@ export function CustomerCard({
   return (
     <section className={s.panel} aria-labelledby="customer-title">
       <div className={s.head}>
-        <h2 id="customer-title" className={s.eyebrow}>
+        <h2 id="customer-title" className={s.eyebrow} tabIndex={-1}>
           Know the customer · account {acct.id}
         </h2>
         <span className={s.meta}>

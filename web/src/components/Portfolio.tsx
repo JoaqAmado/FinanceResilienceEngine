@@ -210,13 +210,13 @@ export function Portfolio({ data, onOpen }: Props) {
     const dollars = P.income_bands[i]?.median_B;
     return (
       <g transform={`translate(${Number(x)},${Number(y)})`}>
-        <text textAnchor="middle" dy={14} fill={COLORS.ink2} fontWeight={600}>
+        <text textAnchor="middle" dy="1.12em" fill={COLORS.ink2} fontWeight={600}>
           {String(payload.value)}
         </text>
-        <text textAnchor="middle" dy={30} fill={COLORS.muted}>
+        <text textAnchor="middle" dy="2.4em" fill={COLORS.muted}>
           buffer {months === null || months === undefined ? 'n/a' : pyFixed(months, 1)} mo
         </text>
-        <text textAnchor="middle" dy={46} fill={COLORS.muted}>
+        <text textAnchor="middle" dy="3.69em" fill={COLORS.muted}>
           {dollars === null || dollars === undefined ? 'n/a' : kMoney(dollars)}
         </text>
       </g>
@@ -254,10 +254,10 @@ export function Portfolio({ data, onOpen }: Props) {
     const [who, test] = String(payload.value).split(' · ');
     return (
       <g transform={`translate(${Number(x)},${Number(y)})`}>
-        <text textAnchor="middle" dy={14} fill={COLORS.ink2} fontWeight={600}>
+        <text textAnchor="middle" dy="1.12em" fill={COLORS.ink2} fontWeight={600}>
           {who}
         </text>
-        <text textAnchor="middle" dy={30} fill={COLORS.muted}>
+        <text textAnchor="middle" dy="2.4em" fill={COLORS.muted}>
           {test} EI 55%
         </text>
       </g>
@@ -326,7 +326,12 @@ export function Portfolio({ data, onOpen }: Props) {
         </ul>
         <div className={s.chartTall}>
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={E.lift} margin={{ top: 16, right: 36, bottom: 8, left: 0 }}>
+            <LineChart
+              data={E.lift}
+              margin={{ top: 16, right: 36, bottom: 8, left: 0 }}
+              title={`Accounts that went overdrawn in ${E.label_year} caught by each watch-list size`}
+              desc="One line per ranking in the legend. The left and right arrow keys step through the list sizes."
+            >
               <CartesianGrid stroke={COLORS.grid} vertical={false} />
               <XAxis
                 dataKey="list_pct"
@@ -345,7 +350,7 @@ export function Portfolio({ data, onOpen }: Props) {
                 ticks={liftTicks}
                 tickLine={false}
                 axisLine={false}
-                width={36}
+                width="auto"
                 tick={{ fill: COLORS.muted }}
               />
               <Tooltip content={LiftTooltip} cursor={{ stroke: COLORS.axis, strokeWidth: 1 }} isAnimationActive={false} />
@@ -435,14 +440,19 @@ export function Portfolio({ data, onOpen }: Props) {
         </p>
         <div className={s.chart}>
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={bars} margin={{ top: 16, right: 8, bottom: 8, left: 0 }}>
+            <BarChart
+              data={bars}
+              margin={{ top: 16, right: 8, bottom: 8, left: 0 }}
+              title={`Share that went overdrawn in ${E.label_year}, by irregular money in and the judges' EI 55% test`}
+              desc="One bar per group, with its 95% interval. The left and right arrow keys step through the groups."
+            >
               <CartesianGrid stroke={COLORS.grid} vertical={false} />
               <XAxis dataKey="label" tickLine={false} stroke={COLORS.axis} tick={cellTick} interval={0} height={48} />
               <YAxis
                 tickFormatter={(v: number) => `${v}%`}
                 tickLine={false}
                 axisLine={false}
-                width={44}
+                width="auto"
                 tick={{ fill: COLORS.muted }}
               />
               <Tooltip content={CellTooltip} cursor={{ fill: 'rgba(15,23,42,0.05)' }} isAnimationActive={false} />
@@ -509,16 +519,23 @@ export function Portfolio({ data, onOpen }: Props) {
         </ul>
         <div className={s.chartTall}>
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={P.income_bands} margin={{ top: 24, right: 8, bottom: 8, left: 0 }} barGap={8} barCategoryGap="18%">
+            <BarChart
+              data={P.income_bands}
+              margin={{ top: 24, right: 8, bottom: 8, left: 0 }}
+              barGap={14}
+              barCategoryGap="18%"
+              title="Share of each monthly money-in band that can't last 6 months"
+              desc="Two bars per band: the judges' EI 55% and the real 2026 EI cap. The left and right arrow keys step through the bands."
+            >
               <CartesianGrid stroke={COLORS.grid} vertical={false} />
-              <XAxis dataKey="income_band" tick={bandTick} tickLine={false} stroke={COLORS.axis} interval={0} height={64} />
+              <XAxis dataKey="income_band" tick={bandTick} tickLine={false} stroke={COLORS.axis} interval={0} height={68} />
               <YAxis
                 domain={[0, 100]}
                 ticks={[0, 25, 50, 75, 100]}
                 tickFormatter={(v: number) => `${v}%`}
                 tickLine={false}
                 axisLine={false}
-                width={52}
+                width="auto"
                 tick={{ fill: COLORS.muted }}
               />
               <Tooltip content={BandTooltip} cursor={{ fill: 'rgba(15,23,42,0.05)' }} isAnimationActive={false} />
@@ -700,7 +717,12 @@ export function Portfolio({ data, onOpen }: Props) {
           </p>
           <div className={s.chart}>
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={P.s6_calibration} margin={{ top: 24, right: 8, bottom: 8, left: 0 }}>
+              <BarChart
+                data={P.s6_calibration}
+                margin={{ top: 24, right: 8, bottom: 8, left: 0 }}
+                title="Accounts the judges call safe that still fail 6 months on typical half-year spending"
+                desc="One bar per judges' EI runway group. The left and right arrow keys step through the groups."
+              >
                 <CartesianGrid stroke={COLORS.grid} vertical={false} />
                 <XAxis
                   dataKey="judge_runway_months"
@@ -718,7 +740,7 @@ export function Portfolio({ data, onOpen }: Props) {
                   tickFormatter={(v: number) => `${v}%`}
                   tickLine={false}
                   axisLine={false}
-                  width={52}
+                  width="auto"
                   tick={{ fill: COLORS.muted }}
                 />
                 <Tooltip
@@ -758,7 +780,12 @@ export function Portfolio({ data, onOpen }: Props) {
           </p>
           <div className={s.chart}>
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={P.cut_histogram} margin={{ top: 24, right: 8, bottom: 8, left: 0 }}>
+              <BarChart
+                data={P.cut_histogram}
+                margin={{ top: 24, right: 8, bottom: 8, left: 0 }}
+                title="Failing accounts by the monthly cut that gets them back to 6 months"
+                desc="One bar per cut size, as a share of spending. The left and right arrow keys step through the cut sizes."
+              >
                 <CartesianGrid stroke={COLORS.grid} vertical={false} />
                 <XAxis
                   dataKey="cut_as_share_of_spending"
@@ -770,7 +797,7 @@ export function Portfolio({ data, onOpen }: Props) {
                   label={{ value: 'cut needed, % of spending', position: 'insideBottom', offset: -4, fill: COLORS.muted }}
                   height={44}
                 />
-                <YAxis tickLine={false} axisLine={false} width={44} tick={{ fill: COLORS.muted }} />
+                <YAxis tickLine={false} axisLine={false} width="auto" tick={{ fill: COLORS.muted }} />
                 <Tooltip
                   content={(p: TooltipContentProps) => <SimpleTooltip {...p} unit="accounts" />}
                   cursor={{ fill: 'rgba(15,23,42,0.05)' }}

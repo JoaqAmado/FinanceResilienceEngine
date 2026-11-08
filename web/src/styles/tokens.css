@@ -138,6 +138,7 @@ table {
 
 /* Recharts text follows the page's rem scale, so presenter mode enlarges chart labels too */
 .recharts-cartesian-axis-tick text,
+.recharts-cartesian-axis-tick-label text,
 .recharts-label,
 .recharts-label-list text {
   font-size: 0.78rem;

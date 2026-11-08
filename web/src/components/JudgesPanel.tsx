@@ -64,7 +64,7 @@ export function JudgesPanel({ acct, judge, baseline, shock, target, greyNote }: 
 
       <div className={s.hero}>
         <span className="visually-hidden" aria-live="polite">
-          Judges' runway: {exact}
+          Judges' runway: {exact}. {v.text}
         </span>
         <span className={s.heroValue} aria-hidden="true">
           {judge.noShortfall ? (

@@ -147,7 +147,12 @@ export function BurnDown({ acct, judgeShock, judge, planShock, ladder, target, a
 
       <div className={s.chart}>
         <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={rows} margin={{ top: 22, right: 18, bottom: 6, left: 6 }}>
+          <ComposedChart
+            data={rows}
+            margin={{ top: 22, right: 18, bottom: 6, left: 6 }}
+            title="Burn-down: balance month by month after the twist"
+            desc="One line per path in the legend. The left and right arrow keys step through the months."
+          >
             <CartesianGrid stroke={COLORS.grid} vertical={false} />
             <XAxis
               dataKey="t"
@@ -162,7 +167,7 @@ export function BurnDown({ acct, judgeShock, judge, planShock, ladder, target, a
             />
             <YAxis
               tickFormatter={axisMoney}
-              width={64}
+              width="auto"
               tickLine={false}
               axisLine={false}
               tick={{ fill: COLORS.muted }}

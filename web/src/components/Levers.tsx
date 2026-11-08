@@ -161,7 +161,7 @@ export function Levers({ levers: l, target, onLevers, onTarget, onReset }: Props
         unit="%"
         value={l.incomePct}
         limit={LIMITS.incomePct}
-        hint="EI pays 55% of usual income"
+        hint={l.jobLoss && l.incomePct < 100 ? 'EI pays 55% of usual money in' : undefined}
         onChange={(v) => onLevers({ incomePct: v })}
       />
       <label className={s.check} data-disabled={l.incomePct >= 100 ? 'true' : undefined}>

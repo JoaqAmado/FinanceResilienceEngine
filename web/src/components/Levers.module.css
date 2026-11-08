@@ -178,4 +178,8 @@
   .range {
     height: 44px;
   }
+
+  .reset {
+    min-height: 44px;
+  }
 }

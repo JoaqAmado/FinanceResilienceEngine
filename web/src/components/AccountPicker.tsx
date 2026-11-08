@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { RefObject } from 'react';
 import s from './AccountPicker.module.css';
 
@@ -47,6 +47,12 @@ export function AccountPicker({ ids, has, current, onOpen, inputRef }: Props) {
     setText(String(current));
     setError(null);
   }, [current]);
+
+  // read by the blur timeout, which runs after a chip click may have opened another account
+  const latest = useRef({ current, error });
+  useEffect(() => {
+    latest.current = { current, error };
+  });
 
   const suggestions = useMemo(() => {
     if (!text || text === String(current)) return [];
@@ -139,7 +145,14 @@ export function AccountPicker({ ids, has, current, onOpen, inputRef }: Props) {
             value={text}
             onFocus={(e) => e.currentTarget.select()}
             onChange={(e) => onChange(e.target.value)}
-            onBlur={() => window.setTimeout(() => setOpen(false), 120)}
+            onBlur={() =>
+              window.setTimeout(() => {
+                setOpen(false);
+                // a partial id left behind goes back to the account on screen, as Escape does (an error stays put)
+                const { current: cur, error: err } = latest.current;
+                if (!err) setText((t) => (Number(t) === cur ? t : String(cur)));
+              }, 120)
+            }
             onKeyDown={(e) => {
               if (e.key === 'ArrowDown' && suggestions.length) {
                 e.preventDefault();

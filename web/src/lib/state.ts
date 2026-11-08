@@ -15,6 +15,8 @@ export type Action =
 export function reducer(st: Scenario, a: Action): Scenario {
   switch (a.type) {
     case 'open': {
+      // re-opening the account already on screen (its chip, or its id typed again) keeps the twist
+      if (a.id === st.id && !a.card) return { ...st, tab: a.tab ?? st.tab };
       // a new customer starts from the selected card's own values (app.py pick)
       const card = a.card ?? st.card;
       // a new customer also starts with the default target and every reality check off

@@ -7,6 +7,7 @@
  *   - a scenario survives the URL-hash round trip
  *   - the early-warning light renders on the customer card (server-rendered markup)
  *   - the Portfolio tab shows the 2025 backtest evidence first, with the lines Python writes
+ *   - chart axis labels follow the rem scale and every chart is named (review fixes)
  */
 import { readFileSync } from 'node:fs';
 import { createElement } from 'react';
@@ -14,7 +15,10 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { CustomerCard } from '../src/components/CustomerCard';
 import { EarlyWarningLight } from '../src/components/EarlyWarningLight';
+import { JudgesPanel } from '../src/components/JudgesPanel';
+import { Levers } from '../src/components/Levers';
 import { Portfolio } from '../src/components/Portfolio';
+import { RealityPanel } from '../src/components/RealityPanel';
 import {
   BASELINE,
   FURNACE,
@@ -48,6 +52,7 @@ import {
   twistLabel,
 } from '../src/lib/scenario';
 import type { Scenario } from '../src/lib/scenario';
+import { reducer } from '../src/lib/state';
 
 const read = (rel: string) => JSON.parse(readFileSync(new URL(rel, import.meta.url), 'utf8'));
 const accounts = decodeAccounts(read('../public/data/accounts.json') as AccountsFile);
@@ -210,6 +215,27 @@ describe('scenario state', () => {
     expect(decodeScenario(encodeScenario(DEFAULT_SCENARIO))).toEqual(DEFAULT_SCENARIO);
   });
 
+  it("re-opening the account on screen keeps the twist; another account, or a card, starts from the card", () => {
+    const edited: Scenario = {
+      ...DEFAULT_SCENARIO,
+      id: 20143,
+      card: 'double',
+      levers: { ...CARD_LEVERS.double, billsPct: 40 },
+      target: 9,
+      toggles: { ...DEFAULT_SCENARIO.toggles, cap: true },
+    };
+    // its chip, or its id typed again
+    expect(reducer(edited, { type: 'open', id: 20143 })).toEqual(edited);
+    expect(reducer({ ...edited, tab: 'portfolio' }, { type: 'open', id: 20143, tab: 'live' })).toEqual(edited);
+    // a different account starts from the card's own values
+    const other = reducer(edited, { type: 'open', id: 20331 });
+    expect([other.id, other.card, other.levers, other.target]).toEqual([20331, 'double', CARD_LEVERS.double, 6]);
+    expect(other.toggles.cap).toBe(false);
+    // the Portfolio list passes a card: that always resets, even on the same account
+    const fromList = reducer(edited, { type: 'open', id: 20143, card: 'ei', tab: 'live' });
+    expect([fromList.card, fromList.levers, fromList.target]).toEqual(['ei', CARD_LEVERS.ei, 6]);
+  });
+
   it('falls back to safe values on junk', () => {
     const s = decodeScenario('#tab=nope&id=-4&card=zzz&inc=900&n=40&bills=abc');
     expect(s.tab).toBe('live');
@@ -262,6 +288,45 @@ describe('live screen model', () => {
         }
       }
     }
+  });
+
+  it('screen readers hear the verdict and the reality-check runway, not just the judges number', () => {
+    const live = (html: string) =>
+      [...html.matchAll(/<span[^>]*aria-live="polite"[^>]*>(.*?)<\/span>/g)].map((x) => x[1].replace(/&#x27;/g, "'"));
+    const acct = byId.get(88269)!;
+    for (const [n, verdict] of [[6, 'SURVIVES 6 MONTHS'], [12, 'RUNS OUT IN 11.3 MONTHS (needs 12)']] as const) {
+      const m = at(88269, { target: n });
+      const html = renderToStaticMarkup(
+        createElement(JudgesPanel, { acct, judge: m.judge, baseline: m.baseline, shock: m.judgeShock, target: n, greyNote: m.greyNote }),
+      );
+      expect(live(html)).toEqual([`Judges' runway: 11.3 mo. ${verdict}`]);
+    }
+    const pens = at(98952, { toggles: { cap: false, ww: false, pens: true, s6: false, bfb: false } });
+    const html = renderToStaticMarkup(
+      createElement(RealityPanel, {
+        judge: pens.judge,
+        real: pens.real,
+        anyOn: pens.anyCheckOn,
+        activeNames: pens.activeNames,
+        checks: pens.checks,
+        jan: pens.jan,
+        onToggle: () => {},
+      }),
+    );
+    expect(live(html)).toEqual(['Runway with the selected checks: 23.4 mo']);
+  });
+
+  it("the Income kept lever's EI hint shows only on a job loss, in money-in wording", () => {
+    const hint = (levers: Scenario['levers']) => {
+      const html = renderToStaticMarkup(
+        createElement(Levers, { levers, target: 6, onLevers: () => {}, onTarget: () => {}, onReset: () => {} }),
+      );
+      return html.match(/<p id="lever-income-hint"[^>]*>(.*?)<\/p>/)?.[1] ?? null;
+    };
+    expect(hint(CARD_LEVERS.furnace)).toBe(null); // 100% kept, no job loss
+    expect(hint({ ...CARD_LEVERS.custom, incomePct: 37 })).toBe(null); // a cut, but not a job loss
+    expect(hint(CARD_LEVERS.ei)).toBe('EI pays 55% of usual money in');
+    expect(hint(CARD_LEVERS.double)).toBe('EI pays 55% of usual money in');
   });
 
   it('grey-zone note only on the plain EI 55% card', () => {
@@ -441,5 +506,40 @@ describe('portfolio tab: 2025 backtest evidence', () => {
     expect(text).toContain('17 of 1,072 · 1.6% (1.0–2.5%)');
     expect(text).toContain('47 of 75');
     expect([...html.matchAll(/<tr><th scope="row">\d+%<\/th>/g)]).toHaveLength(30);
+  });
+});
+
+describe('charts: axis labels and names', () => {
+  const src = (rel: string) => readFileSync(new URL(rel, import.meta.url), 'utf8');
+  const charts = ['CustomerCard', 'BurnDown', 'Portfolio'].map((c) => [c, src(`../src/components/${c}.tsx`)] as const);
+
+  it("the 0.78rem tick rule reaches Recharts 3.10's tick-label layer", () => {
+    // Recharts 3.10 draws tick text under g.recharts-cartesian-axis-tick-label, outside .recharts-cartesian-axis-tick:
+    // without this selector every tick label renders at 16px and long y labels lose their minus sign
+    const rule = src('../src/styles/tokens.css').match(/([^{}]*)\{\s*font-size:\s*0\.78rem;\s*\}/);
+    expect(rule?.[1]).toContain('.recharts-cartesian-axis-tick-label text');
+  });
+
+  it('y axes size to their labels, and stacked tick lines scale with the font', () => {
+    for (const [name, code] of charts) {
+      const axes = [...code.matchAll(/<YAxis\b[\s\S]*?\/>/g)].map((m) => m[0]);
+      expect(axes.length, name).toBeGreaterThan(0);
+      for (const a of axes) expect(a, name).toContain('width="auto"');
+    }
+    const portfolio = charts[2][1];
+    expect(portfolio).not.toMatch(/<text[^>]*dy=\{\d+\}/); // px offsets don't grow in presenter mode
+  });
+
+  it('every chart has a title and a description (accessibility layer kept on)', () => {
+    let n = 0;
+    for (const [name, code] of charts) {
+      for (const m of code.matchAll(/<(ComposedChart|LineChart|BarChart)\b([^>]*)>/gs)) {
+        expect(m[2], `${name} ${m[1]}`).toMatch(/\btitle=/);
+        expect(m[2], `${name} ${m[1]}`).toMatch(/\bdesc=/);
+        expect(m[2], `${name} ${m[1]}`).not.toContain('accessibilityLayer={false}');
+        n++;
+      }
+    }
+    expect(n).toBe(7);
   });
 });

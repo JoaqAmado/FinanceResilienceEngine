@@ -44,7 +44,6 @@
   background: var(--sunken);
   font-weight: 650;
   color: var(--ink-3);
-  white-space: nowrap;
 }
 
 .scroll tbody th {
@@ -69,10 +68,15 @@
 .mineTag {
   font-weight: 500;
   color: var(--accent-ink);
-  white-space: nowrap;
 }
 
 .caption {
   color: var(--muted);
   font-size: 0.78rem;
+}
+
+@media (pointer: coarse) {
+  .details summary {
+    min-height: 44px;
+  }
 }

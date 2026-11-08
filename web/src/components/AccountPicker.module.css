@@ -180,3 +180,9 @@
     gap: 8px;
   }
 }
+
+@media (pointer: coarse) {
+  .nearBtn {
+    min-height: 44px;
+  }
+}

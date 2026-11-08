@@ -37,6 +37,9 @@ export function RealityPanel({ judge, real, anyOn, activeNames, checks, jan, onT
       <div className={s.combined}>
         <span className={s.combinedLabel}>Runway with the selected checks</span>
         <span className={s.combinedValue}>{rwText(real)}</span>
+        <span className="visually-hidden" aria-live="polite">
+          Runway with the selected checks: {rwText(real)}
+        </span>
         {anyOn ? (
           <>
             <Delta v={real} judge={judge} />
