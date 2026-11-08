@@ -139,7 +139,8 @@ function render(d) {
 
   renderLookBack(d.resilience_plan.look_back);
   renderNext(d.resilience_plan.next_12_months);
-  drawChart(d.simulation.rows);
+  renderSavings(d.simulation);
+  drawChart(d.simulation);
 }
 
 function renderLookBack(lb) {
@@ -207,41 +208,164 @@ function renderNext(nx) {
   }));
 }
 
-// ── Chart (inline SVG) ──────────────────────────────────────────────────────
-function drawChart(rows) {
-  const W = 720, H = 260, L = 64, R = 12, T = 12, B = 28;
-  const series = ["baseline", "shocked", "with_plan"].map((s) => [s, rows.filter((r) => r.scenario === s)]);
+// ── "What the plan saves": headline numbers ─────────────────────────────────
+function renderSavings(sim) {
+  const at = (s, m) => (sim.rows.find((r) => r.scenario === s && r.month === m) || {}).balance;
+  const last = Math.max(...sim.rows.map((r) => r.month));
+  const plan12 = at("with_plan", last), shock12 = at("shocked", last);
+  const saved = plan12 - shock12;
+  const s0 = sim.months_until_zero_shocked, p0 = sim.months_until_zero_with_plan;
+  const startsNegative = at("shocked", 0) < 0;
+
+  $("kpi-saved").textContent = money(saved);
+  $("kpi-saved-note").textContent = saved > 0.5
+    ? `That's ${money(saved / last)} a month that stays in the account instead of being spent.`
+    : "Nothing discretionary to cut here: the levers are fixed costs and income.";
+
+  let lasts, note;
+  if (startsNegative) { lasts = "Already overdrawn"; note = "Step 1 is getting back above zero."; }
+  else if (s0 == null) { lasts = `${last}+ months`; note = "The balance stays above zero all year, with or without cuts."; }
+  else if (p0 == null) { lasts = `Month ${s0} → ${last}+`; note = `Without cuts the money runs out in month ${s0}. With the plan it lasts the whole year.`; }
+  else if (p0 > s0) { lasts = `Month ${s0} → ${p0}`; note = `The plan buys ${p0 - s0} more month${p0 - s0 > 1 ? "s" : ""} before the money runs out.`; }
+  else { lasts = `Month ${s0}`; note = "The cuts aren't enough to move the date: lower fixed costs or add income."; }
+  $("kpi-lasts").textContent = lasts;
+  $("kpi-lasts-note").textContent = note;
+
+  $("kpi-m12").textContent = money(plan12);
+  $("kpi-m12-note").textContent = `vs ${money(shock12)} without cuts · ${money(at("baseline", last))} with no shock`;
+}
+
+// ── Chart (inline SVG): three lines, shaded savings gap, run-out markers, hover ──
+const SERIES = [
+  { key: "baseline", cls: "base", name: "No shock" },
+  { key: "shocked", cls: "shock", name: "Shock, no cuts" },
+  { key: "with_plan", cls: "plan", name: "Shock, with the plan" },
+];
+
+function drawChart(sim) {
+  const rows = sim.rows;
+  const W = 760, H = 300, L = 70, R = 128, T = 16, B = 30;
+  const by = Object.fromEntries(SERIES.map((s) => [s.key, rows.filter((r) => r.scenario === s.key)]));
   const vals = rows.map((r) => r.balance).concat([0]);
   let lo = Math.min(...vals), hi = Math.max(...vals);
   if (hi === lo) hi = lo + 1;
-  const pad = (hi - lo) * 0.08; lo -= pad; hi += pad;
+  const pad = (hi - lo) * 0.1; lo -= pad; hi += pad;
   const maxM = Math.max(...rows.map((r) => r.month));
   const x = (m) => L + (m / maxM) * (W - L - R);
   const y = (v) => T + (1 - (v - lo) / (hi - lo)) * (H - T - B);
   const ns = "http://www.w3.org/2000/svg";
   const svg = document.createElementNS(ns, "svg");
   svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
-  const add = (tag, attrs, text) => {
+  const add = (tag, attrs, text, parent = svg) => {
     const n = document.createElementNS(ns, tag);
     for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
     if (text != null) n.textContent = text;
-    svg.appendChild(n);
+    parent.appendChild(n);
     return n;
   };
+
+  // Overdrawn zone (below zero), labelled so the tint never carries meaning alone
+  if (lo < 0) {
+    add("rect", { x: L, y: y(0), width: W - L - R, height: y(lo) - y(0), class: "debt" });
+    add("text", { x: L + 6, y: y(lo) - 6, class: "debt-label" }, "Below zero: overdrawn");
+  }
   for (let i = 0; i <= 4; i++) {
     const v = lo + ((hi - lo) * i) / 4;
     add("line", { x1: L, x2: W - R, y1: y(v), y2: y(v), class: "grid" });
     add("text", { x: L - 8, y: y(v) + 4, "text-anchor": "end" }, money(v));
   }
-  for (let m = 0; m <= maxM; m += 3) add("text", { x: x(m), y: H - 8, "text-anchor": "middle" }, m === 0 ? "now" : `${m} mo`);
+  for (let m = 0; m <= maxM; m += 3) add("text", { x: x(m), y: H - 8, "text-anchor": "middle" }, m === 0 ? "now" : `month ${m}`);
   add("line", { x1: L, x2: W - R, y1: y(0), y2: y(0), class: "zero" });
-  const cls = { baseline: "base", shocked: "shock", with_plan: "plan" };
-  for (const [name, pts] of series) {
-    if (!pts.length) continue;
-    const d = pts.map((r, i) => `${i ? "L" : "M"}${x(r.month).toFixed(1)},${y(r.balance).toFixed(1)}`).join("");
-    add("path", { d, class: cls[name] });
+
+  // Money kept by the plan: the area between "no cuts" and "with the plan"
+  const shock = by.shocked, plan = by.with_plan;
+  const saved = plan.length ? plan[plan.length - 1].balance - shock[shock.length - 1].balance : 0;
+  if (saved > 0.5) {
+    const top = plan.map((r) => `${x(r.month).toFixed(1)},${y(r.balance).toFixed(1)}`);
+    const bottom = shock.slice().reverse().map((r) => `${x(r.month).toFixed(1)},${y(r.balance).toFixed(1)}`);
+    add("polygon", { points: top.concat(bottom).join(" "), class: "saved" });
+    const mid = Math.round(maxM * 0.7);
+    const pm = plan.find((r) => r.month === mid), sm = shock.find((r) => r.month === mid);
+    if (pm && sm && y(sm.balance) - y(pm.balance) > 18) {
+      add("text", { x: x(mid), y: (y(pm.balance) + y(sm.balance)) / 2 + 4, "text-anchor": "middle", class: "saved-label" },
+        `${money(saved)} kept by the plan`);
+    }
   }
-  $("chart").replaceChildren(svg);
+
+  // Lines
+  for (const s of SERIES) {
+    const pts = by[s.key];
+    if (!pts.length) continue;
+    add("path", { d: pts.map((r, i) => `${i ? "L" : "M"}${x(r.month).toFixed(1)},${y(r.balance).toFixed(1)}`).join(""), class: s.cls });
+  }
+
+  // Where the money runs out (first month below zero), on the two shock lines
+  const runouts = [["shocked", "shock", sim.months_until_zero_shocked], ["with_plan", "plan", sim.months_until_zero_with_plan]];
+  const usedSlots = [];
+  for (const [key, cls, m] of runouts) {
+    if (m == null || !by[key].length || by[key][0].balance < 0) continue;
+    const r = by[key].find((p) => p.month === m);
+    if (!r) continue;
+    add("circle", { cx: x(m), cy: y(r.balance), r: 5, class: `runout ${cls}` });
+    let ly = y(0) - 10;
+    while (usedSlots.some((u) => Math.abs(u - ly) < 14)) ly -= 14;
+    usedSlots.push(ly);
+    add("text", { x: x(m), y: ly, "text-anchor": "middle", class: "runout-label" }, `Out of money · month ${m}`);
+  }
+
+  // Direct end labels (pushed apart so they never overlap)
+  const ends = SERIES.filter((s) => by[s.key].length).map((s) => {
+    const r = by[s.key][by[s.key].length - 1];
+    return { s, v: r.balance, y: y(r.balance) };
+  }).sort((a, b) => a.y - b.y);
+  for (let i = 1; i < ends.length; i++) if (ends[i].y - ends[i - 1].y < 28) ends[i].y = ends[i - 1].y + 28;
+  for (const e of ends) {
+    add("text", { x: W - R + 8, y: e.y, class: "end-label" }, e.s.name);
+    add("text", { x: W - R + 8, y: e.y + 13, class: "end-label sub" }, money(e.v));
+  }
+
+  // Hover / keyboard: crosshair + one tooltip listing every series at that month
+  const hover = add("g", { visibility: "hidden" });
+  const cross = add("line", { y1: T, y2: H - B, class: "cross" }, null, hover);
+  const dots = SERIES.map((s) => add("circle", { r: 4, class: `hover-dot runout ${s.cls}` }, null, hover));
+  const tip = $("chart-tip");
+  let current = maxM;
+  const show = (m) => {
+    m = Math.max(0, Math.min(maxM, m));
+    current = m;
+    hover.setAttribute("visibility", "visible");
+    cross.setAttribute("x1", x(m)); cross.setAttribute("x2", x(m));
+    tip.replaceChildren(el("div", "tip-h", m === 0 ? "Now" : `Month ${m}`));
+    SERIES.forEach((s, i) => {
+      const r = by[s.key].find((p) => p.month === m);
+      if (!r) return;
+      dots[i].setAttribute("cx", x(m)); dots[i].setAttribute("cy", y(r.balance));
+      const row = el("div", "tip-r");
+      const key = el("i", "key");
+      key.style.background = `var(--line-${s.cls})`;
+      row.append(key, el("strong", null, money(r.balance)), el("span", null, s.name));
+      tip.append(row);
+    });
+    tip.hidden = false;
+    const box = $("chart").getBoundingClientRect();
+    const px = (x(m) / W) * box.width;
+    tip.style.left = `${Math.min(Math.max(px + 12, 0), Math.max(0, box.width - tip.offsetWidth))}px`;
+  };
+  const hide = () => { hover.setAttribute("visibility", "hidden"); tip.hidden = true; };
+  svg.addEventListener("pointermove", (e) => {
+    const box = svg.getBoundingClientRect();
+    const vx = ((e.clientX - box.left) / box.width) * W;
+    show(Math.round(((vx - L) / (W - L - R)) * maxM));
+  });
+  svg.addEventListener("pointerleave", hide);
+  const c = $("chart");
+  c.onkeydown = (e) => {
+    if (e.key === "ArrowRight") { show(current + 1); e.preventDefault(); }
+    if (e.key === "ArrowLeft") { show(current - 1); e.preventDefault(); }
+  };
+  c.onfocus = () => show(current);
+  c.onblur = hide;
+  c.replaceChildren(svg);
 }
 
 // ── Boot ────────────────────────────────────────────────────────────────────

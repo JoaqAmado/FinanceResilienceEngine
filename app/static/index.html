@@ -146,13 +146,35 @@
       </section>
 
       <section class="card" aria-labelledby="path-h">
-        <h2 id="path-h">Balance over the next 12 months</h2>
+        <h2 id="path-h">What the plan saves</h2>
+        <div class="kpis">
+          <div class="kpi hero">
+            <span class="label">Kept by the plan over 12 months</span>
+            <strong id="kpi-saved"></strong>
+            <small id="kpi-saved-note"></small>
+          </div>
+          <div class="kpi">
+            <span class="label">Money lasts</span>
+            <strong id="kpi-lasts"></strong>
+            <small id="kpi-lasts-note"></small>
+          </div>
+          <div class="kpi">
+            <span class="label">Balance at month 12, with the plan</span>
+            <strong id="kpi-m12"></strong>
+            <small id="kpi-m12-note"></small>
+          </div>
+        </div>
         <div class="legend">
           <span><i class="sw base"></i>No shock</span>
           <span><i class="sw shock"></i>Shock, no cuts</span>
           <span><i class="sw plan"></i>Shock, with the plan</span>
+          <span><i class="sw-area"></i>Kept by the plan</span>
         </div>
-        <div id="chart" class="chart" role="img" aria-label="Projected balance over 12 months: no shock, shock without cuts, shock with the plan"></div>
+        <div class="chart-wrap">
+          <div id="chart" class="chart" tabindex="0" role="img"
+               aria-label="Projected balance over 12 months: no shock, shock without cuts, shock with the plan. Use left and right arrow keys to read each month."></div>
+          <div id="chart-tip" class="tip" role="status" hidden></div>
+        </div>
         <p class="muted small">From the engine's month-by-month simulation, starting at today's buffer. Typical months only; real months vary.</p>
       </section>
 
