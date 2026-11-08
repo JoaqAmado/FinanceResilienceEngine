@@ -1,0 +1,44 @@
+# The raw CSVs in data/ are mounted READ-ONLY everywhere. Everything we build goes to ./warehouse.
+services:
+  pipeline:            # build warehouse/tangerine.duckdb from the raw CSVs (~5 s)
+    build: .
+    command: python -m tangerine.pipeline
+    volumes:
+      - ./data:/app/data:ro
+      - ./warehouse:/app/warehouse
+
+  test:                # quality checks + judge parity + engine tests
+    build: .
+    command: pytest -q
+    volumes:
+      - ./data:/app/data:ro
+      - ./warehouse:/app/warehouse
+
+  findings:            # reports/findings.md, showcase.md, data_dictionary.md, figures/
+    build: .
+    command: python -m tangerine.findings
+    volumes:
+      - ./data:/app/data:ro
+      - ./warehouse:/app/warehouse:ro
+      - ./reports:/app/reports
+
+  engine:              # one account from the command line: docker compose run --rm engine 20111 --shock furnace_1_month
+    build: .
+    entrypoint: ["python", "-m", "tangerine.engine"]
+    command: ["20111"]
+    volumes:
+      - ./warehouse:/app/warehouse:ro
+
+  notebook:            # JupyterLab on http://localhost:8888
+    build: .
+    command: jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root --ServerApp.token=''
+    ports: ["8888:8888"]
+    volumes:
+      - ./:/app
+
+  app:                 # 90-day resilience plan web app on http://localhost:8000
+    build: .
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    ports: ["8000:8000"]
+    volumes:
+      - ./warehouse:/app/warehouse:ro

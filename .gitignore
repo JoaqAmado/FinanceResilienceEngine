@@ -1,0 +1,16 @@
+# Built by the pipeline — never commit
+warehouse/
+
+*.parquet
+
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.pytest_cache/
+.venv/
+
+# Duplicate of data/ (the datathon pack layout). The repo tracks data/; keep only the brief.
+Tangerine/data/
+
+# Local tool settings
+.claude/

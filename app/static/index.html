@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Resilience Plan Builder</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header class="top">
+    <div class="wrap">
+      <p class="eyebrow">Tangerine · Resilience Rewired</p>
+      <h1>90-day resilience plan</h1>
+      <p class="lede">Test a shock, see how long the money lasts, and get a week-by-week plan to prevent it and to get through it.</p>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <!-- 1. Shock test controls -->
+    <section class="card controls no-print" aria-labelledby="ctl-h">
+      <h2 id="ctl-h">1 · Shock test</h2>
+      <div class="row">
+        <div class="field">
+          <label for="account">Account ID</label>
+          <div class="id-row">
+            <input id="account" type="number" inputmode="numeric" value="56404" min="1" list="account-list">
+            <button id="random" class="chip" type="button">🎲 Random account</button>
+          </div>
+          <small id="id-hint">Loading account list…</small>
+          <datalist id="account-list"></datalist>
+        </div>
+        <div class="field grow">
+          <span>Example customers</span>
+          <div id="showcase" class="chips"></div>
+        </div>
+      </div>
+
+      <div class="field">
+        <span>Twist cards</span>
+        <div id="presets" class="chips"></div>
+      </div>
+
+      <details id="custom" class="custom">
+        <summary>Adjust the shock size</summary>
+        <div class="sliders">
+          <label class="field">
+            <span>Income kept <output id="income-out">100%</output></span>
+            <input id="income" type="range" min="0" max="100" step="5" value="100">
+            <small>55% = job loss on EI</small>
+          </label>
+          <label class="field">
+            <span>Income cut lasts</span>
+            <select id="duration">
+              <option value="">For good (judge formula)</option>
+              <option value="3">3 months</option>
+              <option value="6">6 months</option>
+              <option value="12">12 months</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Household bills <output id="bills-out">+0%</output></span>
+            <input id="bills" type="range" min="0" max="50" step="5" value="0">
+          </label>
+          <label class="field">
+            <span>Surprise cost <output id="oneoff-out">none</output></span>
+            <input id="oneoff" type="range" min="0" max="3" step="0.5" value="0">
+            <small>in months of typical spending (1 = the furnace)</small>
+          </label>
+        </div>
+      </details>
+      <div id="error" class="error" role="alert" hidden>
+        <p id="error-msg"></p>
+        <div id="error-suggest" class="chips"></div>
+      </div>
+    </section>
+
+    <div id="results" hidden>
+      <!-- Customer + runway -->
+      <section class="card" aria-labelledby="know-h">
+        <div class="card-head">
+          <h2 id="know-h">2 · Know the customer</h2>
+          <button id="print" class="ghost no-print" type="button">Print plan</button>
+        </div>
+        <p id="shock-desc" class="muted"></p>
+        <div id="profile" class="tiles"></div>
+
+        <div class="runways">
+          <div class="runway">
+            <span class="label">Runway, no shock</span>
+            <strong id="rw-none"></strong>
+          </div>
+          <div class="runway official">
+            <span class="label">Runway after shock <em>· judge formula</em></span>
+            <strong id="rw-judge"></strong>
+            <small>Typical (median) month</small>
+          </div>
+          <div class="runway ours">
+            <span class="label">Stress runway <em>· our check-engine light</em></span>
+            <strong id="rw-stress"></strong>
+            <small id="rw-stress-note"></small>
+          </div>
+        </div>
+      </section>
+
+      <section id="warn-card" class="card" aria-labelledby="warn-h">
+        <h2 id="warn-h">Warning signs</h2>
+        <ul id="notes" class="notes"></ul>
+      </section>
+
+      <!-- 90-day plan -->
+      <div class="plan-grid">
+        <section class="card plan prevent" aria-labelledby="prev-h">
+          <h2 id="prev-h">3 · Prevent it</h2>
+          <p class="sub">Before a shock: steady the base and build the cushion.</p>
+          <p id="prev-summary" class="summary"></p>
+          <div id="prev-checks" class="checks"></div>
+          <ol id="prev-steps" class="timeline"></ol>
+        </section>
+
+        <section class="card plan survive" aria-labelledby="surv-h">
+          <h2 id="surv-h">4 · If the shock hits</h2>
+          <p class="sub">Protect fixed costs, cut the rest, buy time.</p>
+          <div class="pair">
+            <div><span class="label">Runway without cuts</span><strong id="surv-before"></strong></div>
+            <div><span class="label">With the backup cuts</span><strong id="surv-after"></strong></div>
+          </div>
+          <div id="surv-checks" class="checks"></div>
+          <ol id="surv-steps" class="timeline"></ol>
+        </section>
+      </div>
+
+      <section class="card" aria-labelledby="path-h">
+        <h2 id="path-h">Balance over the next 24 months</h2>
+        <div class="legend">
+          <span><i class="sw base"></i>No shock</span>
+          <span><i class="sw shock"></i>With the shock, no cuts</span>
+        </div>
+        <div id="chart" class="chart" role="img" aria-label="Projected balance with and without the shock"></div>
+        <p class="muted small">From the engine's month-by-month simulation, starting at today's buffer. Typical months only; real months vary.</p>
+      </section>
+
+      <p class="foot muted small">Judge numbers follow the official formulas exactly; our stress runway sits beside them and never replaces them.
+        Data: PKDD'99 Financial dataset, anonymized, converted to CAD and shifted to 2020–2025.</p>
+    </div>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
