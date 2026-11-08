@@ -242,7 +242,7 @@ const SERIES = [
   { key: "with_plan", cls: "plan", name: "Shock, with the plan" },
 ];
 
-function drawChart(sim) {
+function drawLines(sim) {
   const rows = sim.rows;
   const W = 760, H = 300, L = 70, R = 128, T = 16, B = 30;
   const by = Object.fromEntries(SERIES.map((s) => [s.key, rows.filter((r) => r.scenario === s.key)]));
@@ -368,6 +368,164 @@ function drawChart(sim) {
   c.replaceChildren(svg);
 }
 
+// ── Chart view switch: "Checkpoints" (bars, default) or "Month by month" (lines) ──
+let chartView = "bars";
+let lastSim = null;
+try { chartView = localStorage.getItem("chartView") === "lines" ? "lines" : "bars"; } catch (e) { /* storage blocked */ }
+
+const compact = (v) => {
+  const a = Math.abs(v), s = v < 0 ? "-$" : "$";
+  if (a >= 1e6) return `${s}${(a / 1e6).toFixed(1)}M`;
+  if (a >= 1e4) return `${s}${Math.round(a / 1e3)}k`;
+  if (a >= 1e3) return `${s}${(a / 1e3).toFixed(1)}k`;
+  return `${s}${Math.round(a)}`;
+};
+
+function updateLegend() {
+  const items = chartView === "bars"
+    ? [["sw box shock", "Shock, no cuts"], ["sw box plan", "Shock, with the plan"], ["sw tick", "No shock (for reference)"]]
+    : [["sw base", "No shock"], ["sw shock", "Shock, no cuts"], ["sw plan", "Shock, with the plan"], ["sw-area", "Kept by the plan"]];
+  $("chart-legend").replaceChildren(...items.map(([cls, label]) => {
+    const s = el("span");
+    s.append(el("i", cls), document.createTextNode(label));
+    return s;
+  }));
+  for (const b of document.querySelectorAll(".seg button")) b.setAttribute("aria-pressed", String(b.dataset.view === chartView));
+  $("chart").setAttribute("aria-label", chartView === "bars"
+    ? "Balance at months 3, 6, 9 and 12: shock without cuts versus with the plan. Use left and right arrow keys to read each checkpoint."
+    : "Projected balance over 12 months: no shock, shock without cuts, shock with the plan. Use left and right arrow keys to read each month.");
+}
+
+function drawChart(sim) {
+  lastSim = sim;
+  $("chart-tip").hidden = true;
+  (chartView === "bars" ? drawBars : drawLines)(sim);
+  updateLegend();
+}
+
+function setChartView(view) {
+  chartView = view;
+  try { localStorage.setItem("chartView", view); } catch (e) { /* storage blocked */ }
+  if (lastSim) drawChart(lastSim);
+}
+
+// ── Bars: balance at checkpoints, no cuts vs with the plan, no-shock tick ────
+function drawBars(sim) {
+  const rows = sim.rows;
+  const maxM = Math.max(...rows.map((r) => r.month));
+  const months = [3, 6, 9, 12].filter((m) => m <= maxM);
+  const at = (s, m) => (rows.find((r) => r.scenario === s && r.month === m) || {}).balance;
+  const groups = months.map((m) => ({ m, shock: at("shocked", m), plan: at("with_plan", m), base: at("baseline", m) }));
+
+  const W = 760, H = 320, L = 70, R = 120, T = 28, B = 30;
+  const vals = groups.flatMap((g) => [g.shock, g.plan, g.base]).concat([0]);
+  let lo = Math.min(...vals), hi = Math.max(...vals);
+  if (hi === lo) hi = lo + 1;
+  const pad = (hi - lo) * 0.12; lo -= lo < 0 ? pad : 0; hi += pad;
+  const y = (v) => T + (1 - (v - lo) / (hi - lo)) * (H - T - B);
+  const band = (W - L - R) / groups.length;
+  const BAR = 24, GAP = 2, RAD = 4;
+  const cx = (i) => L + band * (i + 0.5);
+
+  const ns = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(ns, "svg");
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  const add = (tag, attrs, text, parent = svg) => {
+    const n = document.createElementNS(ns, tag);
+    for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
+    if (text != null) n.textContent = text;
+    parent.appendChild(n);
+    return n;
+  };
+
+  if (lo < 0) {
+    add("rect", { x: L, y: y(0), width: W - L - R, height: y(lo) - y(0), class: "debt" });
+    add("text", { x: L + 6, y: y(lo) - 6, class: "debt-label" }, "Below zero: overdrawn");
+  }
+  for (let i = 0; i <= 4; i++) {
+    const v = lo + ((hi - lo) * i) / 4;
+    add("line", { x1: L, x2: W - R, y1: y(v), y2: y(v), class: "grid" });
+    add("text", { x: L - 8, y: y(v) + 4, "text-anchor": "end" }, money(v));
+  }
+
+  // A bar: square at the zero baseline, 4px rounded at its data end (top if positive, bottom if negative).
+  const bar = (x0, v, cls) => {
+    const y0 = y(0), y1 = y(v), h = Math.abs(y1 - y0);
+    if (h < 0.5) { add("line", { x1: x0, x2: x0 + BAR, y1: y0, y2: y0, class: `bar-flat ${cls}` }); return; }
+    const r = Math.min(RAD, h, BAR / 2);
+    const d = v >= 0
+      ? `M${x0},${y0} V${y1 + r} Q${x0},${y1} ${x0 + r},${y1} H${x0 + BAR - r} Q${x0 + BAR},${y1} ${x0 + BAR},${y1 + r} V${y0} Z`
+      : `M${x0},${y0} V${y1 - r} Q${x0},${y1} ${x0 + r},${y1} H${x0 + BAR - r} Q${x0 + BAR},${y1} ${x0 + BAR},${y1 - r} V${y0} Z`;
+    add("path", { d, class: `bar ${cls}` });
+  };
+  const valueLabel = (xc, v) => add("text", {
+    x: xc, y: v >= 0 ? y(v) - 6 : y(v) + 14, "text-anchor": "middle", class: "bar-label",
+  }, compact(v));
+
+  groups.forEach((g, i) => {
+    const xs = cx(i) - BAR - GAP / 2, xp = cx(i) + GAP / 2;
+    bar(xs, g.shock, "shock");
+    bar(xp, g.plan, "plan");
+    valueLabel(xs + BAR / 2, g.shock);
+    valueLabel(xp + BAR / 2, g.plan);
+    // No-shock reference: a thin gray tick across the group, on the same dollar axis
+    add("line", { x1: xs - 6, x2: xp + BAR + 6, y1: y(g.base), y2: y(g.base), class: "tick" });
+    add("text", { x: cx(i), y: H - 8, "text-anchor": "middle" }, `month ${g.m}`);
+  });
+  add("line", { x1: L, x2: W - R, y1: y(0), y2: y(0), class: "zero" });
+
+  // Bracket on the last checkpoint: how much the plan keeps
+  const g = groups[groups.length - 1];
+  const saved = g.plan - g.shock;
+  if (saved > 0.5) {
+    const xb = cx(groups.length - 1) + GAP / 2 + BAR + 12;
+    const yTop = y(Math.max(g.plan, g.shock)), yBot = y(Math.min(g.plan, g.shock));
+    add("path", { d: `M${xb - 4},${yTop} H${xb} V${yBot} H${xb - 4}`, class: "bracket" });
+    const ym = (yTop + yBot) / 2;
+    add("text", { x: xb + 8, y: ym - 2, class: "bracket-label" }, `+${money(saved)}`);
+    add("text", { x: xb + 8, y: ym + 13, class: "bracket-sub" }, "kept by the plan");
+  }
+
+  // Hover / keyboard: each group is one hit target; the tooltip lists all three values
+  const tip = $("chart-tip");
+  const hits = groups.map((gr, i) => add("rect", {
+    x: L + band * i, y: T, width: band, height: H - T - B, class: "hit",
+  }));
+  let current = groups.length - 1;
+  const show = (i) => {
+    i = Math.max(0, Math.min(groups.length - 1, i));
+    current = i;
+    hits.forEach((h, j) => h.classList.toggle("on", j === i));
+    const gr = groups[i];
+    tip.replaceChildren(el("div", "tip-h", `Month ${gr.m}`));
+    for (const [cls, v, name] of [["shock", gr.shock, "Shock, no cuts"], ["plan", gr.plan, "Shock, with the plan"], ["base", gr.base, "No shock"]]) {
+      const row = el("div", "tip-r");
+      const key = el("i", "key");
+      key.style.background = `var(--line-${cls})`;
+      row.append(key, el("strong", null, money(v)), el("span", null, name));
+      tip.append(row);
+    }
+    tip.hidden = false;
+    const box = $("chart").getBoundingClientRect();
+    const px = ((L + band * (i + 1)) / W) * box.width;
+    const left = px + 8 + tip.offsetWidth > box.width ? ((L + band * i) / W) * box.width - tip.offsetWidth - 8 : px + 8;
+    tip.style.left = `${Math.max(0, left)}px`;
+  };
+  const hide = () => { hits.forEach((h) => h.classList.remove("on")); tip.hidden = true; };
+  hits.forEach((h, i) => {
+    h.addEventListener("pointerenter", () => show(i));
+    h.addEventListener("pointerleave", hide);
+  });
+  const c = $("chart");
+  c.onkeydown = (e) => {
+    if (e.key === "ArrowRight") { show(current + 1); e.preventDefault(); }
+    if (e.key === "ArrowLeft") { show(current - 1); e.preventDefault(); }
+  };
+  c.onfocus = () => show(current);
+  c.onblur = hide;
+  c.replaceChildren(svg);
+}
+
 // ── Boot ────────────────────────────────────────────────────────────────────
 async function init() {
   const meta = await (await fetch("/api/meta")).json();
@@ -399,6 +557,7 @@ async function init() {
   $("account").addEventListener("change", load);
   $("account").addEventListener("keydown", (e) => { if (e.key === "Enter") load(); });
   $("print").addEventListener("click", () => window.print());
+  for (const b of document.querySelectorAll(".seg button")) b.addEventListener("click", () => setChartView(b.dataset.view));
   markPreset(activePreset);
   syncOutputs();
   load();

@@ -4,6 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Resilience Plan Builder</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
@@ -164,11 +167,12 @@
             <small id="kpi-m12-note"></small>
           </div>
         </div>
-        <div class="legend">
-          <span><i class="sw base"></i>No shock</span>
-          <span><i class="sw shock"></i>Shock, no cuts</span>
-          <span><i class="sw plan"></i>Shock, with the plan</span>
-          <span><i class="sw-area"></i>Kept by the plan</span>
+        <div class="chart-head">
+          <div id="chart-legend" class="legend"></div>
+          <div class="seg no-print" role="group" aria-label="Chart view">
+            <button type="button" data-view="bars" aria-pressed="true">Checkpoints</button>
+            <button type="button" data-view="lines" aria-pressed="false">Month by month</button>
+          </div>
         </div>
         <div class="chart-wrap">
           <div id="chart" class="chart" tabindex="0" role="img"

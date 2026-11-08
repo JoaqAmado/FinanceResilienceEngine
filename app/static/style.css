@@ -39,11 +39,13 @@
 [hidden] { display: none !important; }
 body {
   margin: 0; background: var(--bg); color: var(--text);
-  font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font: 15px/1.5 "Inter", "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+  font-feature-settings: "cv11", "ss01";
+  -webkit-font-smoothing: antialiased;
 }
 .wrap { max-width: 1120px; margin: 0 auto; padding: 0 16px; }
-h1, h2 { line-height: 1.2; margin: 0; }
-h1 { font-size: 1.9rem; }
+h1, h2 { line-height: 1.2; margin: 0; letter-spacing: -.01em; font-weight: 600; }
+h1 { font-size: 1.9rem; letter-spacing: -.02em; font-weight: 700; }
 h2 { font-size: 1.1rem; }
 
 .top { padding: 28px 0 20px; }
@@ -259,3 +261,24 @@ table.months { width: 100%; border-collapse: collapse; font-size: .88rem; font-v
 .tip .tip-r strong { font-variant-numeric: tabular-nums; min-width: 72px; }
 .tip .tip-r span { color: var(--muted); }
 .tip .key { width: 12px; height: 2px; border-radius: 1px; flex: 0 0 auto; }
+
+/* Chart view toggle + bar view */
+.chart-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.seg { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.seg button { font: inherit; font-size: .82rem; background: transparent; color: var(--muted); border: 0; padding: 6px 12px; cursor: pointer; }
+.seg button + button { border-left: 1px solid var(--border); }
+.seg button[aria-pressed="true"] { background: var(--surface-2); color: var(--text); font-weight: 600; }
+.sw.box { width: 12px; height: 12px; border-radius: 3px; }
+.sw.tick { width: 16px; height: 2px; background: var(--line-base); }
+.chart .bar.shock { fill: var(--line-shock); }
+.chart .bar.plan { fill: var(--line-plan); }
+.chart .bar-flat { stroke-width: 2; }
+.chart .bar-flat.shock { stroke: var(--line-shock); }
+.chart .bar-flat.plan { stroke: var(--line-plan); }
+.chart .tick { stroke: var(--line-base); stroke-width: 2; stroke-linecap: round; }
+.chart .bar-label { fill: var(--text); font-size: 11px; font-variant-numeric: tabular-nums; }
+.chart .bracket { stroke: var(--text); stroke-width: 1.5; fill: none; }
+.chart .bracket-label { fill: var(--text); font-size: 15px; font-weight: 700; }
+.chart .bracket-sub { fill: var(--muted); font-size: 11px; }
+.chart .hit { fill: transparent; }
+.chart .hit.on { fill: var(--text); fill-opacity: .04; }
