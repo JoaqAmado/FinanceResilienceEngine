@@ -179,6 +179,11 @@
   letter-spacing: -0.01em;
 }
 
+/* "No shortfall (120+)" is words, not a number: a smaller size keeps "Judges' formula" on one line at desktop width */
+.floatText {
+  font-size: 1.05rem;
+}
+
 .float .badgeIcon {
   width: 1.4rem;
   height: 1.4rem;

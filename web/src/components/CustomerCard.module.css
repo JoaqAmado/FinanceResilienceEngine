@@ -51,6 +51,7 @@
   color: var(--ink-3);
   font-weight: 600;
   line-height: 1.25;
+  text-wrap: balance;
 }
 
 .mValue {

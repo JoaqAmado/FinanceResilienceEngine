@@ -119,6 +119,11 @@
   transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur) var(--ease-out);
 }
 
+/* the global 2px offset pushed the ring over the hint text below the slider: draw it inside the 32px box */
+.range:focus-visible {
+  outline-offset: -3px;
+}
+
 .range:hover::-webkit-slider-thumb {
   transform: scale(1.08);
 }

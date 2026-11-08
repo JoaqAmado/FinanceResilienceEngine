@@ -124,7 +124,7 @@ export function JudgesPanel({ acct, judge, baseline, shock, target, greyNote, dr
         // visual only: the live region above already announces every change
         <div className={`${s.float} ${v.kind === 'good' ? s.good : s.bad}`} aria-hidden="true">
           <span className={s.floatLabel}>Judges' formula</span>
-          <span className={s.floatValue}>{exact}</span>
+          <span className={judge.noShortfall ? `${s.floatValue} ${s.floatText}` : s.floatValue}>{exact}</span>
           <span className={s.badgeIcon}>{v.icon}</span>
           <div className={s.floatBar}>
             <RunwayBar judge={judge} target={target} real={real} still={dragging} compact />

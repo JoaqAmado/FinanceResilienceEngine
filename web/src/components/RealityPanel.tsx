@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import type { ReactNode } from 'react';
 import type { RunwayResult } from '../engine';
 import { deltaSign, deltaText, pathText, rwText } from '../lib/format';
 import type { CheckKey, CheckRow } from '../lib/live';
@@ -6,6 +8,8 @@ import s from './RealityPanel.module.css';
 interface Props {
   judge: RunwayResult;
   real: RunwayResult;
+  /** a slider is being dragged: values that change mid-drag skip the peach flash */
+  dragging?: boolean;
   anyOn: boolean;
   activeNames: string[];
   checks: CheckRow[];
@@ -24,7 +28,14 @@ function Delta({ v, judge }: { v: RunwayResult | number; judge: RunwayResult }) 
   );
 }
 
-export function RealityPanel({ judge, real, anyOn, activeNames, checks, jan, onToggle }: Props) {
+/** The caller keys this on the engine string, so it remounts (and flashes peach once) whenever the value changes.
+ *  Whether it flashes is fixed at mount: a value that changes mid-drag stays still, and letting go doesn't flash. */
+function FlashValue({ className, still, children }: { className: string; still: boolean; children: ReactNode }) {
+  const [flash] = useState(!still);
+  return <span className={flash ? `${className} ${s.flash}` : className}>{children}</span>;
+}
+
+export function RealityPanel({ judge, real, dragging = false, anyOn, activeNames, checks, jan, onToggle }: Props) {
   return (
     <section className={s.panel} aria-labelledby="reality-title">
       <div className={s.head}>
@@ -37,9 +48,9 @@ export function RealityPanel({ judge, real, anyOn, activeNames, checks, jan, onT
       <div className={s.combined}>
         <span className={s.combinedLabel}>Runway with the selected checks</span>
         {/* keyed on the engine string so the peach flash replays whenever the value changes */}
-        <span key={rwText(real)} className={`${s.combinedValue} ${s.flash}`}>
+        <FlashValue key={rwText(real)} className={s.combinedValue} still={dragging}>
           {rwText(real)}
-        </span>
+        </FlashValue>
         <span className="visually-hidden" aria-live="polite">
           Runway with the selected checks: {rwText(real)}
         </span>
@@ -76,9 +87,9 @@ export function RealityPanel({ judge, real, anyOn, activeNames, checks, jan, onT
             </label>
             {c.enabled ? (
               <span className={s.values}>
-                <span key={rwText(c.result)} className={`${s.value} ${s.flash}`}>
+                <FlashValue key={rwText(c.result)} className={s.value} still={dragging}>
                   {rwText(c.result)}
-                </span>
+                </FlashValue>
                 <Delta v={c.result} judge={judge} />
               </span>
             ) : (

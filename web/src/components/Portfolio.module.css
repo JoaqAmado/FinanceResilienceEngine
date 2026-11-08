@@ -301,6 +301,14 @@
   .chartTall {
     overflow-x: auto;
     overscroll-behavior-x: contain;
+    /* scroll shadows: the white covers scroll with the chart and hide the navy edge shadows at either end,
+       so a faint shadow shows only on a side with more to swipe */
+    background:
+      linear-gradient(90deg, var(--surface) 30%, transparent) left center / 40px 100% no-repeat local,
+      linear-gradient(270deg, var(--surface) 30%, transparent) right center / 40px 100% no-repeat local,
+      radial-gradient(farthest-side at 0 50%, rgba(19, 35, 63, 0.2), transparent) left center / 14px 100% no-repeat scroll,
+      radial-gradient(farthest-side at 100% 50%, rgba(19, 35, 63, 0.2), transparent) right center / 14px 100% no-repeat
+        scroll;
   }
 
   /* !important: ResponsiveContainer writes an inline min-width */
