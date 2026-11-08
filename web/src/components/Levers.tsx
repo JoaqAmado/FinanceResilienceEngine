@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { CSSProperties } from 'react';
-import { LIMITS } from '../lib/scenario';
+import { DEFAULT_SCENARIO, LIMITS } from '../lib/scenario';
 import type { Levers as LeverValues } from '../lib/scenario';
 import s from './Levers.module.css';
 
@@ -82,6 +82,7 @@ function Lever({
   disabled,
   integer,
   hint,
+  notch,
   onChange,
 }: {
   id: string;
@@ -92,12 +93,18 @@ function Lever({
   disabled?: boolean;
   integer?: boolean;
   hint?: string;
+  /** where the selected card set this lever: a small mark on the track once the lever moves away from it */
+  notch?: number;
   onChange: (v: number) => void;
 }) {
   const hintId = hint ? `${id}-hint` : undefined;
   // the track fills tangerine up to the thumb (a bar length only; the number field shows the value)
   const shown = Math.min(value, limit.sliderMax);
   const fill = limit.sliderMax > limit.min ? ((shown - limit.min) / (limit.sliderMax - limit.min)) * 100 : 0;
+  const notchAt =
+    notch !== undefined && !disabled && notch !== value && notch >= limit.min && notch <= limit.sliderMax
+      ? (notch - limit.min) / (limit.sliderMax - limit.min)
+      : null;
   return (
     <div className={s.lever} data-disabled={disabled ? 'true' : undefined}>
       <div className={s.leverTop}>
@@ -118,18 +125,24 @@ function Lever({
           {unit !== '$' && <span className={s.unit}>{unit}</span>}
         </span>
       </div>
-      <input
-        type="range"
-        className={s.range}
-        aria-label={`${label} slider`}
-        min={limit.min}
-        max={limit.sliderMax}
-        step={limit.step}
-        value={shown}
-        style={{ '--p': `${fill}%` } as CSSProperties}
-        disabled={disabled}
-        onChange={(e) => onChange(Number(e.target.value))}
-      />
+      <div className={s.rangeWrap}>
+        <input
+          type="range"
+          className={s.range}
+          aria-label={`${label} slider`}
+          min={limit.min}
+          max={limit.sliderMax}
+          step={limit.step}
+          value={shown}
+          style={{ '--p': `${fill}%` } as CSSProperties}
+          disabled={disabled}
+          onChange={(e) => onChange(Number(e.target.value))}
+        />
+        {notchAt !== null && (
+          // centred under the thumb's travel: half a thumb in from each end
+          <span className={s.notch} aria-hidden="true" style={{ left: `calc(0.6875rem + (100% - 1.375rem) * ${notchAt})` }} />
+        )}
+      </div>
       {hint && (
         <p id={hintId} className={s.hint}>
           {hint}
@@ -145,9 +158,12 @@ interface Props {
   onLevers: (patch: Partial<LeverValues>) => void;
   onTarget: (n: number) => void;
   onReset: () => void;
+  /** the selected card's own lever values, marked on each slider (optional: the tests render without it) */
+  cardLevers?: LeverValues;
 }
 
-export function Levers({ levers: l, target, onLevers, onTarget, onReset }: Props) {
+export function Levers({ levers: l, target, onLevers, onTarget, onReset, cardLevers }: Props) {
+  const c = cardLevers;
   const byX = l.oneOffMode === 'x';
   return (
     <section className={s.panel} aria-labelledby="levers-title">
@@ -166,6 +182,7 @@ export function Levers({ levers: l, target, onLevers, onTarget, onReset }: Props
         unit="%"
         value={l.incomePct}
         limit={LIMITS.incomePct}
+        notch={c?.incomePct}
         hint={l.jobLoss && l.incomePct < 100 ? 'EI pays 55% of usual money in' : undefined}
         onChange={(v) => onLevers({ incomePct: v })}
       />
@@ -193,6 +210,7 @@ export function Levers({ levers: l, target, onLevers, onTarget, onReset }: Props
         unit="%"
         value={l.billsPct}
         limit={LIMITS.billsPct}
+        notch={c?.billsPct}
         hint="Rises with H, the household bills on record"
         onChange={(v) => onLevers({ billsPct: v })}
       />
@@ -202,6 +220,7 @@ export function Levers({ levers: l, target, onLevers, onTarget, onReset }: Props
         unit="$"
         value={l.extra}
         limit={LIMITS.extra}
+        notch={c?.extra}
         hint="Rent up $X a month goes here: H is $0 on 1,225 accounts"
         onChange={(v) => onLevers({ extra: v })}
       />
@@ -234,6 +253,7 @@ export function Levers({ levers: l, target, onLevers, onTarget, onReset }: Props
           unit="×"
           value={l.oneOffX}
           limit={LIMITS.oneOffX}
+          notch={c?.oneOffX}
           disabled={!byX}
           onChange={(v) => onLevers({ oneOffX: v })}
         />
@@ -243,6 +263,7 @@ export function Levers({ levers: l, target, onLevers, onTarget, onReset }: Props
           unit="$"
           value={l.oneOffAmt}
           limit={LIMITS.oneOffAmt}
+          notch={c?.oneOffAmt}
           disabled={byX}
           onChange={(v) => onLevers({ oneOffAmt: v })}
         />
@@ -254,6 +275,7 @@ export function Levers({ levers: l, target, onLevers, onTarget, onReset }: Props
         unit="months"
         value={target}
         limit={LIMITS.target}
+        notch={c ? DEFAULT_SCENARIO.target : undefined}
         integer
         onChange={(v) => onTarget(Math.round(v))}
       />

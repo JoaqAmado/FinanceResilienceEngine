@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Dispatch, PointerEvent, RefObject } from 'react';
 import type { AppData } from '../lib/load';
 import { buildLive } from '../lib/live';
-import { leversMatchCard } from '../lib/scenario';
+import { CARD_LEVERS, leversMatchCard } from '../lib/scenario';
 import type { Scenario } from '../lib/scenario';
 import type { Action } from '../lib/state';
 import { AccountPicker } from './AccountPicker';
@@ -93,6 +93,7 @@ export function Live({ data, scenario, dispatch, searchRef }: Props) {
           onLevers={(patch) => dispatch({ type: 'levers', patch })}
           onTarget={(n) => dispatch({ type: 'target', n })}
           onReset={() => dispatch({ type: 'reset' })}
+          cardLevers={CARD_LEVERS[scenario.card]}
         />
       </div>
       <div className={s.chart}>

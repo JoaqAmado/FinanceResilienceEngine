@@ -150,6 +150,24 @@
   box-shadow: 0 2px 6px rgba(19, 35, 63, 0.25);
 }
 
+/* the slider plus the selected card's notch (grid, so the inline input adds no line-box gap below it) */
+.rangeWrap {
+  position: relative;
+  display: grid;
+}
+
+.notch {
+  position: absolute;
+  top: calc(50% + 1px); /* the input's 2px top margin */
+  width: 3px;
+  height: 0.95rem;
+  border-radius: 2px;
+  background: var(--ink-2);
+  opacity: 0.6;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
 .range:disabled::-webkit-slider-thumb {
   border-color: var(--line-control);
 }
