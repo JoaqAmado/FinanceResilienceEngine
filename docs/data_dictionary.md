@@ -362,6 +362,8 @@ row per flag budget.
 | `light` | the same for the light (most points, then lowest balance) |
 | `ei55_runway` | the same for the judges' EI runway, shortest first |
 | `buffer_months` | the same for buffer months, fewest first |
+| `gradient_boosting_only` | of the model's catches, those not on the light's list |
+| `light_only` | of the light's catches, those not on the model's list |
 | `events` | accounts that went overdrawn in the whole backtest |
 | `train_accounts` | accounts the model was trained on, at the snapshot a year earlier |
 | `train_events` | of those, accounts with any day below zero in the year after that snapshot |

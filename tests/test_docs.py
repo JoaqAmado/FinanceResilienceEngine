@@ -166,7 +166,10 @@ def figures(m):
     bm = BM.cached_benchmark()
     bh, bl, btr = bm.row(BM.HEADLINE_BUDGET), bm.row(BM.LIGHT_BUDGET), bm.train
     assert int(bh.light) == int(lift.light) and int(bh.list_accounts) == int(lift.list_accounts)  # the same lists
-    versus_rules = f"{BM.versus(int(bh.gradient_boosting), int(bh.light))} the light's {len(W.RULES)} rules"
+    split = lambda r: (int(r.gradient_boosting_only), int(r.light_only))  # noqa: E731  (overdrafts on one list only)
+    assert min(BM.sign_test_p(*split(r)) for r in (bh, bl)) >= BM.SIGN_TEST_ALPHA  # "can't tell the two apart"
+    vs = lambda r: BM.versus(int(r.gradient_boosting), int(r.light), *split(r))  # noqa: E731
+    versus_rules = f"{vs(bh)} the light's {len(W.RULES)} rules"
 
     return {
         "readme": [
@@ -218,11 +221,18 @@ def figures(m):
             f"account with a row {E.S6_HISTORY} months earlier and all {E.S6_HORIZON} months after it",
             # the gradient-boosting benchmark (resilience/benchmark.py)
             f"| Gradient boosting on {len(BM.FEATURES)} features, trained on {btr.label_year}'s outcomes "
-            f"({len(btr.X):,} accounts, {int(btr.y.sum())} went overdrawn), on the same lists | {E.HEADLINE_LIST_PCT}% "
-            f"watch-list: {int(bh.gradient_boosting)}, {versus_rules} · as many accounts as the light flags with "
-            f"{E.WATCH_POINTS}+ points ({int(bl.list_accounts):,}): {int(bl.gradient_boosting)}, against the light's "
-            f"{int(bl.light)} |",
+            f"({len(btr.X):,} accounts, {int(btr.y.sum())} went overdrawn), on watch-lists of the same size | "
+            f"{E.HEADLINE_LIST_PCT}% watch-list: {int(bh.gradient_boosting)}, {versus_rules} ({int(bh.light)}) · as "
+            f"many accounts as the light flags with {E.WATCH_POINTS}+ points ({int(bl.list_accounts):,}): "
+            f"{int(bl.gradient_boosting)}, {vs(bl)} the light ({int(bl.light)}). The lists catch different "
+            f"overdrafts: {split(bh)[0]} only on the model's and {split(bh)[1]} only on the light's on the "
+            f"{E.HEADLINE_LIST_PCT}% list, {split(bl)[0]} and {split(bl)[1]} at {int(bl.list_accounts):,}, so this data "
+            f"can't tell the two rankings apart |",
             f"the {len(btr.X):,} accounts rated at the {btr.snapshot} snapshot and still active in {btr.label_year}",
+            f"On {len(btr.X):,} training accounts early stopping stays off, so every run gives the same scores whatever "
+            f"the `random_state`",
+            "`versus()` words the model's count \"about as many\" unless an exact two-sided sign test on",
+            f"is below `SIGN_TEST_ALPHA` (`{BM.SIGN_TEST_ALPHA:g}`); at both sizes it is not",
             f"ranks the same {len(bm.test.X):,} accounts as the watch-lists",
             f"Its {len(BM.FEATURES)} features read only the months up to each snapshot: the light's {len(W.RULES)} rule "
             f"inputs",

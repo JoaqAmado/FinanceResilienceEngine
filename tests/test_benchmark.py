@@ -5,6 +5,7 @@ import re
 import numpy as np
 import pandas as pd
 import pytest
+from sklearn.ensemble import HistGradientBoostingClassifier
 
 from resilience import benchmark as B
 from resilience import evidence as E
@@ -23,9 +24,17 @@ def test_model_order_ranks_highest_score_first_then_lowest_account_id():
 
 
 def test_versus_words_the_difference():
-    assert B.versus(47, 47) == "as many overdrafts as"
-    assert B.versus(59, 55) == "4 more overdrafts than"
-    assert B.versus(54, 55) == "1 fewer overdraft than"
+    """Review fix: a 47 = 47 tie and 59 against 55 read as exact or as a win; both splits are noise."""
+    assert B.versus(47, 47, 9, 9) == "about as many overdrafts as"
+    assert B.versus(59, 55, 13, 9) == "about as many overdrafts as"
+    assert B.versus(60, 45, 20, 5) == "15 more overdrafts than"
+    assert B.versus(45, 60, 5, 20) == "15 fewer overdrafts than"
+
+
+def test_sign_test_on_the_overdrafts_only_one_list_catches():
+    assert B.sign_test_p(9, 9) == 1.0 and B.sign_test_p(0, 0) == 1.0
+    assert round(B.sign_test_p(13, 9), 2) == 0.52 and B.sign_test_p(9, 13) == B.sign_test_p(13, 9)
+    assert B.sign_test_p(6, 0) == 2 / 2 ** 6 < B.SIGN_TEST_ALPHA
 
 
 def test_the_apps_do_not_import_the_benchmark():
@@ -79,11 +88,19 @@ def test_the_test_year_is_the_evidence_backtest(bench, monthly, loans):
 def test_counts_on_both_flag_budgets(bench):
     assert bench.table.to_dict("records") == [
         {"budget": "10% watch-list", "list_accounts": 385, "gradient_boosting": 47, "light": 47, "ei55_runway": 25,
-         "buffer_months": 29, "events": 75, "train_accounts": 2747, "train_events": 49},
+         "buffer_months": 29, "gradient_boosting_only": 9, "light_only": 9, "events": 75, "train_accounts": 2747,
+         "train_events": 49},
         {"budget": "light 2+ points", "list_accounts": 624, "gradient_boosting": 59, "light": 55, "ei55_runway": 30,
-         "buffer_months": 36, "events": 75, "train_accounts": 2747, "train_events": 49},
+         "buffer_months": 36, "gradient_boosting_only": 13, "light_only": 9, "events": 75, "train_accounts": 2747,
+         "train_events": 49},
     ]
     s = bench.test.scores
+    y, model, light = bench.test.y, B.model_order(bench.score), E.risk_order(s, "light")
+    for r in bench.table.itertuples():                                 # the overdrafts on one list and not the other
+        on_model, on_light = set(model[:r.list_accounts]), set(light[:r.list_accounts])
+        assert r.gradient_boosting_only == int(y.reindex(sorted(on_model - on_light)).sum())
+        assert r.light_only == int(y.reindex(sorted(on_light - on_model)).sum())
+        assert r.gradient_boosting - r.light == r.gradient_boosting_only - r.light_only
     flagged = s["points"] >= E.WATCH_POINTS                            # the light's budget is exactly its 2+ points
     assert int(flagged.sum()) == 624 and int(s.loc[flagged, "went_overdrawn"].sum()) == 55
 
@@ -122,12 +139,25 @@ def test_two_fits_give_identical_scores(bench):
 
 
 @needs_data
+def test_early_stopping_stays_off_so_the_seed_changes_nothing(bench):
+    """Review fix: the findings said the fixed random_state makes runs repeat. On this few training accounts early
+    stopping stays off ('auto' switches it on above 10,000), so no random_state is ever used."""
+    model = B.fit(bench.train)
+    assert len(bench.train.X) <= 10_000 and not model.do_early_stopping_
+    assert model.n_iter_ == B.GBM_PARAMS["max_iter"]
+    other = HistGradientBoostingClassifier(**{**B.GBM_PARAMS, "random_state": 12345}).fit(
+        bench.train.X, bench.train.y.astype(int))
+    assert np.array_equal(B.model_score(other, bench.test).to_numpy(), bench.score.to_numpy())
+
+
+@needs_data
 def test_benchmark_line(bench):
     assert B.benchmark_line(bench) == (
         "Gradient boosting on 13 features, trained on 2024's outcomes (2,747 accounts, 49 went overdrawn), catches 47 "
-        "of the 75 accounts that went overdrawn in 2025 on the same 10% watch-list (385 accounts): as many overdrafts "
-        "as the light's 4 rules. On as many accounts as the light flags with 2+ points (624), it catches 59 and the "
-        "light 55. The product ships the rules, which a customer can read.")
+        "of the 75 accounts that went overdrawn in 2025 on a 10% watch-list of the light's size (385 accounts): about "
+        "as many overdrafts as the light's 4 rules (47; 9 only on the model's list, 9 only on the light's). On as many "
+        "accounts as the light flags with 2+ points (624), it catches 59 and the light 55 (13 and 9 only on one list): "
+        "about as many overdrafts as the light. The product ships the rules, which a customer can read.")
 
 
 @needs_data

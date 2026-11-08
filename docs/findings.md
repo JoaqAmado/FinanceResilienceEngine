@@ -25,7 +25,7 @@ and still active in 2025, of which 75 first went overdrawn in 2025.
 |---|---|
 | Of those 75, passed the judges' EI 55% test at the snapshot | 28 (the light had flagged 17 of them, 2+ points) |
 | Overdrafts caught by a 10% watch-list (385 accounts) | light (most points, then lowest balance) 47 · judges' EI 55% runway 25 · buffer months 29 |
-| Gradient boosting on 13 features, trained on 2024's outcomes (2,747 accounts, 49 went overdrawn), on the same lists | 10% watch-list: 47, as many overdrafts as the light's 4 rules · as many accounts as the light flags with 2+ points (624): 59, against the light's 55 |
+| Gradient boosting on 13 features, trained on 2024's outcomes (2,747 accounts, 49 went overdrawn), on watch-lists of the same size | 10% watch-list: 47, about as many overdrafts as the light's 4 rules (47) · as many accounts as the light flags with 2+ points (624): 59, about as many overdrafts as the light (55). The lists catch different overdrafts: 9 only on the model's and 9 only on the light's on the 10% list, 13 and 9 at 624, so this data can't tell the two rankings apart |
 | Second finding, small numbers: went overdrawn in 2025 | irregular money in that passes the EI test: 14 of 376 (3.7%, 95% interval 2.2–6.2%) · steady money in that fails it: 17 of 1,072 (1.6%, 1.0–2.5%) |
 | **Half-year spending, checked forward** (4 as-of months, 12,681 account half-years): of the 6,652 that fail the 6-month EI test on the money out that followed, missed by | the same test on the median month S: 2,406 · on half-year S6: 1,003 (false alarms: S 720 · S6 1,579) |
 
@@ -91,12 +91,16 @@ on those rows, and an account passes the judges' EI test when its published runw
   ties go to the lowest `account_id`. Table: `artifacts/backtest_lift.csv`.
 - **Gradient boosting benchmark.** `resilience/benchmark.py` (`python -m resilience.benchmark`). The product has no
   trained model; this checks whether one would have caught more. It fits scikit-learn's
-  `HistGradientBoostingClassifier` (fixed `random_state`, so every run gives the same scores) on the light's
-  backtest one year earlier: the 2,747 accounts rated at the 2023-12 snapshot and still active in 2024, outcome =
-  any day below zero in 2024. It then ranks the same 3,847 accounts as the watch-lists, highest score first, ties
-  to the lowest `account_id`. Its 13 features read only the months up to each snapshot: the light's 4 rule inputs,
+  `HistGradientBoostingClassifier` on the light's backtest one year earlier, outcome = any day below zero in 2024:
+  the 2,747 accounts rated at the 2023-12 snapshot and still active in 2024.
+  On 2,747 training accounts early stopping stays off, so every run gives the same scores whatever the `random_state`.
+  It then ranks the same 3,847 accounts as the watch-lists, highest score first, ties to the lowest `account_id`.
+  Its 13 features read only the months up to each snapshot: the light's 4 rule inputs,
   buffer months, the judges' EI runway and the runway with no shock, money in, and, over the light's 6 months,
   money out, household bills and insurance, loan payments and cash deposits as shares of money in, and bank fees.
+  At each list size the table also counts the overdrafts on only one of the two lists (`gradient_boosting_only`,
+  `light_only`), and `versus()` words the model's count "about as many" unless an exact two-sided sign test on
+  those two counts is below `SIGN_TEST_ALPHA` (`0.05`); at both sizes it is not.
   The apps keep the rules: each rule that fires is named on the card. Table: `artifacts/ml_benchmark.csv`.
 - **Irregular money in.** `irregular_table()`: the light's own rule (money in: std ÷ mean > 0.5 over its 6
   months) against passing or failing the judges' EI test, with Wilson 95% intervals. It rests on 14 and 17

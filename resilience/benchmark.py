@@ -34,9 +34,13 @@ remaining ties by lowest account_id (the tie rule of evidence.risk_order).
 Two flag budgets on the test year; at each, how many of the accounts that went overdrawn each ranking flags:
     HEADLINE_BUDGET   the evidence.HEADLINE_LIST_PCT watch-list: gradient boosting, light, EI runway, buffer months
     LIGHT_BUDGET      as many accounts as the light shows as a warning (evidence.WATCH_POINTS or more points)
+and how many of those overdrafts are on the model's list only and on the light's list only. versus() calls the
+model's count "about as many" as the light's unless an exact two-sided sign test on those two counts is below
+SIGN_TEST_ALPHA.
 """
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
@@ -60,6 +64,7 @@ FEATURES = ("buffer_months_capped", "min_bal_over_S", "cash_share", "inc_cv", "b
             "fixed_share", "loan_share", "fees_per_month", "log_money_in", "cash_deposit_share",
             "runway_ei55_capped", "runway_no_shock_capped")
 MODEL = "gradient_boosting"
+SIGN_TEST_ALPHA = 0.05               # below this, the overdrafts only one list catches say one ranking is better
 HEADLINE_BUDGET = f"{HEADLINE_LIST_PCT}% watch-list"
 LIGHT_BUDGET = f"light {WATCH_POINTS}+ points"
 ARTIFACT_FILE = "ml_benchmark"
@@ -155,13 +160,16 @@ def model_order(score: pd.Series) -> pd.Index:
 # ---------------------------------------------------------------- the comparison
 
 def comparison(train: Sample, test: Sample, score: pd.Series) -> pd.DataFrame:
-    """One row per flag budget: accounts flagged, and how many that went overdrawn each ranking flags."""
+    """One row per flag budget: accounts flagged, how many that went overdrawn each ranking flags, and how many of
+    those are on only the model's list or only the light's."""
     s, y = test.scores, test.y
     orders = {MODEL: model_order(score), **{r: risk_order(s, r) for r in RANKINGS}}
     budgets = {HEADLINE_BUDGET: list_size(HEADLINE_LIST_PCT, len(s)),
                LIGHT_BUDGET: int((s["points"] >= WATCH_POINTS).sum())}
+    only = lambda a, b, k: int(y.reindex(orders[a][:k].difference(orders[b][:k])).sum())  # noqa: E731
     return pd.DataFrame([{"budget": name, "list_accounts": k,
                           **{r: int(y.reindex(o[:k]).sum()) for r, o in orders.items()},
+                          f"{MODEL}_only": only(MODEL, "light", k), "light_only": only("light", MODEL, k),
                           "events": int(y.sum()), "train_accounts": len(train.X), "train_events": int(train.y.sum())}
                          for name, k in budgets.items()])
 
@@ -196,25 +204,34 @@ def cached_benchmark(data_dir: str = str(DATA_DIR)) -> Benchmark:
 
 # ---------------------------------------------------------------- the line
 
-def versus(model: int, rules: int) -> str:
-    """The model's catches against the rules': "as many overdrafts as", "4 more overdrafts than", or
-    "1 fewer overdraft than"."""
-    if model == rules:
-        return "as many overdrafts as"
-    d = abs(model - rules)
-    return f"{d:,} {'more' if model > rules else 'fewer'} overdraft{'' if d == 1 else 's'} than"
+def sign_test_p(model_only: int, rules_only: int) -> float:
+    """Exact two-sided sign test on the overdrafts only one list catches: the chance of a split at least this uneven
+    if each of them were as likely to be on either list."""
+    n = model_only + rules_only
+    tail = sum(math.comb(n, i) for i in range(min(model_only, rules_only) + 1)) / 2 ** n
+    return min(1.0, 2 * tail)
+
+
+def versus(model: int, rules: int, model_only: int, rules_only: int) -> str:
+    """The model's catches against the rules': "about as many overdrafts as" unless the sign test on the overdrafts
+    only one list catches is below SIGN_TEST_ALPHA, then "15 more overdrafts than" or "15 fewer overdrafts than"."""
+    if sign_test_p(model_only, rules_only) >= SIGN_TEST_ALPHA:
+        return "about as many overdrafts as"
+    return f"{abs(model - rules):,} {'more' if model > rules else 'fewer'} overdrafts than"
 
 
 def benchmark_line(b: Benchmark) -> str:
     head, light = b.row(HEADLINE_BUDGET), b.row(LIGHT_BUDGET)
-    g, lt = int(head[MODEL]), int(head["light"])
+    vs = lambda r: versus(*(int(r[c]) for c in (MODEL, "light", f"{MODEL}_only", "light_only")))  # noqa: E731
     return (f"Gradient boosting on {len(FEATURES)} features, trained on {b.train.label_year}'s outcomes "
-            f"({len(b.train.X):,} accounts, {int(b.train.y.sum()):,} went overdrawn), catches {g:,} of the "
-            f"{int(head['events']):,} accounts that went overdrawn in {b.test.label_year} on the same "
-            f"{HEADLINE_LIST_PCT}% watch-list ({int(head['list_accounts']):,} accounts): {versus(g, lt)} the light's "
-            f"{len(RULES)} rules. On as many accounts as the light flags with {WATCH_POINTS}+ points "
-            f"({int(light['list_accounts']):,}), it catches {int(light[MODEL]):,} and the light {int(light['light']):,}. "
-            f"The product ships the rules, which a customer can read.")
+            f"({len(b.train.X):,} accounts, {int(b.train.y.sum()):,} went overdrawn), catches {int(head[MODEL]):,} of "
+            f"the {int(head['events']):,} accounts that went overdrawn in {b.test.label_year} on a "
+            f"{HEADLINE_LIST_PCT}% watch-list of the light's size ({int(head['list_accounts']):,} accounts): "
+            f"{vs(head)} the light's {len(RULES)} rules ({int(head['light']):,}; {int(head[f'{MODEL}_only']):,} only on "
+            f"the model's list, {int(head['light_only']):,} only on the light's). On as many accounts as the light "
+            f"flags with {WATCH_POINTS}+ points ({int(light['list_accounts']):,}), it catches {int(light[MODEL]):,} and "
+            f"the light {int(light['light']):,} ({int(light[f'{MODEL}_only']):,} and {int(light['light_only']):,} only "
+            f"on one list): {vs(light)} the light. The product ships the rules, which a customer can read.")
 
 
 def main(out_dir: Path | None = None) -> None:
