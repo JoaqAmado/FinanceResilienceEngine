@@ -27,8 +27,31 @@
   background: linear-gradient(90deg, var(--s-judges) 80%, rgba(42, 120, 214, 0.35));
 }
 
+/* reality checks on: the stretch between the judges' runway and the checked runway, hatched in reality orange */
+.real {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: 999px;
+  background: repeating-linear-gradient(
+    135deg,
+    var(--s-reality) 0 3px,
+    rgba(235, 104, 52, 0.25) 3px 6px
+  );
+  box-shadow: inset 0 0 0 1.5px var(--s-reality);
+  transition:
+    left var(--dur-slow) var(--ease-out),
+    width var(--dur-slow) var(--ease-out);
+}
+
+/* checks shorten the runway: the hatch sits on top of the blue it takes away */
+.real[data-shorter='true'] {
+  background: repeating-linear-gradient(135deg, var(--s-reality) 0 3px, var(--surface) 3px 6px);
+}
+
 /* track the pointer while a slider is dragged */
-.bar[data-still='true'] .fill {
+.bar[data-still='true'] .fill,
+.bar[data-still='true'] .real {
   transition: none;
 }
 

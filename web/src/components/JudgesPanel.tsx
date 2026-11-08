@@ -14,6 +14,8 @@ interface Props {
   greyNote: string | null;
   /** a slider is being dragged: the number snaps instead of rolling on every input event */
   dragging?: boolean;
+  /** the runway with the selected reality checks, marked on the bar only while a check is on */
+  real?: RunwayResult | null;
 }
 
 type Verdict = { kind: 'good' | 'bad'; icon: string; text: string };
@@ -52,7 +54,7 @@ function Formula({ acct, judge }: { acct: Account; judge: RunwayResult }) {
   );
 }
 
-export function JudgesPanel({ acct, judge, baseline, shock, target, greyNote, dragging = false }: Props) {
+export function JudgesPanel({ acct, judge, baseline, shock, target, greyNote, dragging = false, real = null }: Props) {
   const v = verdict(acct, judge, target);
   const flow = judge.gap > 0 ? `gap ${money(judge.gap)}/mo` : `surplus ${money(Math.abs(judge.gap))}/mo`;
   const exact = rwText(judge);
@@ -97,7 +99,7 @@ export function JudgesPanel({ acct, judge, baseline, shock, target, greyNote, dr
       </div>
 
       {/* after the verdict, so number and verdict stay above the fold in presenter mode at 1280 x 720 */}
-      <RunwayBar judge={judge} target={target} still={dragging} />
+      <RunwayBar judge={judge} target={target} real={real} still={dragging} />
 
       <Formula acct={acct} judge={judge} />
 

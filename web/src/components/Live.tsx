@@ -72,6 +72,7 @@ export function Live({ data, scenario, dispatch, searchRef }: Props) {
           target={scenario.target}
           greyNote={model.greyNote}
           dragging={dragging}
+          real={model.anyCheckOn ? model.real : null}
         />
       </div>
       <div className={s.reality}>

@@ -12,18 +12,37 @@ function share(r: RunwayResult): number {
   return Math.min(Math.max(r.months ?? 0, 0), SCALE) / SCALE;
 }
 
-export function RunwayBar({ judge, target, still = false }: { judge: RunwayResult; target: number; still?: boolean }) {
+interface Props {
+  judge: RunwayResult;
+  target: number;
+  /** the runway with the selected reality checks; shown as a hatched orange marker only when a check is on */
+  real?: RunwayResult | null;
+  still?: boolean;
+}
+
+export function RunwayBar({ judge, target, real = null, still = false }: Props) {
   const over = judge.noShortfall || (judge.months ?? 0) > SCALE;
   const edge = target >= 11 ? 'end' : target <= 1 ? 'start' : undefined;
+  const a = share(judge);
+  const b = real ? share(real) : a;
+  const checks = real ? `, reality checks ${rwText(real)}` : '';
   return (
     <div
       className={s.bar}
       data-still={still ? 'true' : undefined}
       role="img"
-      aria-label={`Judges' runway ${rwText(judge)}, against a must-survive line at ${target} months, on a 0 to 12 month scale`}
+      aria-label={`Judges' runway ${rwText(judge)}${checks}, against a must-survive line at ${target} months, on a 0 to 12 month scale`}
     >
       <div className={s.track}>
-        <div className={s.fill} data-over={over ? 'true' : undefined} style={{ width: `${share(judge) * 100}%` }} />
+        <div className={s.fill} data-over={over ? 'true' : undefined} style={{ width: `${a * 100}%` }} />
+        {real && (
+          // orange = reality check, as in every chart: the stretch between the judges' runway and the checked one
+          <div
+            className={s.real}
+            data-shorter={b < a ? 'true' : undefined}
+            style={{ left: `${Math.min(a, b) * 100}%`, width: `${Math.abs(a - b) * 100}%` }}
+          />
+        )}
         <div className={s.flag} data-edge={edge} style={{ left: `${(target / SCALE) * 100}%` }}>
           <span>must survive {target}</span>
         </div>
