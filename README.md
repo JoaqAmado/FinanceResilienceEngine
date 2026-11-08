@@ -47,7 +47,7 @@ python -m venv .venv
 pip install -r requirements.txt
 pip install -e .                     # makes `tangerine` and `app` importable: no PYTHONPATH needed
 
-python app/main.py                   # the 90-day plan web app → open http://localhost:8001
+python app/main.py                   # the web app → open the link it prints (http://localhost:8000 if free)
 ```
 Other commands:
 ```bash

@@ -1,7 +1,7 @@
 """FastAPI backend: serves the resilience engine and the resilience plan (look back + next 12 months) as JSON,
 plus the HTML page.
 
-Run:  python app/main.py                     (local Python; opens on http://localhost:8001)
+Run:  python app/main.py                     (local Python; http://localhost:8000, or the next free port)
       docker compose up app                 (Docker; http://localhost:8000)
 """
 from __future__ import annotations
@@ -134,10 +134,19 @@ def plan(
 
 
 if __name__ == "__main__":
-    import os
+    import socket
 
     import uvicorn
 
-    port = int(os.environ.get("PORT", "8001"))  # 8000 is used by the Docker app service
+    def _free(p: int) -> bool:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            return s.connect_ex(("127.0.0.1", p)) != 0
+
+    if "PORT" in os.environ:
+        port = int(os.environ["PORT"])
+    else:  # 8000 if free; otherwise (e.g. the Docker app is running there) the next free port
+        port = next(p for p in range(8000, 8011) if _free(p))
+        if port != 8000:
+            print("Port 8000 is busy (is the Docker app running? That copy is at http://localhost:8000).")
     print(f"Open http://localhost:{port}")
     uvicorn.run("app.main:app", host="127.0.0.1", port=port)
