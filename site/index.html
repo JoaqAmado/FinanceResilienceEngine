@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Twin Runway · Sheridan Datathon 2026</title>
+  <meta name="description" content="Twin Runway stress-tests any account against job loss, rising bills or a surprise repair, starting from the judges' runway formula, then builds the plan.">
+  <meta name="theme-color" content="#f47920">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%23f47920'/%3E%3Ccircle cx='12' cy='12' r='4' fill='%23ffb27a'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <div class="wrap header-row">
+      <a class="brand" href="#top" aria-label="Twin Runway, back to top">
+        <span class="brand-dot" aria-hidden="true"></span>
+        <span>Twin Runway</span>
+      </a>
+      <nav class="site-nav" aria-label="Sections">
+        <a href="#demo">Demo</a>
+        <a href="#finding">Finding</a>
+        <a href="#how">How it works</a>
+        <a href="#evidence">Evidence</a>
+        <a href="#built">How it's built</a>
+        <a href="#links">Links</a>
+      </nav>
+      <a class="btn btn-primary btn-small" href="app/">Open the live app</a>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="hero" id="top" aria-labelledby="hero-title">
+      <div class="wrap hero-grid">
+        <div class="hero-copy">
+          <p class="eyebrow">Sheridan Datathon 2026 · Tangerine track · Resilience Rewired</p>
+          <h1 id="hero-title">Twin Runway</h1>
+          <p class="pitch">The judges' runway is a fuel gauge, so we added a check-engine light: a resilience engine that stress-tests any account against job loss, rising bills or a surprise repair, then builds the plan.</p>
+          <div class="cta-row">
+            <a class="btn btn-primary" href="app/">Open the live app</a>
+            <a class="btn btn-ghost" href="#demo">Watch the 2-minute demo</a>
+          </div>
+        </div>
+        <aside class="stat-card" aria-label="Headline finding">
+          <p class="stat-label">On the judges' formula</p>
+          <p class="stat-big">35.1%</p>
+          <p class="stat-text"><strong>1,578 of 4,500 accounts (35.1%)</strong> can't last 6 months on EI at 55%.</p>
+          <p class="stat-foot">Every figure on this page comes from the engine and is recomputed by the test suite.</p>
+        </aside>
+      </div>
+      <div class="wrap">
+        <figure class="shot shot-hero">
+          <img src="img/furnace-1400.webp" srcset="img/furnace-800.webp 800w, img/furnace-1400.webp 1400w" sizes="(min-width: 1200px) 1140px, calc(100vw - 32px)" width="1400" height="471" alt="The live app on account 77743 after the Furnace dies twist: the judges' formula shows 0.0 months of runway with a red BUFFER GONE warning, and the reality checks panel sits beside it.">
+          <figcaption>Live twist, account 77743: a furnace repair the size of a month's spending is more than the buffer, so the judges' runway reads 0.0 months.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="band" id="demo" data-youtube-id="" aria-labelledby="demo-title">
+      <div class="wrap">
+        <h2 id="demo-title">The <span class="nowrap">2-minute</span> demo</h2>
+        <div class="video" data-video-slot>
+          <p class="video-coming">The demo video is coming soon. Until then, <a href="app/">open the live app</a> and try a twist on any account.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="finding" aria-labelledby="finding-title">
+      <div class="wrap">
+        <p class="kicker">The finding</p>
+        <h2 id="finding-title">The more money comes in, the thinner the cushion</h2>
+        <p class="lead">Group the accounts by monthly money in and run the judges' EI 55% twist. The share that can't last 6 months climbs with money in, because spending grows faster than the buffer.</p>
+        <div class="duo">
+          <div class="metric">
+            <p class="metric-label">Can't last 6 months on EI at 55%</p>
+            <p class="metric-value"><span>4.8%</span> <span class="arrow" aria-hidden="true">→</span> <span class="hot">75.6%</span></p>
+            <p class="metric-text">from the lowest money-in band (under $2.5k a month) to the highest ($20k a month and up)</p>
+          </div>
+          <div class="metric">
+            <p class="metric-label">Median buffer, in months of spending</p>
+            <p class="metric-value"><span>8.9</span> <span class="arrow" aria-hidden="true">→</span> <span class="hot">1.6</span></p>
+            <p class="metric-text">over the same bands: the cushion shrinks as money in grows</p>
+          </div>
+        </div>
+        <figure class="shot">
+          <img src="img/bands-1400.webp" srcset="img/bands-800.webp 800w, img/bands-1400.webp 1400w" sizes="(min-width: 1200px) 1140px, calc(100vw - 32px)" width="1400" height="406" loading="lazy" alt="Bar chart from the app's Portfolio discoveries tab: the share of each money-in band that can't last 6 months rises from the lowest band to the highest, for the judges' EI 55% and for the real 2026 EI cap.">
+          <figcaption>Portfolio discoveries: the judges' EI 55% (blue) beside the real 2026 EI cap (orange, a labelled reality check), by money-in band.</figcaption>
+        </figure>
+        <div class="case">
+          <img src="img/customer-450.webp" width="450" height="600" loading="lazy" alt="Know the customer card for account 77743: money in $19,216 a month, spending $13,061 a month, buffer $11,906, which is 0.9 months of spending, and its early-warning light.">
+          <div class="case-copy">
+            <p class="kicker">One account</p>
+            <h3>Account 77743</h3>
+            <p>$19,216 a month comes in, yet the buffer covers only 0.9 months of spending. With no shock it never runs short. Then the furnace dies: a repair the size of a month's spending leaves it <strong>$1,154 short</strong>, and the judges' runway reads <strong>0.0 months</strong>.</p>
+            <p class="muted">A big monthly number in is not the same as a cushion. Twin Runway shows both, on the account's own figures.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="band" id="how" aria-labelledby="how-title">
+      <div class="wrap">
+        <p class="kicker">How it works</p>
+        <h2 id="how-title">The judges' number first, then the real world, then the plan</h2>
+        <ol class="steps">
+          <li>
+            <h3>The judges' number first</h3>
+            <p>Runway is the judges' formula, exactly as the track brief defines it: (buffer − one-off) ÷ (spending after the shock − money in after the shock). The twist cards apply the judges' shocks: laid off on EI at 55%, a furnace repair of one month's spending, or a job loss with household bills up 15%.</p>
+          </li>
+          <li>
+            <h3>Labelled reality checks beside it</h3>
+            <p>Switchable checks sit next to the official number, each labelled as our assumption, so the judges' number never changes: the real 2026 EI cap ($729 a week), keeping a pension on job loss, typical half-year spending, bills paid by standing order, and a month-by-month start in January.</p>
+            <div class="pair">
+              <figure class="shot">
+                <img src="img/pension-1400.webp" srcset="img/pension-800.webp 800w, img/pension-1400.webp 1400w" sizes="(min-width: 900px) 560px, calc(100vw - 32px)" width="1400" height="620" loading="lazy" alt="Account 98952 laid off on EI at 55%: the judges' formula shows 4.2 months; with the Keep pension on job loss check switched on, the runway with the selected checks is 23.4 months.">
+                <figcaption>Account 98952, a retiree: with the pension kept on job loss, the runway with the check is 23.4 months beside the judges' 4.2.</figcaption>
+              </figure>
+              <figure class="shot">
+                <img src="img/cap-1400.webp" srcset="img/cap-800.webp 800w, img/cap-1400.webp 1400w" sizes="(min-width: 900px) 560px, calc(100vw - 32px)" width="1400" height="620" loading="lazy" alt="Account 20331 laid off on EI at 55%: the judges' formula shows 5.1 months; with the 2026 EI cap check switched on, the runway with the selected checks is 2.4 months.">
+                <figcaption>Account 20331: with the real 2026 EI cap, the runway with the check is 2.4 months beside the judges' 5.1.</figcaption>
+              </figure>
+            </div>
+          </li>
+          <li>
+            <h3>A goal plan and a backup plan</h3>
+            <p>The goal plan sizes a job-loss-proof fund that passes the shock on the judges' formula, and fills it with an automatic monthly transfer of the normal surplus. The backup plan is a ladder of steps, cheapest first, that stops at the first one reaching 6 months. Across the portfolio, <strong>1,192 of the 1,555 failing accounts</strong> that still have a buffer get back to 6 months by cutting a quarter of spending or less.</p>
+            <figure class="shot">
+              <img src="img/plan-1400.webp" srcset="img/plan-800.webp 800w, img/plan-1400.webp 1400w" sizes="(min-width: 1200px) 1060px, calc(100vw - 32px)" width="1400" height="649" loading="lazy" alt="Make a plan for account 20331: a goal plan for a job-loss-proof fund, a backup ladder whose second step, a 10% cut of non-fixed spending, reaches 6 months, and the story card.">
+              <figcaption>Make a plan, account 20331: the backup ladder reaches 6 months at a 10% cut of non-fixed spending.</figcaption>
+            </figure>
+          </li>
+        </ol>
+        <div class="light">
+          <h3><span class="light-dot" aria-hidden="true"></span>The early-warning light</h3>
+          <p>A watch flag beside the runway, not a credit score. It gives one point for each of 4 rules over the account's last 6 months, and from 2 points the apps show it as a warning:</p>
+          <ul class="rules">
+            <li>lowest balance under half a month of spending</li>
+            <li>almost all spending is cash</li>
+            <li>irregular money in</li>
+            <li>balance sliding more than 10% of a month's spending per month</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="evidence" aria-labelledby="evidence-title">
+      <div class="wrap">
+        <p class="kicker">The 2025 evidence</p>
+        <h2 id="evidence-title">The judges' test misses people. The light catches more of them.</h2>
+        <p class="lead">Every score is taken as it stood at the <span class="nowrap">2024-12</span> snapshot, on the 3,847 accounts still active in 2025. Of those, 75 first went overdrawn in 2025, and 28 of those 75 had passed the judges' <span class="nowrap">6-month</span> test at the snapshot.</p>
+        <div class="lift" role="group" aria-labelledby="lift-title" style="--max: 75">
+          <p class="lift-title" id="lift-title">On a 10% watch-list (385 of 3,847 accounts), how many of the 75 each ranking catches</p>
+          <div class="bar-row">
+            <span class="bar-name">Early-warning light, 4 rules</span>
+            <span class="bar-track"><span class="bar bar-light" style="--v: 47"></span></span>
+            <span class="bar-num">47</span>
+          </div>
+          <div class="bar-row">
+            <span class="bar-name">Buffer months, fewest first</span>
+            <span class="bar-track"><span class="bar bar-buffer" style="--v: 29"></span></span>
+            <span class="bar-num">29</span>
+          </div>
+          <div class="bar-row">
+            <span class="bar-name">The judges' runway, shortest first</span>
+            <span class="bar-track"><span class="bar bar-judges" style="--v: 25"></span></span>
+            <span class="bar-num">25</span>
+          </div>
+        </div>
+        <figure class="shot">
+          <img src="img/lift-1400.webp" srcset="img/lift-800.webp 800w, img/lift-1400.webp 1400w" sizes="(min-width: 1200px) 1140px, calc(100vw - 32px)" width="1400" height="372" loading="lazy" alt="Lift chart from the app: for watch-lists of each size, the early-warning light holds more of the accounts that went overdrawn in 2025 than the judges' runway or buffer months; at the 10% list it holds 47 against 25 and 29.">
+          <figcaption>The lift chart in the app, for every watch-list size.</figcaption>
+        </figure>
+        <div class="note">
+          <h3>A machine-learning check, worded honestly</h3>
+          <p>Gradient boosting on 13 features, trained on 2024's outcomes, catches 47 on the same 10% watch-list: about as many overdrafts as the light, not the same accounts (38 are on both lists). This data can't tell the two rankings apart, so both apps keep the 4 rules anyone can read.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="band" id="built" aria-labelledby="built-title">
+      <div class="wrap">
+        <p class="kicker">How it's built</p>
+        <h2 id="built-title">One engine, three languages, the same answers</h2>
+        <p class="parity">The judges' numbers match on all 4,500 accounts in Python, TypeScript and SQL (DuckDB).</p>
+        <div class="cards">
+          <article class="card">
+            <h3>Python engine</h3>
+            <p>One deterministic engine computes every number: the judges' runway, the shocks, the reality checks, the plans, the light and the backtest. The test suite recomputes every figure the docs and this page quote.</p>
+          </article>
+          <article class="card">
+            <h3>React and TypeScript app</h3>
+            <p>The engine, ported to TypeScript, runs in the browser offline: no keys, no network. Parity tests check it against the Python engine's outputs.</p>
+          </article>
+          <article class="card">
+            <h3>SQL in DuckDB and Snowflake</h3>
+            <p>The judges' numbers as plain SQL, run offline in DuckDB or in a Snowflake warehouse.</p>
+          </article>
+          <article class="card">
+            <h3>Optional Gemini wording</h3>
+            <p>In the Streamlit app, Gemini can reword the story over the engine's numbers. It never computes a number: if its text has a figure the engine didn't give it, the app shows its built-in template instead.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="links" aria-labelledby="links-title">
+      <div class="wrap">
+        <h2 id="links-title">Try it, read it, judge it</h2>
+        <ul class="link-grid">
+          <li><a class="link-card" href="app/"><strong>Open the live app</strong><span>Live twist, portfolio discoveries, method and limits</span></a></li>
+          <li><a class="link-card" href="https://github.com/JoaqAmado/FinanceResilienceEngine"><strong>Source on GitHub</strong><span>The engine, both apps, SQL, tests and docs</span></a></li>
+          <li><a class="link-card" href="https://github.com/JoaqAmado/FinanceResilienceEngine/blob/main/docs/findings.md"><strong>Findings</strong><span>What the data says, and how each figure is computed</span></a></li>
+          <li><a class="link-card" href="https://devpost.com/software/tangerine-68ojg5"><strong>Devpost project</strong><span>The submission page</span></a></li>
+        </ul>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <p>Built at Sheridan Datathon 2026 · Tangerine track</p>
+    </div>
+  </footer>
+
+  <script>
+    // The demo video: put its YouTube id in data-youtube-id on #demo. Empty keeps the "coming soon" line.
+    (function () {
+      var section = document.getElementById('demo');
+      var id = (section.getAttribute('data-youtube-id') || '').trim();
+      if (!/^[A-Za-z0-9_-]{11}$/.test(id)) return;
+      var frame = document.createElement('iframe');
+      frame.src = 'https://www.youtube-nocookie.com/embed/' + id + '?rel=0';
+      frame.title = 'Twin Runway demo video';
+      frame.loading = 'lazy';
+      frame.allow = 'accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+      frame.referrerPolicy = 'strict-origin-when-cross-origin';
+      frame.allowFullscreen = true;
+      var slot = section.querySelector('[data-video-slot]');
+      slot.classList.add('has-video');
+      slot.replaceChildren(frame);
+    })();
+  </script>
+</body>
+</html>

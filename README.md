@@ -46,6 +46,8 @@ More from the engine:
 | `web/public/data/` | the engine's inputs for the web app, from `scripts/export_web_data.py` | generated |
 | `web/test/vectors.json` | the Python engine's outputs the web app must match, from `scripts/export_web_data.py` | generated |
 | `scripts/` | `export_web_data.py`, which writes the web app's data | tool |
+| `site/` | the landing page judges open first: plain HTML and CSS, app screenshots in `site/img/` | site |
+| `scripts/build_site.py` | builds `site/` and the web app into one static folder, `site_dist/`, with the app at `site_dist/app/` | tool |
 | `tests/` | pytest: unit checks, real-data checks, docs and layout checks | tests |
 | `docs/` | findings, method, model card, data dictionary, warehouse | docs |
 
