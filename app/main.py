@@ -17,7 +17,10 @@ for _p in (_ROOT / "src", _ROOT):
     if str(_p) not in sys.path:
         sys.path.insert(0, str(_p))
 
+import os
+
 from fastapi import FastAPI, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -49,7 +52,21 @@ async def lifespan(_app: FastAPI):
     yield
 
 
-app = FastAPI(title="Tangerine resilience plan", version="1.0", lifespan=lifespan)
+app = FastAPI(
+    title="Tangerine resilience plan",
+    version="1.0",
+    lifespan=lifespan,
+    description="Know the customer, take a shock, make a plan. Interactive docs at /docs. Any front end (React, "
+                "mobile, a notebook) can call these endpoints; judge numbers are returned unchanged beside ours.",
+)
+# Let other UIs (e.g. the React app in web/ on http://localhost:5173) call the API from the browser.
+# Read-only GET API with no cookies or logins, so any origin is allowed; restrict with CORS_ORIGINS if deployed.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[o.strip() for o in os.environ.get("CORS_ORIGINS", "*").split(",")],
+    allow_methods=["GET"],
+    allow_headers=["*"],
+)
 app.mount("/static", StaticFiles(directory=STATIC), name="static")
 
 

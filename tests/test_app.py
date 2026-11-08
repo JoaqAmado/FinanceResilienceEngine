@@ -123,6 +123,13 @@ def test_api_errors():
     assert client.get("/api/plan/20111", params={"bills_increase_amount": -5}).status_code == 422
 
 
+def test_other_uis_can_call_the_api():
+    """CORS: a front end on another origin (e.g. the React app on :5173) is allowed to read the API."""
+    r = client.get("/api/meta", headers={"Origin": "http://localhost:5173"})
+    assert r.headers["access-control-allow-origin"] in ("*", "http://localhost:5173")
+    assert client.get("/openapi.json").json()["paths"].keys() >= {"/api/meta", "/api/accounts", "/api/plan/{account_id}"}
+
+
 def test_page_and_meta():
     assert "Resilience plan" in client.get("/").text
     meta = client.get("/api/meta").json()
