@@ -91,7 +91,7 @@ PRACTICE_PHRASINGS = (
     "baby on the way, $900 a month more",
     "a $2,500 furnace repair",
     "emergency vet bill of $1,200",
-    "two months of spending one-off",
+    "a one-off worth 3 months of spending",
     "cut back on spending by 25%",
     "discretionary spending down fifteen percent",
     "survive 12 months",
@@ -1196,9 +1196,15 @@ def rehearsed_phrasings() -> list[str]:
     return out
 
 
-def warm(phrases: list[str] | None = None, adapter=None, out=sys.stdout) -> dict[str, int]:
+RATE_LIMIT_WAITS = (15.0, 30.0, 60.0)
+
+
+def warm(phrases: list[str] | None = None, adapter=None, out=sys.stdout, sleep=None) -> dict[str, int]:
     """Run each phrasing through the LLM once (current = no shock), so later runs are cache hits."""
+    import time
+
     from . import shock_llm
+    sleep = time.sleep if sleep is None else sleep
     phrases = rehearsed_phrasings() if phrases is None else phrases
     counts = {"cached": 0, "new": 0, "failed": 0}
     current = Shock()
@@ -1209,6 +1215,12 @@ def warm(phrases: list[str] | None = None, adapter=None, out=sys.stdout) -> dict
             counts["cached"] += 1
             continue
         intent, status = shock_llm.llm_intent(norm, current, adapter=adapter)
+        for wait in RATE_LIMIT_WAITS:  # a free-tier key allows a burst of calls a minute: wait it out, then retry
+            if intent is not None or "rate_limit" not in status:
+                break
+            print(f"  rate-limited; waiting {wait:g}s", file=out)
+            sleep(wait)
+            intent, status = shock_llm.llm_intent(norm, current, adapter=adapter)
         if intent is None:
             counts["failed"] += 1
             print(f"  failed: {p!r} ({status})", file=out)

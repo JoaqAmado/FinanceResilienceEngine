@@ -17,7 +17,7 @@ import { balancePath, loanInTrouble, makeShock, planPath, pyFixed } from '../eng
 import type { Account, Ladder, RunwayResult, Shock } from '../engine';
 import { COLORS, DASH } from '../lib/colors';
 import { axisMoney, money } from '../lib/format';
-import { calendarBalancePath } from '../lib/paths';
+import { burnDownHorizon, calendarBalancePath } from '../lib/paths';
 import s from './BurnDown.module.css';
 
 interface Props {
@@ -81,7 +81,7 @@ function tickStep(h: number): number {
 
 export function BurnDown({ acct, judgeShock, judge, planShock, ladder, target, activeNames, dragging }: Props) {
   // months 0..max(24, 2x the judges' runway)
-  const horizon = Math.max(24, Math.ceil(2 * (judge.noShortfall ? 0 : (judge.months ?? 0))));
+  const horizon = burnDownHorizon(judge);
   const rows = useMemo<Row[]>(() => {
     const base = balancePath(acct, makeShock(), horizon);
     const judges = balancePath(acct, judgeShock, horizon);

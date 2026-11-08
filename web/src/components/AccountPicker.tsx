@@ -73,7 +73,7 @@ export function AccountPicker({ ids, has, current, onOpen, inputRef }: Props) {
     setError(null);
     setText(String(id));
     onOpen(id);
-    // leave the box once an account opens, so keys 1-4 pick the twist card straight away (/ comes back here)
+    // leave the box once an account opens, so the keys work straight away (/ comes back here, T opens the chat)
     inputRef.current?.blur();
   }
 

@@ -105,7 +105,7 @@ export const DOUBLE_WHAMMY = makeShock({
 });
 export const README_TWISTS = [LAID_OFF_EI, FURNACE, DOUBLE_WHAMMY] as const;
 
-/** The live-twist cards, as app.py applies them (the card name is the shock name). */
+/** The three track twists as the levers apply them, named as app.py names them (shock_parser.describe_shock). */
 export const PRESETS = {
   'Laid off: EI 55%': makeShock({ incomeMultiplier: 0.55, jobLoss: true, name: 'Laid off: EI 55%' }),
   'Furnace dies: 1× spending': makeShock({ oneOffMultipleOfS: 1, name: 'Furnace dies: 1× spending' }),

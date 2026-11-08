@@ -123,7 +123,7 @@ UNSEEN = {  # phrase -> expected non-default Shock fields (account 20331 for the
     "baby on the way, $900 a month more": ({"extra_monthly_cost": 900.0}, 6, None),
     "a $2,500 furnace repair": ({"one_off_cost": 2500.0}, 6, None),
     "emergency vet bill of $1,200": ({"one_off_cost": 1200.0}, 6, None),
-    "two months of spending one-off": ({"one_off_multiple_of_S": 2.0}, 6, None),
+    "a one-off worth 3 months of spending": ({"one_off_multiple_of_S": 3.0}, 6, None),
     "cut back on spending by 25%": ({"flexible_cut_pct": 0.25}, 6, None),
     "discretionary spending down fifteen percent": ({"flexible_cut_pct": 0.15}, 6, None),
     "survive 12 months": ({}, 12, None),
@@ -414,3 +414,18 @@ def test_rehearsed_phrasings_cover_chips_golden_and_practice():
     assert {sp.normalize(c) for c in sp.HINT_CHIPS} <= phrases
     assert set(sp.golden_table()) <= phrases
     assert {sp.normalize(p) for p in sp.PRACTICE_PHRASINGS} <= phrases
+
+
+# ------------------------------------------------------------------ the web app's port stays in step
+
+@needs_data
+def test_the_web_apps_golden_table_and_chat_vectors_are_up_to_date(m):
+    """web/src/engine/shock_parser.ts must give exactly these results (web/test/shock.test.ts). If this fails, run
+    .venv/bin/python scripts/export_shock_vectors.py and port the Python change to the TypeScript file."""
+    import importlib.util
+    root = sp.ROOT
+    assert (root / "web" / "src" / "engine" / "goldenTwists.json").read_bytes() == sp.GOLDEN_FILE.read_bytes()
+    spec = importlib.util.spec_from_file_location("export_shock_vectors", root / "scripts" / "export_shock_vectors.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    assert (root / "web" / "test" / "shock_vectors.json").read_text(encoding="utf-8") == mod.dumps(mod.build(m))

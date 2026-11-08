@@ -87,6 +87,12 @@
       "expect": {"target": 9}
     },
     {
+      "name": "Two months of spending as a one-off (Gemini read it as no shock when warmed, so it is golden)",
+      "phrases": ["Two months of spending one-off", "A one-off of two months of spending"],
+      "intent": {"one_off": {"kind": "months_of_spending", "months": 2}},
+      "expect": {"one_off_multiple_of_S": 2.0}
+    },
+    {
       "name": "Follow-up hint: cut spending 25%",
       "phrases": ["Cut spending 25%", "Cut non-fixed spending 25%"],
       "intent": {"spending_cut": {"kind": "set_pct", "pct": 0.25}},

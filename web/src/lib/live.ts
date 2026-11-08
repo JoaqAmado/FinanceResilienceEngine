@@ -18,8 +18,8 @@ import {
   templateStory,
   withShock,
 } from '../engine';
-import type { Account, GoalPlan, Ladder, RunwayResult, Shock, Story } from '../engine';
-import { judgeShockFor } from './scenario';
+import type { Account, Facts, GoalPlan, Ladder, RunwayResult, Shock, Story } from '../engine';
+import { shockFromLevers } from './scenario';
 import type { Scenario, Toggles } from './scenario';
 
 export type CheckKey = keyof Toggles;
@@ -54,15 +54,18 @@ export interface LiveModel {
   jan: number;
   greyNote: string | null;
   planShock: Shock;
+  /** the shock the job-loss-proof fund is sized on */
+  goalShock: Shock;
   goal: GoalPlan;
   /** conventional benchmark: 3 months of spending */
   conventional: GoalPlan;
   ladder: Ladder;
+  facts: Facts;
   story: Story;
 }
 
 export function buildLive(acct: Account, s: Scenario): LiveModel {
-  const judgeShock = judgeShockFor(s.card, s.levers);
+  const judgeShock = shockFromLevers(s.levers);
   const jobLoss = isJobLoss(judgeShock);
   const N = s.target;
 
@@ -160,10 +163,11 @@ export function buildLive(acct: Account, s: Scenario): LiveModel {
     .map(([n]) => n);
 
   const planShock = realShock;
-  const goal = goalPlan(acct, N, 'ei_proof', goalShockFor(planShock));
+  const goalShock = goalShockFor(planShock);
+  const goal = goalPlan(acct, N, 'ei_proof', goalShock);
   const conventional = goalPlan(acct, 3);
   const ladder = backupLadder(acct, planShock, N);
-  const f = facts(
+  const f: Facts = facts(
     acct.id,
     acct,
     judgeShock,
@@ -190,9 +194,11 @@ export function buildLive(acct: Account, s: Scenario): LiveModel {
     jan,
     greyNote: greyZoneNote(judge, judgeShock),
     planShock,
+    goalShock,
     goal,
     conventional,
     ladder,
+    facts: f,
     story: templateStory(f),
   };
 }

@@ -7,7 +7,7 @@
  * series sits exactly where calendarPath() says, for every account.
  */
 import { shockTerms } from '../engine';
-import type { Account, Shock } from '../engine';
+import type { Account, RunwayResult, Shock } from '../engine';
 
 export function calendarBalancePath(acct: Account, shock: Shock, months: number, startMonth = 1): number[] {
   const { income, addons, oneOff } = shockTerms(acct, shock);
@@ -21,4 +21,9 @@ export function calendarBalancePath(acct: Account, shock: Shock, months: number,
     out.push(bal);
   }
   return out;
+}
+
+/** The burn-down chart's horizon: months 0..max(24, 2 x the judges' runway). */
+export function burnDownHorizon(judge: RunwayResult): number {
+  return Math.max(24, Math.ceil(2 * (judge.noShortfall ? 0 : (judge.months ?? 0))));
 }

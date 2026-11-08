@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import NumberFlow from '@number-flow/react';
-import { pyFixed, survives } from '../engine';
+import { pyFixed } from '../engine';
+import { verdictKind } from '../engine/consistency';
 import type { Account, RunwayResult, Shock } from '../engine';
 import { money, rwText } from '../lib/format';
 import s from './JudgesPanel.module.css';
@@ -23,15 +24,16 @@ type Verdict = { kind: 'good' | 'bad'; icon: string; text: string };
 
 /** app.py's badge, in the same order: survives, already overdrawn, buffer gone, runs out. */
 function verdict(acct: Account, judge: RunwayResult, N: number): Verdict {
-  if (survives(judge, N)) return { kind: 'good', icon: '✓', text: `SURVIVES ${N} MONTHS` };
-  if (acct.B <= 0) {
+  const kind = verdictKind(acct, judge, N);  // the same function resilience/consistency checks
+  if (kind === 'survives') return { kind: 'good', icon: '✓', text: `SURVIVES ${N} MONTH${N === 1 ? '' : 'S'}` };
+  if (kind === 'overdrawn') {
     return {
       kind: 'bad',
       icon: '!',
       text: `ALREADY OVERDRAWN: the buffer was ${money(acct.B)} before any shock, so runway is 0`,
     };
   }
-  if (judge.bufferLeft <= 0) {
+  if (kind === 'buffer_gone') {
     return { kind: 'bad', icon: '!', text: `BUFFER GONE: the one-off (${money(judge.oneOff)}) is more than the buffer` };
   }
   return { kind: 'bad', icon: '!', text: `RUNS OUT IN ${pyFixed(judge.months ?? 0, 1)} MONTHS (needs ${N})` };

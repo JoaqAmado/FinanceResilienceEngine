@@ -1,30 +1,77 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Dispatch, PointerEvent, RefObject } from 'react';
+import { accountFlags, balancePath } from '../engine';
+import { checkView, verdictKind } from '../engine/consistency';
+import type { Issue } from '../engine/consistency';
+import { describeShock } from '../engine/shock_parser';
+import type { AccountIndex } from '../engine/shock_parser';
+import { send } from '../lib/chat';
+import type { ChatState } from '../lib/chat';
+import { rwText } from '../lib/format';
 import type { AppData } from '../lib/load';
 import { buildLive } from '../lib/live';
-import { CARD_LEVERS, leversMatchCard } from '../lib/scenario';
+import type { LiveModel } from '../lib/live';
+import { burnDownHorizon } from '../lib/paths';
 import type { Scenario } from '../lib/scenario';
 import type { Action } from '../lib/state';
 import { AccountPicker } from './AccountPicker';
 import { BurnDown } from './BurnDown';
+import { ChatPanel } from './ChatPanel';
 import { CustomerCard } from './CustomerCard';
 import { JudgesPanel } from './JudgesPanel';
 import { Levers } from './Levers';
 import s from './Live.module.css';
 import { Plans } from './Plans';
 import { RealityPanel } from './RealityPanel';
-import { TwistCards } from './TwistCards';
 
 interface Props {
   data: AppData;
   scenario: Scenario;
   dispatch: Dispatch<Action>;
   searchRef: RefObject<HTMLInputElement | null>;
+  chat: ChatState;
+  setChat: (c: ChatState) => void;
+  chatRef?: RefObject<HTMLInputElement | null>;
 }
 
-export function Live({ data, scenario, dispatch, searchRef }: Props) {
+export function accountIndex(data: AppData): AccountIndex {
+  return { get: (id) => data.byId.get(id), minId: Math.min(...data.ids), maxId: Math.max(...data.ids) };
+}
+
+/** resilience/consistency.check_view on what this screen shows. */
+export function screenIssues(acct: AppData['accounts'][number], scenario: Scenario, model: LiveModel,
+  chat: ChatState): Issue[] {
+  return checkView(acct, model.realShock, scenario.target, {
+    accountId: acct.id,
+    levers: scenario.levers,
+    toggles: scenario.toggles,
+    chat: chat.last,
+    understoodAs: describeShock(model.realShock, acct, scenario.target),
+    twistLabel: model.judgeShock.name,
+    card: { I: acct.I, F: acct.F, S: acct.S, B: acct.B, H: acct.H, P: acct.P, Pn: acct.Pn },
+    judgeShock: model.judgeShock,
+    judge: model.judge,
+    judgeText: rwText(model.judge),
+    verdict: verdictKind(acct, model.judge, scenario.target),
+    judgePath: balancePath(acct, model.judgeShock, burnDownHorizon(model.judge)),
+    jan: model.jan,
+    real: model.real,
+    checks: model.checks,
+    ladder: model.ladder,
+    goal: model.goal,
+    goalShock: model.goalShock,
+    story: model.story,
+    facts: model.facts,
+    flags: accountFlags(acct).map(([code]) => code),
+  });
+}
+
+export function Live({ data, scenario, dispatch, searchRef, chat, setChat, chatRef }: Props) {
   const acct = data.byId.get(scenario.id);
   const model = useMemo(() => (acct ? buildLive(acct, scenario) : null), [acct, scenario]);
+  const issues = useMemo(() => (acct && model ? screenIssues(acct, scenario, model, chat) : []),
+    [acct, scenario, model, chat]);
+  const index = useMemo(() => accountIndex(data), [data]);
   const [dragging, setDragging] = useState(false);
 
   useEffect(() => {
@@ -43,6 +90,12 @@ export function Live({ data, scenario, dispatch, searchRef }: Props) {
 
   const has = useCallback((id: number) => data.byId.has(id), [data]);
   const open = useCallback((id: number) => dispatch({ type: 'open', id }), [dispatch]);
+  const onSend = useCallback((text: string) => {
+    if (!acct) return;
+    const out = send(text, scenario, acct, index, chat);
+    setChat(out.chat);
+    if (out.action) dispatch(out.action);
+  }, [acct, scenario, index, chat, setChat, dispatch]);
 
   if (!acct || !model) return null;
 
@@ -52,12 +105,12 @@ export function Live({ data, scenario, dispatch, searchRef }: Props) {
         <AccountPicker ids={data.ids} has={has} current={acct.id} onOpen={open} inputRef={searchRef} />
       </div>
       <div className={s.cards}>
-        <TwistCards
-          card={scenario.card}
-          matches={leversMatchCard(scenario.card, scenario.levers)}
-          label={model.judgeShock.name}
-          onPick={(card) => dispatch({ type: 'card', card })}
-          onReset={() => dispatch({ type: 'reset' })}
+        <ChatPanel
+          chat={chat}
+          understoodAs={describeShock(model.realShock, acct, scenario.target)}
+          issues={issues}
+          onSend={onSend}
+          inputRef={chatRef}
         />
       </div>
       <div className={s.customer}>
@@ -92,8 +145,9 @@ export function Live({ data, scenario, dispatch, searchRef }: Props) {
           target={scenario.target}
           onLevers={(patch) => dispatch({ type: 'levers', patch })}
           onTarget={(n) => dispatch({ type: 'target', n })}
-          onReset={() => dispatch({ type: 'reset' })}
-          cardLevers={CARD_LEVERS[scenario.card]}
+          onReset={() => onSend('reset')}
+          chatLevers={chat.last?.accountId === acct.id ? chat.last.levers : undefined}
+          chatTarget={chat.last?.accountId === acct.id ? chat.last.target : undefined}
         />
       </div>
       <div className={s.chart}>

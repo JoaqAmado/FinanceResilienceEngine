@@ -34,7 +34,7 @@ export function Method() {
           </ul>
         </div>
         <p>
-          Twist cards: EI 55% → income = 0.55 × I · bills +15% → spending = S + 0.15 × H · furnace → one-off = 1 × S.
+          The track's twists: EI 55% → income = 0.55 × I · bills +15% → spending = S + 0.15 × H · furnace → one-off = 1 × S.
           Custom starts from no shock, so only the levers you set change anything.
         </p>
       </section>
@@ -93,7 +93,7 @@ export function Method() {
         </h2>
         <p>
           The engine runs in your browser: a TypeScript port of the Python engine (<code>resilience/core.py</code> and{' '}
-          <code>narrative.py</code>), so any twist card works live and offline. A parity test checks the port against
+          <code>narrative.py</code>), so any twist works live and offline. A parity test checks the port against
           the outputs exported from the Python engine (every account's runway under 13 shocks, plus
           plans and stories on a sample of accounts), and every runway, flag, plan step and story string must match
           exactly. The page loads one data file of the 4,500 accounts' inputs at full precision, and

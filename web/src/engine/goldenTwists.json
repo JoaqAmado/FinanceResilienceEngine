@@ -1,0 +1,108 @@
+{
+  "about": "Exact-match twists for resilience.shock_parser. Each phrase is normalized (lowercase, punctuation stripped, spaces collapsed) before matching. 'intent' says what the words mean; resilience.shock_parser.validate_and_build turns it into a Shock for the selected account. 'expect' is the Shock (non-default fields) the intent gives from no shock, checked by tests/test_shock_parser.py; account-relative twists have no 'expect'.",
+  "twists": [
+    {
+      "name": "README twist 1: laid off, EI at 55%",
+      "phrases": [
+        "Laid off: EI at 55% of usual income",
+        "Laid off: EI 55%",
+        "Laid off, EI pays 55%",
+        "Laid off",
+        "Job loss",
+        "Lost my job",
+        "Lost their job",
+        "Laid off on EI",
+        "Job loss on EI",
+        "On EI at 55%",
+        "Unemployed on EI",
+        "They lose their job and go on EI",
+        "The customer is laid off and EI pays 55%",
+        "Lose the job, EI 55%"
+      ],
+      "intent": {"income": {"kind": "job_loss_ei", "pct": 0.55}},
+      "expect": {"income_multiplier": 0.55, "job_loss": true}
+    },
+    {
+      "name": "README twist 2: furnace dies, repair = 1 month of typical spending",
+      "phrases": [
+        "Furnace dies: repair = 1 month of typical spending",
+        "Furnace dies: 1× spending",
+        "Furnace dies, repair = a month of spending",
+        "Furnace dies",
+        "The furnace dies",
+        "Furnace breaks",
+        "Furnace repair costs a month of spending",
+        "A repair that costs a full month of spending",
+        "One-off cost of a month of spending",
+        "Emergency repair worth one month of spending"
+      ],
+      "intent": {"one_off": {"kind": "months_of_spending", "months": 1}},
+      "expect": {"one_off_multiple_of_S": 1.0}
+    },
+    {
+      "name": "README twist 3: job loss on EI and household bills +15%",
+      "phrases": [
+        "Job loss (EI 55%) + household bills +15%",
+        "Job loss + bills +15%",
+        "Job loss on EI and bills up 15%",
+        "Laid off and bills up 15%",
+        "Laid off, EI pays 55%, and household bills rise 15%",
+        "Job loss and household bills up 15%",
+        "EI at 55% and bills up 15%",
+        "Double whammy"
+      ],
+      "intent": {"income": {"kind": "job_loss_ei", "pct": 0.55}, "bills": {"kind": "increase_pct", "pct": 0.15}},
+      "expect": {"income_multiplier": 0.55, "job_loss": true, "bills_increase_pct": 0.15}
+    },
+    {
+      "name": "Laid off with the 2026 EI cap",
+      "phrases": [
+        "Laid off: EI at 55%, capped at the 2026 maximum ($729/week)",
+        "Laid off with the 2026 EI cap",
+        "Job loss on EI with the 2026 cap"
+      ],
+      "intent": {"income": {"kind": "job_loss_ei", "pct": 0.55}, "checks": {"ei_cap": "on"}},
+      "expect": {"income_multiplier": 0.55, "job_loss": true, "income_cap_monthly": 3159.0}
+    },
+    {
+      "name": "Reality check: the 2026 EI cap on the current job loss",
+      "phrases": ["With the 2026 EI cap", "Add the 2026 EI cap", "Turn on the EI cap"],
+      "intent": {"checks": {"ei_cap": "on"}}
+    },
+    {
+      "name": "Hint chip: income drops to $2,000 a month (account-relative)",
+      "phrases": ["Income drops to $2,000 a month", "Income drops to $2,000/mo", "Income falls to $2000 a month"],
+      "intent": {"income": {"kind": "to_amount", "amount": 2000}}
+    },
+    {
+      "name": "Hint chip: rent up $300 a month",
+      "phrases": ["Rent up $300 a month", "Rent goes up $300 a month", "Rent up $300/mo", "Rent +$300/mo"],
+      "intent": {"monthly_cost": {"kind": "set", "amount": 300}},
+      "expect": {"extra_monthly_cost": 300.0}
+    },
+    {
+      "name": "Hint chip: must last 9 months",
+      "phrases": ["Must last 9 months", "Survive 9 months", "A 9-month test"],
+      "intent": {"target": {"kind": "set", "months": 9}},
+      "expect": {"target": 9}
+    },
+    {
+      "name": "Two months of spending as a one-off (Gemini read it as no shock when warmed, so it is golden)",
+      "phrases": ["Two months of spending one-off", "A one-off of two months of spending"],
+      "intent": {"one_off": {"kind": "months_of_spending", "months": 2}},
+      "expect": {"one_off_multiple_of_S": 2.0}
+    },
+    {
+      "name": "Follow-up hint: cut spending 25%",
+      "phrases": ["Cut spending 25%", "Cut non-fixed spending 25%"],
+      "intent": {"spending_cut": {"kind": "set_pct", "pct": 0.25}},
+      "expect": {"flexible_cut_pct": 0.25}
+    },
+    {
+      "name": "Reset",
+      "phrases": ["Reset", "Start over", "Baseline (no shock)", "No shock"],
+      "intent": {"edit": {"kind": "reset_all"}},
+      "expect": {}
+    }
+  ]
+}

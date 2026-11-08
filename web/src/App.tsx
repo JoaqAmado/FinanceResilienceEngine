@@ -5,8 +5,10 @@ import { Live } from './components/Live';
 import { Method } from './components/Method';
 import { Portfolio } from './components/Portfolio';
 import { useAppData } from './lib/load';
-import { CARDS, DEFAULT_ACCOUNT, decodeScenario, encodeScenario } from './lib/scenario';
-import type { CardId, Tab } from './lib/scenario';
+import { EMPTY_CHAT } from './lib/chat';
+import type { ChatState } from './lib/chat';
+import { DEFAULT_ACCOUNT, NO_SHOCK, NO_TOGGLES, decodeScenario, encodeScenario } from './lib/scenario';
+import type { Tab } from './lib/scenario';
 import { reducer } from './lib/state';
 
 const TABS: { id: Tab; label: string }[] = [
@@ -41,6 +43,9 @@ export function App() {
   const [presenter, setPresenter] = useState(readPresenter);
   const [copied, setCopied] = useState(false);
   const searchRef = useRef<HTMLInputElement | null>(null);
+  const chatRef = useRef<HTMLInputElement | null>(null);
+  // the chat history lives here, so it survives switching tabs (it is not part of the shareable URL)
+  const [chat, setChat] = useState<ChatState>(EMPTY_CHAT);
 
   // presenter mode scales the root font size; every size in the app is in rem
   useEffect(() => {
@@ -101,10 +106,10 @@ export function App() {
         focusSearch();
         return;
       }
-      const card = CARDS.find((c) => c.key === e.key);
-      if (card) {
+      if (e.key === 't' || e.key === 'T') {
         e.preventDefault();
-        dispatch({ type: 'card', card: card.id });
+        dispatch({ type: 'tab', tab: 'live' });
+        window.setTimeout(() => chatRef.current?.focus(), 0);
         return;
       }
       if (e.key === 'r' || e.key === 'R') {
@@ -122,10 +127,12 @@ export function App() {
     });
   }, []);
 
-  const openInLive = useCallback((id: number, card?: CardId) => {
-    dispatch({ type: 'open', id, card, tab: 'live' });
+  const openInLive = useCallback((id: number, ei?: boolean) => {
+    if (ei) dispatch({ type: 'apply', id, levers: { ...NO_SHOCK, incomePct: 55, jobLoss: true }, toggles: NO_TOGGLES,
+      target: 6 });
+    else dispatch({ type: 'open', id, tab: 'live' });
     window.scrollTo({ top: 0, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
-    // keyboard focus follows the account to the live twist (the heading names it; keys 1-4 still pick a card)
+    // keyboard focus follows the account to the live twist (the heading names it)
     window.setTimeout(() => document.getElementById('customer-title')?.focus({ preventScroll: true }), 0);
   }, []);
 
@@ -225,7 +232,8 @@ export function App() {
               hidden={scn.tab !== 'live'}
             >
               {data.byId.has(scn.id) && (
-                <Live data={data} scenario={scn} dispatch={dispatch} searchRef={searchRef} />
+                <Live data={data} scenario={scn} dispatch={dispatch} searchRef={searchRef} chat={chat}
+                  setChat={setChat} chatRef={chatRef} />
               )}
             </section>
             <section
@@ -243,8 +251,8 @@ export function App() {
         )}
       </main>
       <footer className={s.footer}>
-        Keys: <kbd>/</kbd> account box · <kbd>1</kbd>–<kbd>4</kbd> twist cards · <kbd>R</kbd> reset levers to the
-        card · arrow keys nudge a focused slider.
+        Keys: <kbd>/</kbd> account box · <kbd>T</kbd> type a twist · <kbd>R</kbd> reset to no shock · arrow keys nudge
+        a focused slider.
       </footer>
     </div>
   );

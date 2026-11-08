@@ -1,6 +1,6 @@
 /**
  * UI-side guarantees on top of the engine parity suite:
- *   - the twist cards' lever values mean exactly the engine presets (and app.py's twist labels)
+ *   - the README twists' lever values mean exactly the engine presets (and app.py's twist labels)
  *   - the January balance series crosses $0 exactly where calendarPath() says
  *   - the hero number's Intl formatting (NumberFlow) prints the same digits as Python's :.1f
  *   - the portfolio drill-down bands reproduce resilience/portfolio.py's table
@@ -41,13 +41,12 @@ import { buildLive } from '../src/lib/live';
 import { calendarBalancePath } from '../src/lib/paths';
 import { INCOME_LABELS, failsSix, portfolioRows } from '../src/lib/portfolio';
 import {
-  CARDS,
-  CARD_LEVERS,
   DEFAULT_SCENARIO,
+  FURNACE_LEVERS,
+  NO_SHOCK,
+  NO_TOGGLES,
   decodeScenario,
   encodeScenario,
-  judgeShockFor,
-  leversMatchCard,
   shockFromLevers,
   twistLabel,
 } from '../src/lib/scenario';
@@ -74,17 +73,22 @@ const SHOCK_FIELDS: (keyof Shock)[] = [
   'name',
 ];
 
-describe('twist cards', () => {
-  it('each card applies exactly its engine preset, named by the card', () => {
-    for (const c of CARDS) {
-      const got = judgeShockFor(c.id, CARD_LEVERS[c.id]);
-      const want = PRESETS[c.preset];
-      for (const k of SHOCK_FIELDS) {
-        // Custom's label is app.py's "Custom: no shock", which is the preset's name too
-        expect(got[k], `${c.id}.${k}`).toBe(want[k]);
-      }
-      expect(leversMatchCard(c.id, CARD_LEVERS[c.id])).toBe(true);
+/** The levers of the three README twists and of no shock (what the chat's golden phrases write). */
+const L = {
+  ei: { ...NO_SHOCK, incomePct: 55, jobLoss: true },
+  furnace: FURNACE_LEVERS,
+  double: { ...NO_SHOCK, incomePct: 55, jobLoss: true, billsPct: 15 },
+  custom: NO_SHOCK,
+};
+
+describe('twist levers', () => {
+  it("each README twist's levers apply exactly its engine preset, named as app.py names it", () => {
+    for (const [k, name] of [['ei', 'Laid off: EI 55%'], ['furnace', 'Furnace dies: 1× spending'],
+      ['double', 'Job loss + bills +15%']] as const) {
+      const got = shockFromLevers(L[k]);
+      for (const f of SHOCK_FIELDS) expect(got[f], `${k}.${f}`).toBe(PRESETS[name][f]);
     }
+    expect(shockFromLevers(L.custom).name).toBe('No shock');
   });
 
   it('the presets are the README twists the vectors were exported for', () => {
@@ -94,26 +98,24 @@ describe('twist cards', () => {
     expect(same(PRESETS['Job loss + bills +15%'], DOUBLE_WHAMMY)).toBe(true);
   });
 
-  it('twist labels follow app.py', () => {
-    const custom = CARD_LEVERS.custom;
-    expect(twistLabel('custom', custom)).toBe('Custom: no shock');
-    expect(twistLabel('custom', { ...custom, incomePct: 70, extra: 400 })).toBe('Custom: income kept 70%, +$400/mo');
-    expect(twistLabel('ei', { ...CARD_LEVERS.ei, incomePct: 60 })).toBe('Custom: job loss, EI 60%');
-    expect(twistLabel('double', { ...CARD_LEVERS.double, billsPct: 20 })).toBe('Custom: job loss, EI 55%, bills +20%');
-    expect(twistLabel('furnace', { ...CARD_LEVERS.furnace, oneOffX: 1.5 })).toBe('Custom: one-off 1.5× spending');
-    expect(twistLabel('furnace', { ...CARD_LEVERS.furnace, oneOffMode: 'amt', oneOffAmt: 12500 })).toBe(
-      'Custom: one-off $12,500',
-    );
+  it('twist labels follow app.py (shock_parser.describe_shock)', () => {
+    const custom = L.custom;
+    expect(twistLabel(custom)).toBe('No shock');
+    expect(twistLabel({ ...custom, incomePct: 70, extra: 400 })).toBe('Income kept 70%, +$400/mo');
+    expect(twistLabel({ ...L.ei, incomePct: 60 })).toBe('Laid off, EI pays 60%');
+    expect(twistLabel({ ...L.double, billsPct: 20 })).toBe('Laid off, EI pays 55%, household bills +20%');
+    expect(twistLabel({ ...L.furnace, oneOffX: 1.5 })).toBe('One-off 1.5× spending');
+    expect(twistLabel({ ...L.furnace, oneOffMode: 'amt', oneOffAmt: 12500 })).toBe('One-off $12,500');
+    expect(twistLabel({ ...custom, cutPct: 25 })).toBe('Non-fixed spending cut 25%');
     // the inactive one-off input doesn't count: switching mode with $0 is no shock
-    expect(twistLabel('custom', { ...custom, oneOffMode: 'amt', oneOffX: 2 })).toBe('Custom: no shock');
+    expect(twistLabel({ ...custom, oneOffMode: 'amt', oneOffX: 2 })).toBe('No shock');
     // the job-loss box only counts while income is below 100%
     expect(shockFromLevers({ ...custom, jobLoss: true }).jobLoss).toBe(false);
-    expect(twistLabel('ei', { ...CARD_LEVERS.ei, jobLoss: false })).toBe('Custom: income kept 55%');
+    expect(twistLabel({ ...L.ei, jobLoss: false })).toBe('Income kept 55%');
   });
 
   it('a lever-built shock equals the engine shock with the same fractions', () => {
-    const l = { ...CARD_LEVERS.custom, incomePct: 57.5, billsPct: 15, jobLoss: true };
-    const s = shockFromLevers(l);
+    const s = shockFromLevers({ ...L.custom, incomePct: 57.5, billsPct: 15, jobLoss: true });
     expect(s.incomeMultiplier).toBe(0.575);
     expect(s.billsIncreasePct).toBe(0.15);
   });
@@ -155,7 +157,7 @@ describe('hero number formatting', () => {
     let n = 0;
     // the four cards, plus an income-kept grid in 5% steps with the bills and one-off levers moved
     const grid = Array.from({ length: 21 }, (_, i) =>
-      shockFromLevers({ ...CARD_LEVERS.custom, incomePct: i * 5, jobLoss: true, billsPct: i % 4 * 5, oneOffX: (i % 3) * 0.25 }),
+      shockFromLevers({ ...L.custom, incomePct: i * 5, jobLoss: true, billsPct: i % 4 * 5, oneOffX: (i % 3) * 0.25 }),
     );
     const shocks = [...Object.values(PRESETS), ...grid];
     let bad = 0;
@@ -206,8 +208,8 @@ describe('scenario state', () => {
     const s: Scenario = {
       tab: 'portfolio',
       id: 20331,
-      card: 'double',
-      levers: { incomePct: 57.5, jobLoss: true, billsPct: 22, extra: 350, oneOffMode: 'amt', oneOffX: 0.75, oneOffAmt: 4200 },
+      levers: { incomePct: 57.5, jobLoss: true, billsPct: 22, extra: 350, oneOffMode: 'amt', oneOffX: 0.75,
+        oneOffAmt: 4200, cutPct: 12.5 },
       target: 9,
       toggles: { cap: true, ww: false, pens: true, s6: true, bfb: false },
     };
@@ -215,47 +217,42 @@ describe('scenario state', () => {
     expect(decodeScenario(encodeScenario(DEFAULT_SCENARIO))).toEqual(DEFAULT_SCENARIO);
   });
 
-  it("re-opening the account on screen keeps the twist; another account, or a card, starts from the card", () => {
-    const edited: Scenario = {
-      ...DEFAULT_SCENARIO,
-      id: 20143,
-      card: 'double',
-      levers: { ...CARD_LEVERS.double, billsPct: 40 },
-      target: 9,
-      toggles: { ...DEFAULT_SCENARIO.toggles, cap: true },
-    };
-    // its chip, or its id typed again
+  it('a link from before the chat (a twist card, no levers) opens that card', () => {
+    expect(decodeScenario('#id=20331&card=double').levers).toEqual(L.double);
+    expect(decodeScenario('#id=20331&card=ei').levers).toEqual(L.ei);
+    expect(decodeScenario('#id=20331&card=custom').levers).toEqual(L.custom);
+  });
+
+  it('another account keeps the twist; a chat message sets every lever; reset goes back to no shock', () => {
+    const edited: Scenario = { ...DEFAULT_SCENARIO, id: 20143, levers: { ...L.double, billsPct: 40 }, target: 9,
+      toggles: { ...DEFAULT_SCENARIO.toggles, cap: true } };
     expect(reducer(edited, { type: 'open', id: 20143 })).toEqual(edited);
-    expect(reducer({ ...edited, tab: 'portfolio' }, { type: 'open', id: 20143, tab: 'live' })).toEqual(edited);
-    // a different account starts from the card's own values
-    const other = reducer(edited, { type: 'open', id: 20331 });
-    expect([other.id, other.card, other.levers, other.target]).toEqual([20331, 'double', CARD_LEVERS.double, 6]);
-    expect(other.toggles.cap).toBe(false);
-    // the Portfolio list passes a card: that always resets, even on the same account
-    const fromList = reducer(edited, { type: 'open', id: 20143, card: 'ei', tab: 'live' });
-    expect([fromList.card, fromList.levers, fromList.target]).toEqual(['ei', CARD_LEVERS.ei, 6]);
+    expect(reducer(edited, { type: 'open', id: 20331 })).toEqual({ ...edited, id: 20331 });
+    const applied = reducer({ ...edited, tab: 'portfolio' }, { type: 'apply', id: 98952, levers: L.ei,
+      toggles: { ...NO_TOGGLES, pens: true }, target: 12 });
+    expect(applied).toEqual({ tab: 'live', id: 98952, levers: L.ei, toggles: { ...NO_TOGGLES, pens: true }, target: 12 });
+    expect(reducer(edited, { type: 'reset' })).toEqual({ ...edited, levers: NO_SHOCK, target: 6, toggles: NO_TOGGLES });
   });
 
   it('falls back to safe values on junk', () => {
     const s = decodeScenario('#tab=nope&id=-4&card=zzz&inc=900&n=40&bills=abc');
     expect(s.tab).toBe('live');
     expect(s.id).toBe(DEFAULT_SCENARIO.id);
-    expect(s.card).toBe(DEFAULT_SCENARIO.card);
     expect(s.levers.incomePct).toBe(100);
-    expect(s.target).toBe(12);
-    expect(s.levers.billsPct).toBe(CARD_LEVERS[DEFAULT_SCENARIO.card].billsPct);
+    expect(s.target).toBe(24);
+    expect(s.levers.billsPct).toBe(DEFAULT_SCENARIO.levers.billsPct);
   });
 });
 
 describe('live screen model', () => {
   const byId = new Map(accounts.map((a) => [a.id, a]));
   const at = (id: number, patch: Partial<Scenario> = {}) =>
-    buildLive(byId.get(id)!, { ...DEFAULT_SCENARIO, id, card: 'ei', levers: CARD_LEVERS.ei, ...patch });
+    buildLive(byId.get(id)!, { ...DEFAULT_SCENARIO, id, levers: L.ei, ...patch });
 
   it('rehearsal account numbers', () => {
     // rehearsal accounts
     expect(at(77743).judge.months).toBe(4.8);
-    expect(at(77743, { card: 'furnace', levers: CARD_LEVERS.furnace }).judge.months).toBe(0);
+    expect(at(77743, { levers: L.furnace }).judge.months).toBe(0);
     expect(at(20331).judge.months).toBe(5.1);
     expect(at(20143).judge.months).toBe(2.2);
     expect(at(88269).judge.months).toBe(11.3);
@@ -277,8 +274,8 @@ describe('live screen model', () => {
     const allOn = { cap: true, ww: true, pens: true, s6: true, bfb: true };
     for (const a of accounts.slice(0, 400)) {
       for (const card of ['ei', 'furnace', 'custom'] as const) {
-        const m = buildLive(a, { ...DEFAULT_SCENARIO, id: a.id, card, levers: CARD_LEVERS[card], toggles: allOn });
-        const plain = buildLive(a, { ...DEFAULT_SCENARIO, id: a.id, card, levers: CARD_LEVERS[card] });
+        const m = buildLive(a, { ...DEFAULT_SCENARIO, id: a.id, levers: L[card], toggles: allOn });
+        const plain = buildLive(a, { ...DEFAULT_SCENARIO, id: a.id, levers: L[card] });
         expect(m.judge).toEqual(plain.judge);
         for (const c of m.checks) if (!c.enabled) expect(c.on).toBe(false);
         if (!m.jobLoss) {
@@ -323,13 +320,13 @@ describe('live screen model', () => {
       );
       return html.match(/<p id="lever-income-hint"[^>]*>(.*?)<\/p>/)?.[1] ?? null;
     };
-    expect(hint(CARD_LEVERS.furnace)).toBe(null); // 100% kept, no job loss
-    expect(hint({ ...CARD_LEVERS.custom, incomePct: 37 })).toBe(null); // a cut, but not a job loss
-    expect(hint(CARD_LEVERS.ei)).toBe('EI pays 55% of usual money in');
-    expect(hint(CARD_LEVERS.double)).toBe('EI pays 55% of usual money in');
+    expect(hint(L.furnace)).toBe(null); // 100% kept, no job loss
+    expect(hint({ ...L.custom, incomePct: 37 })).toBe(null); // a cut, but not a job loss
+    expect(hint(L.ei)).toBe('EI pays 55% of usual money in');
+    expect(hint(L.double)).toBe('EI pays 55% of usual money in');
   });
 
-  it('grey-zone note only on the plain EI 55% card', () => {
+  it('grey-zone note only on the plain EI 55% twist', () => {
     const inZone = accounts.filter((a) => {
       const m = applyShock(a, LAID_OFF_EI).months;
       return m !== null && m >= 6 && m < 12;
@@ -337,7 +334,7 @@ describe('live screen model', () => {
     expect(inZone.length).toBeGreaterThan(100);
     for (const a of inZone.slice(0, 50)) {
       expect(at(a.id).greyNote).not.toBe(null);
-      expect(at(a.id, { levers: { ...CARD_LEVERS.ei, incomePct: 60 } }).greyNote).toBe(null);
+      expect(at(a.id, { levers: { ...L.ei, incomePct: 60 } }).greyNote).toBe(null);
     }
   });
 });
@@ -397,7 +394,7 @@ describe('early-warning light on the customer card', () => {
     expect(l).not.toContain('In the 2025 backtest');
     expect(html).not.toContain('aria-current'); // no tier row is marked as this account's
     // the judges' number is untouched
-    const live = buildLive(byId.get(20331)!, { ...DEFAULT_SCENARIO, id: 20331, card: 'ei', levers: CARD_LEVERS.ei });
+    const live = buildLive(byId.get(20331)!, { ...DEFAULT_SCENARIO, id: 20331, levers: L.ei });
     expect(live.judge.months).toBe(5.1);
   });
 

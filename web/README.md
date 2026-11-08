@@ -1,7 +1,7 @@
 # Twin Runway: web app
 
 The live-twist demo as a static, keyless page. The resilience engine is ported to TypeScript and runs in the
-browser, so any twist card works instantly and offline. The judges' number always comes first; reality checks are
+browser, so any twist works instantly and offline. The judges' number always comes first; reality checks are
 labelled extras beside it.
 
 ## Run it
@@ -22,9 +22,17 @@ work: Chrome blocks module scripts and `fetch()` on `file://`.
 ## What's on the page
 
 - **Live twist**: type any `account_id` (type-ahead over all 4,500; five digits open it straight away), or click a
-  rehearsal account or **Random account**. Pick a twist card (keys `1`–`4`); switching card or account resets the
-  levers to that card. Levers: income kept %, "job loss on EI", bills up %, extra monthly cost, one-off as × spending
-  or $, must-survive months.
+  rehearsal account or **Random account**. Then type the twist in the **chat** ("Job loss on EI and bills up 15%",
+  "income drops to $2,000 a month", "make it 20% instead") or click a hint chip. The chat only sets the levers; a
+  new account keeps the current shock. **Fine-tune levers** show the same state: income kept %, "job loss on EI",
+  bills up %, extra monthly cost, non-fixed spending cut %, one-off as × spending or $, must-survive months.
+  - **Chat**: the current shock in this customer's dollars, a Reset button, six hint chips, the last 10 messages
+    (each reply: what it was understood as, how dollar amounts were resolved, warnings, the source, 1–2 hints), and
+    a closed "What can I type?" table. It reads the golden phrases first, then the offline rules: the same parser as
+    the Streamlit app (`resilience/shock_parser.py`), ported, so the same text gives the same shock in both apps.
+    The web app has no LLM: it needs no key, and an uncached phrasing the rules can't read gets a question back.
+  - **All numbers consistent** badge: every render re-derives the runway, verdict, burn-down crossing, January
+    path, ladder, goal, reality checks, story numbers and flags, and lists exactly which check failed if any does.
   - **Judges' formula** first: the animated runway, the SURVIVES / RUNS OUT / ALREADY OVERDRAWN / BUFFER GONE badge,
     the formula with this account's numbers, and the caption. The grey-zone note shows only on the plain EI 55% card.
   - **Reality checks**: 2026 EI cap, waiting week, keep pension, half-year spending, bills by standing order. Each
@@ -44,15 +52,17 @@ work: Chrome blocks module scripts and `fetch()` on `file://`.
   half-year calibration, cut histogram with the realistic cuts line, pre-loan 2×2.
 - **Method & limits**: definitions, limits and sources.
 - **Presenter mode** (header button) enlarges all type for the projector. **Copy link** copies a URL whose hash
-  holds the whole scenario (account, card, levers, target, checks), so a reload keeps the twist.
+  holds the whole scenario (account, levers, target, checks), so a reload keeps the twist.
 
-Keys: `/` account box · `1`–`4` twist cards · `R` reset levers to the card · arrow keys nudge a focused slider.
+Keys: `/` account box · `T` type a twist · `R` reset to no shock · arrow keys nudge a focused slider.
 
 ## How the TypeScript engine stays identical to the Python one
 
 `src/engine/` is a line-by-line port of the Python engine: `src/engine/core.ts` of `resilience/core.py`,
-`src/engine/narrative.ts` of `resilience/narrative.py`, `src/engine/warning.ts` of `resilience/warning.py` and
-`src/engine/evidence.ts` of `resilience/evidence.py`. A change to one of those Python files needs the same change
+`src/engine/narrative.ts` of `resilience/narrative.py`, `src/engine/warning.ts` of `resilience/warning.py`,
+`src/engine/evidence.ts` of `resilience/evidence.py`, `src/engine/shock_parser.ts` of `resilience/shock_parser.py`
+(the golden table and offline rules) and `src/engine/consistency.ts` of `resilience/consistency.py` (the view
+checks that run in the browser). A change to one of those Python files needs the same change
 in its port. Nothing in the UI recomputes a formula; it calls the engine.
 
 1. `scripts/export_web_data.py` (in the repo root) runs the **Python** engine and writes:
@@ -67,12 +77,18 @@ in its port. Nothing in the UI recomputes a formula; it calls the engine.
      flags, calendar paths and stories on a sample; the early-warning light for every account today and at the
      2024-12 backtest snapshot (with each account's 2025 outcome, so the test rebuilds the tier table); and the
      backtest evidence's per-account scores and half-years with Python's tables and lines (`evidence`)
+   - `scripts/export_shock_vectors.py` writes `src/engine/goldenTwists.json` (a copy of
+     `resilience/golden_twists.json`) and `test/shock_vectors.json`: the Python parser's result for every golden,
+     practice and edge-case phrase on 7 accounts and 4 starting shocks, multi-step conversations, and labels
 2. `test/parity.test.ts` runs the TypeScript engine on the same inputs and requires exact equality for every
    runway, flag, verdict, plan step and story string, and for every backtest evidence table and line. Money values must match to within 1e-6, and in practice
    all of them are bit-for-bit identical. Rounding uses numpy's rule (`np.round` = `rint(x·10)/10`, ties to even),
    never `Math.round` or `toFixed`.
+   `test/shock.test.ts` requires the TypeScript parser to give exactly those results, string for string, and
+   `test/chat.test.ts` drives the chat (chips, edits, account switches, unreadable input) and runs the browser
+   consistency checks on 215 accounts × 15 shocks.
 3. `test/ui.test.ts` covers what the UI adds on top:
-   - each twist card's levers produce exactly the engine's preset
+   - each README twist's levers produce exactly the engine's preset
    - twist labels match `app.py`
    - the January balance series crosses $0 where `calendarPath()` says, for every account
    - the hero number's `Intl` formatting prints the same digits as Python's `:.1f`

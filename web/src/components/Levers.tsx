@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { CSSProperties } from 'react';
-import { DEFAULT_SCENARIO, LIMITS } from '../lib/scenario';
+import { LIMITS } from '../lib/scenario';
 import type { Levers as LeverValues } from '../lib/scenario';
 import s from './Levers.module.css';
 
@@ -93,7 +93,7 @@ function Lever({
   disabled?: boolean;
   integer?: boolean;
   hint?: string;
-  /** where the selected card set this lever: a small mark on the track once the lever moves away from it */
+  /** where the last chat message set this lever: a small mark on the track once the lever moves away from it */
   notch?: number;
   onChange: (v: number) => void;
 }) {
@@ -158,21 +158,23 @@ interface Props {
   onLevers: (patch: Partial<LeverValues>) => void;
   onTarget: (n: number) => void;
   onReset: () => void;
-  /** the selected card's own lever values, marked on each slider (optional: the tests render without it) */
-  cardLevers?: LeverValues;
+  /** the lever values the last chat message set, marked on each slider (optional: the tests render without it) */
+  chatLevers?: LeverValues;
+  /** the target the last chat message set */
+  chatTarget?: number;
 }
 
-export function Levers({ levers: l, target, onLevers, onTarget, onReset, cardLevers }: Props) {
-  const c = cardLevers;
+export function Levers({ levers: l, target, onLevers, onTarget, onReset, chatLevers, chatTarget }: Props) {
+  const c = chatLevers;
   const byX = l.oneOffMode === 'x';
   return (
     <section className={s.panel} aria-labelledby="levers-title">
       <div className={s.head}>
         <h2 id="levers-title" className={s.title}>
-          Twist levers
+          Fine-tune levers
         </h2>
         <button type="button" className={s.reset} onClick={onReset}>
-          ↺ Reset to card
+          ↺ Reset
         </button>
       </div>
 
@@ -223,6 +225,16 @@ export function Levers({ levers: l, target, onLevers, onTarget, onReset, cardLev
         notch={c?.extra}
         hint="Rent up $X a month goes here: H is $0 on 1,225 accounts"
         onChange={(v) => onLevers({ extra: v })}
+      />
+      <Lever
+        id="lever-cut"
+        label="Cut non-fixed spending"
+        unit="%"
+        value={l.cutPct}
+        limit={LIMITS.cutPct}
+        notch={c?.cutPct}
+        hint="Card and cash spending the customer cuts"
+        onChange={(v) => onLevers({ cutPct: v })}
       />
 
       <fieldset className={s.oneoff}>
@@ -275,7 +287,7 @@ export function Levers({ levers: l, target, onLevers, onTarget, onReset, cardLev
         unit="months"
         value={target}
         limit={LIMITS.target}
-        notch={c ? DEFAULT_SCENARIO.target : undefined}
+        notch={chatTarget}
         integer
         onChange={(v) => onTarget(Math.round(v))}
       />

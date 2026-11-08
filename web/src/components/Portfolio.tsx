@@ -25,12 +25,12 @@ import { count, kMoney, money, monthsOf, pct1, pctValue, rwText } from '../lib/f
 import type { AppData } from '../lib/load';
 import { INCOME_LABELS, failsSix, portfolioRows } from '../lib/portfolio';
 import type { AccountRow } from '../lib/portfolio';
-import type { CardId } from '../lib/scenario';
 import s from './Portfolio.module.css';
 
 interface Props {
   data: AppData;
-  onOpen: (id: number, card?: CardId) => void;
+  /** open the account in the live twist; ei = with the judges' EI 55% job loss applied */
+  onOpen: (id: number, ei?: boolean) => void;
 }
 
 type SortKey = 'id' | 'I' | 'B' | 'buf' | 'ei' | 'cap';
@@ -669,7 +669,7 @@ export function Portfolio({ data, onOpen }: Props) {
               <h3 className={s.h3}>
                 Money in {INCOME_LABELS[band]}: {count(bandRows.length)} accounts
               </h3>
-              <span className={s.caption}>Click an account to open it in the live twist on the Laid off: EI 55% card.</span>
+              <span className={s.caption}>Click an account to open it in the live twist with the Laid off: EI 55% twist applied.</span>
               <button type="button" className={s.close} onClick={() => setBand(null)}>
                 Close list
               </button>
@@ -703,7 +703,7 @@ export function Portfolio({ data, onOpen }: Props) {
                   {bandRows.map((r) => (
                     <tr key={r.id}>
                       <td>
-                        <button type="button" className={s.openBtn} onClick={() => onOpen(r.id, 'ei')}>
+                        <button type="button" className={s.openBtn} onClick={() => onOpen(r.id, true)}>
                           {r.id}
                         </button>
                       </td>
