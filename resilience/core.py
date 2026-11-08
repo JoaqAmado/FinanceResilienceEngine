@@ -201,6 +201,13 @@ EI_2026_MAX_WEEKLY = 729.0
 EI_2026_MAX_MONTHLY = EI_2026_MAX_WEEKLY * 52 / 12  # 3,159.00
 WEEKS_PER_MONTH = 52 / 12
 
+# The one-week waiting period is the normal EI rule, but today it is waived: "the waiting period is waived for
+# all new claims for EI benefits" that start between March 30, 2025 and October 9, 2027 (checked 2026-11-08).
+# Source: https://www.canada.ca/en/services/benefits/ei/temporary-measures-for-major-economic-conditions.html
+# So the waiting-week check is a post-waiver scenario, and it stays off by default in both apps.
+EI_WAITING_WEEK_WAIVED_UNTIL = "2027-10-09"
+WAITING_WEEK_LABEL = "EI waiting week: normal rule, once the waiver ends (waived until Oct 9, 2027, canada.ca)"
+
 BASELINE = Shock(name="Baseline (no shock)")
 LAID_OFF_EI = Shock(income_multiplier=0.55, job_loss=True, name="Laid off: EI at 55% of usual income")
 LAID_OFF_EI_CAPPED = Shock(income_multiplier=0.55, income_cap_monthly=EI_2026_MAX_MONTHLY, job_loss=True,
@@ -603,7 +610,9 @@ def account_flags(row: pd.Series) -> list[tuple[str, str]]:
                   "credit; lead with an EI claim, a hardship deferral on the loan, and the spending steps."))
     if bool(_get(row, "pre_loan_negative", False)):
         f.append(("pre_loan_overdraft",
-                  "Overdrawn before taking the loan: in this data every such borrower (27 of 27) defaulted."))
+                  "Overdrawn before taking the loan: a red flag, not evidence. Every such borrower here (27 of 27) is "
+                  "labelled defaulted, but that is built into how this dataset labels loans (good only if the balance "
+                  "never went below zero)."))
     elif bool(_get(row, "ever_negative", False)):
         f.append(("been_negative", "Has gone below zero before."))
     return f

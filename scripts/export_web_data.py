@@ -5,7 +5,8 @@
 Writes
     web/public/data/accounts.json        every account's engine inputs (columnar: fields + rows), including
                                          the early-warning light's rule inputs today (resilience.warning)
-    web/public/data/portfolio.json       headline numbers + the chart tables of resilience.portfolio,
+    web/public/data/portfolio.json       headline numbers + the chart tables of resilience.portfolio
+                                         and the sentences both apps show beside them (portfolio.lines),
                                          + the early-warning light's 2025 backtest tiers
                                          + the 2025 backtest evidence of resilience.evidence
     web/public/data/history/<id>.json    monthly money_in, money_out, month_end_balance per account
@@ -33,6 +34,7 @@ from resilience import core as C  # noqa: E402
 from resilience import evidence as EV  # noqa: E402
 from resilience import warning as W  # noqa: E402
 from resilience.narrative import facts, template_story  # noqa: E402
+from resilience import portfolio as PF  # noqa: E402
 from resilience.portfolio import build_all  # noqa: E402
 
 WEB = ROOT / "web"
@@ -438,10 +440,11 @@ def main() -> None:
                       "rows": [account_row(a, exported.loc[a]) for a in ids]})
 
     tables = build_all(m)
+    port_lines = PF.lines(tables)
     acc_table = tables.pop("accounts")
     headlines = records(tables.pop("headlines"))[0]
     port = {"version": 1, "headlines": headlines, **{k: records(v) for k, v in tables.items()},
-            "runway_columns": [c for c in acc_table.columns if c.startswith("runway_")],
+            "lines": port_lines, "runway_columns": [c for c in acc_table.columns if c.startswith("runway_")],
             "early_warning": backtest_file(light_bt, str(monthly["month"].max())),
             "evidence": evidence_file(evid)}
     port_bytes = dump(DATA_OUT / "portfolio.json", port)
@@ -479,7 +482,10 @@ def main() -> None:
                           "goal_layout": "[targetBuffer, currentBuffer, shortfall, monthlySurplus, monthsToTarget, targetKind]"},
            "constants": {"RUNWAY_CAP_MONTHS": C.RUNWAY_CAP_MONTHS, "EI_2026_MAX_MONTHLY": C.EI_2026_MAX_MONTHLY,
                          "EI_2026_MAX_WEEKLY": C.EI_2026_MAX_WEEKLY, "WEEKS_PER_MONTH": C.WEEKS_PER_MONTH,
-                         "NO_SHORTFALL_LABEL": C.NO_SHORTFALL_LABEL},
+                         "NO_SHORTFALL_LABEL": C.NO_SHORTFALL_LABEL,
+                         "EI_WAITING_WEEK_WAIVED_UNTIL": C.EI_WAITING_WEEK_WAIVED_UNTIL,
+                         "WAITING_WEEK_LABEL": C.WAITING_WEEK_LABEL,
+                         "REALISTIC_CUT_PCTS": list(PF.REALISTIC_CUT_PCTS), "QUARTER_CUT_PCT": PF.QUARTER_CUT_PCT},
            "named_shocks": {"BASELINE": shock_js(C.BASELINE), "LAID_OFF_EI": shock_js(C.LAID_OFF_EI),
                             "LAID_OFF_EI_CAPPED": shock_js(C.LAID_OFF_EI_CAPPED), "FURNACE": shock_js(C.FURNACE),
                             "DOUBLE_WHAMMY": shock_js(C.DOUBLE_WHAMMY)},

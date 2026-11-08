@@ -180,7 +180,17 @@ describe('portfolio drill-down', () => {
       expect(npRound((band.filter((r) => failsSix(r.cap)).length / band.length) * 100, 1)).toBe(
         want.fail_6mo_ei55_cap2026_pct,
       );
+      // the dollar cushion beside the months (pandas median: the mean of the two middle values)
+      const median = (xs: number[]) => {
+        const s = [...xs].sort((x, y) => x - y);
+        const m = s.length >> 1;
+        return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+      };
+      expect(npRound(median(band.map((r) => r.B)), 0)).toBe(want.median_B);
+      expect(npRound(median(band.map((r) => r.S)), 0)).toBe(want.median_S);
     });
+    expect([portfolio.income_bands[0].median_B, portfolio.income_bands[0].median_S]).toEqual([13943, 1433]);
+    expect([portfolio.income_bands[6].median_B, portfolio.income_bands[6].median_S]).toEqual([38869, 22952]);
     expect(rows.filter((r) => failsSix(r.ei)).length).toBe(portfolio.headlines.fail_6mo_ei55);
     expect(rows.filter((r) => failsSix(r.cap)).length).toBe(portfolio.headlines.fail_6mo_ei55_cap2026);
   });
@@ -228,6 +238,13 @@ describe('live screen model', () => {
     expect(pens.real.months).toBe(23.4);
     const cap = at(20331).checks.find((c) => c.key === 'cap')!;
     expect(cap.result.months).toBe(2.4);
+  });
+
+  it('the waiting week starts off and is labelled the normal rule, once the waiver ends', () => {
+    expect(DEFAULT_SCENARIO.toggles.ww).toBe(false);
+    const ww = at(20331).checks.find((c) => c.key === 'ww')!;
+    expect(ww.on).toBe(false);
+    expect(ww.label).toBe('EI waiting week: normal rule, once the waiver ends (waived until Oct 9, 2027, canada.ca)');
   });
 
   it('reality checks never change the judges number, and disabled checks never apply', () => {
@@ -387,6 +404,29 @@ describe('portfolio tab: 2025 backtest evidence', () => {
         "the judges' EI 55% runway catches 25 and buffer months 29.",
     );
     expect(text).toContain('the light had flagged 17 of them (2+ points).');
+  });
+
+  it('realistic cuts, dollar cushions and the reworded caveats, as Python writes them', () => {
+    const L = portfolio.lines;
+    // the quarter sentence the tab builds from cut_histogram is Python's, and the realistic-cut line sits beside it
+    expect(text).toContain(`${L.quarter} ${L.realistic_cuts}`);
+    expect(L.realistic_cuts).toBe(
+      'Studies of people who lost a job find they cut about 13–16% of spending. At those cuts, 778 of 1,555 (50.0%) ' +
+        'get back to 6 months with 16% or less, and 606 (39.0%) with 13% or less.',
+    );
+    expect(text).toContain(L.cushion);
+    expect(L.cushion).toContain('the median buffer is $13.9k under $2.5k a month and $38.9k over $20k');
+    expect(L.cushion).toContain('Median monthly spending grows faster ($1.4k → $23.0k)');
+    for (const cell of ['$13,943', '$1,433', '$38,869', '$22,952']) expect(text).toContain(cell);
+    expect(text).toContain('Spending is lumpy');
+    expect(text).toContain('Calendar caveat: here spending peaks in January and June');
+    expect(text).not.toContain('Spending peaks in January and June, which a median month never sees');
+    expect(text).toContain(
+      '27 of 27 borrowers who were overdrawn before their loan are labelled defaulted; none of the 606 who repaid ' +
+        'or are on track was overdrawn before it. That is built into how this dataset labels loans',
+    );
+    const heads = [...html.matchAll(/<h2[^>]*>(.*?)<\/h2>/g)].map((m) => unescape(m[1].replace(/<[^>]+>/g, '')));
+    expect(heads[5]).toBe('6 · Overdrawn before the loan: a red flag, built into the loan labels');
   });
 
   it('the 2x2 table and the numbers table carry every cell', () => {

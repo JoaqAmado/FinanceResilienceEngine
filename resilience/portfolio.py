@@ -64,6 +64,8 @@ def income_bands(acc: pd.DataFrame) -> pd.DataFrame:
         "fail_6mo_ei55_cap2026_pct": (g["runway_ei55_cap2026"].apply(lambda s: (s < 6).mean()) * 100).round(1),
         "median_buffer_months": g["buffer_months"].median().round(2),
         "median_I": g["I"].median().round(0),
+        "median_B": g["B"].median().round(0),  # the cushion in dollars, beside the months
+        "median_S": g["S"].median().round(0),  # typical monthly spending
     }).rename_axis("income_band").reset_index()
 
 
@@ -88,6 +90,23 @@ def cut_histogram(acc: pd.DataFrame) -> pd.DataFrame:
     rows = [{"cut_as_share_of_spending": k, "accounts": int((mask & (fail["B"] > 0)).sum())} for k, mask in bins]
     rows.append({"cut_as_share_of_spending": "already overdrawn (B <= 0)", "accounts": int((fail["B"] <= 0).sum())})
     return pd.DataFrame(rows)
+
+
+# The cuts people who really lose a job make, in % of spending: about 13% (JPMorgan Chase Institute 2016,
+# "Recovering from Job Loss": low-buffer families by the time UI ran out) to about 16% (Browning & Crossley,
+# "Unemployment insurance benefit levels and consumption changes": still unemployed at six months).
+REALISTIC_CUT_PCTS = (13, 16)
+QUARTER_CUT_PCT = 25  # "a quarter of spending or less": the <= 10% and 10-25% bins of cut_histogram
+
+
+def realistic_cuts(acc: pd.DataFrame) -> pd.DataFrame:
+    """Finding #4, at the cuts real job losers make: failing accounts with a positive buffer that get back to
+    6 months with a cut of at most max_cut_pct of spending (the same test as cut_histogram's bins)."""
+    fail = acc[(acc["runway_ei55"] < 6) & (acc["B"] > 0)]
+    pct = fail["ei55_min_cut_pct_of_S"] * 100
+    return pd.DataFrame([{"max_cut_pct": k, "accounts": int((pct <= k).sum()), "failing_with_buffer": len(fail),
+                          "share_pct": round(float((pct <= k).mean() * 100), 1)}
+                         for k in (*REALISTIC_CUT_PCTS, QUARTER_CUT_PCT)])
 
 
 def preloan_overdraft(acc: pd.DataFrame) -> pd.DataFrame:
@@ -123,8 +142,35 @@ def build_all(m: pd.DataFrame | None = None) -> dict[str, pd.DataFrame]:
         "income_bands": income_bands(acc),
         "s6_calibration": s6_calibration(acc),
         "cut_histogram": cut_histogram(acc),
+        "realistic_cuts": realistic_cuts(acc),
         "preloan_overdraft": preloan_overdraft(acc),
         "headlines": pd.DataFrame([headline_numbers(acc)]),
+    }
+
+
+def _k(x: float) -> str:
+    return f"${x / 1000:.1f}k"
+
+
+def lines(t: dict[str, pd.DataFrame]) -> dict[str, str]:
+    """The sentences both apps show beside the money-in bands and the cut histogram, from build_all's tables."""
+    rc = t["realistic_cuts"].set_index("max_cut_pct")
+    lo_cut, hi_cut = (rc.loc[k] for k in REALISTIC_CUT_PCTS)
+    q = rc.loc[QUARTER_CUT_PCT]
+    b = t["income_bands"]
+    lo, hi = b.iloc[0], b.iloc[-1]
+    return {
+        "quarter": f"{int(q.accounts):,} of {int(q.failing_with_buffer):,} failing customers with a positive buffer "
+                   f"get back to 6 months by cutting a quarter of spending or less.",
+        "realistic_cuts": f"Studies of people who lost a job find they cut about {REALISTIC_CUT_PCTS[0]}–"
+                          f"{REALISTIC_CUT_PCTS[1]}% of spending. At those cuts, {int(hi_cut.accounts):,} of "
+                          f"{int(hi_cut.failing_with_buffer):,} ({hi_cut.share_pct:.1f}%) get back to 6 months with "
+                          f"{REALISTIC_CUT_PCTS[1]}% or less, and {int(lo_cut.accounts):,} ({lo_cut.share_pct:.1f}%) "
+                          f"with {REALISTIC_CUT_PCTS[0]}% or less.",
+        "cushion": f"In dollars the cushion does grow with money in: the median buffer is {_k(lo.median_B)} under "
+                   f"{INCOME_LABELS[0][2:]} a month and {_k(hi.median_B)} over {INCOME_LABELS[-1][3:]}. Median "
+                   f"monthly spending grows faster ({_k(lo.median_S)} → {_k(hi.median_S)}), so in months of "
+                   f"spending the buffer shrinks ({lo.median_buffer_months:.1f} → {hi.median_buffer_months:.1f}).",
     }
 
 

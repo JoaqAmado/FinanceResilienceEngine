@@ -57,7 +57,9 @@ def main() -> None:
     ap.add_argument("--pay-cut", action="store_true",
                     help="the --income drop is a pay cut or reduced hours, not a layoff on EI")
     ap.add_argument("--cap", action="store_true", help=f"plans use the 2026 EI cap (${EI_2026_MAX_MONTHLY:,.0f}/mo)")
-    ap.add_argument("--waiting-week", action="store_true", help="plans include one unpaid EI week")
+    ap.add_argument("--waiting-week", action="store_true",
+                    help="plans include one unpaid EI week (normal rule, once the waiver ends; "
+                         "waived until Oct 9, 2027)")
     ap.add_argument("--pension-aware", action="store_true", help="plans keep pension income on a job loss")
     ap.add_argument("--bills-fallback", action="store_true", help="plans count household bills paid by standing order")
     args = ap.parse_args()
@@ -121,7 +123,8 @@ def main() -> None:
             if args.income_cap is not None:
                 checks.append((f"income cap ${args.income_cap:,.0f}/mo", s.with_(income_cap_monthly=args.income_cap)))
             checks += [("2026 EI cap", s.with_(income_cap_monthly=EI_2026_MAX_MONTHLY)),
-                       ("cap + waiting week", s.with_(income_cap_monthly=EI_2026_MAX_MONTHLY, waiting_week=True))]
+                       ("cap + waiting week (post-waiver)",
+                        s.with_(income_cap_monthly=EI_2026_MAX_MONTHLY, waiting_week=True))]
             if r.Pn > 0:
                 checks.append(("pension-aware", s.with_(pension_aware=True)))
         if s.bills_increase_pct and r.H == 0 and r.get("H_SO", 0) > 0:

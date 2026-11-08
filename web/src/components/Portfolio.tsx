@@ -19,7 +19,7 @@ import type { TooltipContentProps, XAxisTickContentProps } from 'recharts';
 import { RULES, WINDOW_ROWS, evidenceLines, pyFixed } from '../engine';
 import type { IrregularRow, LiftRow, PortfolioFile } from '../engine';
 import { COLORS, DASH } from '../lib/colors';
-import { count, money, monthsOf, pct1, pctValue, rwText } from '../lib/format';
+import { count, kMoney, money, monthsOf, pct1, pctValue, rwText } from '../lib/format';
 import type { AppData } from '../lib/load';
 import { INCOME_LABELS, failsSix, portfolioRows } from '../lib/portfolio';
 import type { AccountRow } from '../lib/portfolio';
@@ -83,7 +83,11 @@ function BandTooltip({ active, payload }: TooltipContentProps) {
       <span>
         <i className={s.key} style={{ background: COLORS.reality }} /> Real 2026 EI cap: {pctValue(r.fail_6mo_ei55_cap2026_pct)}
       </span>
-      <span>Median buffer: {r.median_buffer_months === null ? 'n/a' : pyFixed(r.median_buffer_months, 1)} months</span>
+      <span>
+        Median buffer: {r.median_B === null ? 'n/a' : money(r.median_B)} (
+        {r.median_buffer_months === null ? 'n/a' : pyFixed(r.median_buffer_months, 1)} months)
+      </span>
+      <span>Median spending: {r.median_S === null ? 'n/a' : `${money(r.median_S)}/mo`}</span>
       <span className={s.tipHint}>Click to list these accounts</span>
     </div>
   );
@@ -203,6 +207,7 @@ export function Portfolio({ data, onOpen }: Props) {
   const bandTick = ({ x, y, payload }: XAxisTickContentProps) => {
     const i = INCOME_LABELS.indexOf(payload.value as (typeof INCOME_LABELS)[number]);
     const months = P.income_bands[i]?.median_buffer_months;
+    const dollars = P.income_bands[i]?.median_B;
     return (
       <g transform={`translate(${Number(x)},${Number(y)})`}>
         <text textAnchor="middle" dy={14} fill={COLORS.ink2} fontWeight={600}>
@@ -210,6 +215,9 @@ export function Portfolio({ data, onOpen }: Props) {
         </text>
         <text textAnchor="middle" dy={30} fill={COLORS.muted}>
           buffer {months === null || months === undefined ? 'n/a' : pyFixed(months, 1)} mo
+        </text>
+        <text textAnchor="middle" dy={46} fill={COLORS.muted}>
+          {dollars === null || dollars === undefined ? 'n/a' : kMoney(dollars)}
         </text>
       </g>
     );
@@ -503,7 +511,7 @@ export function Portfolio({ data, onOpen }: Props) {
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={P.income_bands} margin={{ top: 24, right: 8, bottom: 8, left: 0 }} barGap={8} barCategoryGap="18%">
               <CartesianGrid stroke={COLORS.grid} vertical={false} />
-              <XAxis dataKey="income_band" tick={bandTick} tickLine={false} stroke={COLORS.axis} interval={0} height={48} />
+              <XAxis dataKey="income_band" tick={bandTick} tickLine={false} stroke={COLORS.axis} interval={0} height={64} />
               <YAxis
                 domain={[0, 100]}
                 ticks={[0, 25, 50, 75, 100]}
@@ -572,8 +580,51 @@ export function Portfolio({ data, onOpen }: Props) {
         </div>
         <p className={s.caption}>
           Under the judges' own EI twist the top band fails {ratio}× as often as the bottom; under the real 2026 cap
-          almost all of it fails. Spending scales with money in; the buffer doesn't.
+          almost all of it fails. {P.lines.cushion}
         </p>
+        <details className={s.numbers}>
+          <summary>Show the numbers</summary>
+          <div className={s.tableScroll}>
+            <table className={s.table}>
+              <thead>
+                <tr>
+                  <th scope="col">Money in / mo</th>
+                  <th scope="col" className={s.r}>
+                    Accounts
+                  </th>
+                  <th scope="col" className={s.r}>
+                    Fail, judges' EI 55%
+                  </th>
+                  <th scope="col" className={s.r}>
+                    Fail, 2026 EI cap
+                  </th>
+                  <th scope="col" className={s.r}>
+                    Median buffer
+                  </th>
+                  <th scope="col" className={s.r}>
+                    Median spending / mo
+                  </th>
+                  <th scope="col" className={s.r}>
+                    Buffer (months)
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {bands.map((b) => (
+                  <tr key={b.income_band}>
+                    <th scope="row">{b.income_band}</th>
+                    <td className={s.r}>{count(b.accounts)}</td>
+                    <td className={s.r}>{pctValue(b.fail_6mo_ei55_pct)}</td>
+                    <td className={s.r}>{pctValue(b.fail_6mo_ei55_cap2026_pct)}</td>
+                    <td className={s.r}>{b.median_B === null ? 'n/a' : money(b.median_B)}</td>
+                    <td className={s.r}>{b.median_S === null ? 'n/a' : money(b.median_S)}</td>
+                    <td className={s.r}>{b.median_buffer_months === null ? 'n/a' : pyFixed(b.median_buffer_months, 1)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </details>
 
         {band !== null && (
           <div className={s.drill}>
@@ -687,8 +738,12 @@ export function Portfolio({ data, onOpen }: Props) {
             </ResponsiveContainer>
           </div>
           <p className={s.caption}>
-            Spending peaks in January and June, which a median month never sees. The 6-8 band is the grey zone shown on
-            the live twist.
+            Spending is lumpy: a few costly months a year that a median month never sees. The 6-8 band is the grey zone
+            shown on the live twist.
+          </p>
+          <p className={s.caption}>
+            Calendar caveat: here spending peaks in January and June, a pattern already in the original PKDD'99 Czech
+            data before it was re-dated, so it says nothing about Canadian seasons.
           </p>
           <p className={s.caption}>{lines.s6}</p>
         </section>
@@ -729,14 +784,15 @@ export function Portfolio({ data, onOpen }: Props) {
           </div>
           <p className={s.caption}>
             {count(cutEasy)} of {count(cutPositive)} failing customers with a positive buffer get back to 6 months by
-            cutting a quarter of spending or less. "Overdrawn" accounts have no buffer to protect.
+            cutting a quarter of spending or less. {P.lines.realistic_cuts} "Overdrawn" accounts have no buffer to
+            protect.
           </p>
         </section>
       </div>
 
       <section className={s.panel} aria-labelledby="preloan-title">
         <h2 id="preloan-title" className={s.h2}>
-          6 · Overdrawn before the loan → default, every time (in this data)
+          6 · Overdrawn before the loan: a red flag, built into the loan labels
         </h2>
         <div className={s.twoByTwo}>
           <table className={s.table}>
@@ -766,10 +822,10 @@ export function Portfolio({ data, onOpen }: Props) {
           </table>
         </div>
         <p className={s.caption}>
-          {pre('yes', 'defaulted (B/D)')} of {count(preYesTotal)} borrowers who were overdrawn before their loan
-          defaulted; none of the {pre('no', 'repaid or on track (A/C)')} who repaid or are on track was overdrawn before
-          it. Small sample, and loan status looks tied to overdraft by construction: a red flag on the customer card,
-          not a rule.
+          {pre('yes', 'defaulted (B/D)')} of {count(preYesTotal)} borrowers who were overdrawn before their loan are
+          labelled defaulted; none of the {pre('no', 'repaid or on track (A/C)')} who repaid or are on track was
+          overdrawn before it. That is built into how this dataset labels loans (CTU's published rule: if
+          min(trans.balance) &gt;= 0 then good else bad), so it is a red flag on the customer card, not evidence.
         </p>
       </section>
     </div>

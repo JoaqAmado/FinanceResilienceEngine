@@ -16,6 +16,7 @@ import streamlit as st
 
 from resilience import (
     EI_2026_MAX_MONTHLY,
+    WAITING_WEEK_LABEL,
     Shock,
     account_flags,
     apply_shock,
@@ -32,6 +33,7 @@ from resilience import evidence as EV
 from resilience import llm, warehouse
 from resilience.narrative import facts, template_story
 from resilience.portfolio import build_all
+from resilience.portfolio import lines as portfolio_lines
 from resilience.warning import RULES, WINDOW_ROWS, account_light, backtest
 
 st.set_page_config(page_title="Twin Runway · Tangerine Resilience Engine", page_icon="🍊", layout="wide")
@@ -269,7 +271,7 @@ with tab_live:
     can_bills = r.H == 0 and r.H_SO > 0
     cap = t[0].toggle(f"2026 EI cap (${EI_2026_MAX_MONTHLY:,.0f}/mo)", key="t_cap",
                       help="$729/week max, canada.ca, 2026", disabled=not job_loss)
-    ww = t[1].toggle("EI waiting week", key="t_ww", help="No EI for the first week", disabled=not job_loss)
+    ww = t[1].toggle(WAITING_WEEK_LABEL, key="t_ww", help="No EI for the first week", disabled=not job_loss)
     pens = t[2].toggle("Keep pension on job loss", key="t_pens", disabled=not can_pension)
     s6 = t[3].toggle("Typical half-year spending", key="t_s6",
                      help="Median 6-month spend ÷ 6, instead of the median month")
@@ -313,7 +315,7 @@ with tab_live:
                 ("Starting in January (month by month)", jan)]
         if judge_shock.is_job_loss:
             rows += [("2026 EI cap", apply_shock(r, judge_shock.with_(income_cap_monthly=EI_2026_MAX_MONTHLY))),
-                     ("2026 cap + waiting week",
+                     ("2026 cap + waiting week, once the waiver ends",
                       apply_shock(r, judge_shock.with_(income_cap_monthly=EI_2026_MAX_MONTHLY, waiting_week=True)))]
             if r.Pn > 0:
                 rows.append(("Pension kept", apply_shock(r, judge_shock.with_(pension_aware=True))))
@@ -453,11 +455,21 @@ with tab_port:
     fig.update_layout(barmode="group", height=360, yaxis_title="% failing 6 months", yaxis_range=[0, 112],
                       margin=dict(l=0, r=0, t=10, b=0), legend=dict(orientation="h", y=1.1),
                       xaxis=dict(tickmode="array", tickvals=list(ib.income_band),
-                                 ticktext=[f"{x}<br><span style='color:{GREY}'>buffer {mth:.1f} mo</span>"
-                                           for x, mth in zip(ib.income_band, ib.median_buffer_months)]))
+                                 ticktext=[f"{x}<br><span style='color:{GREY}'>buffer {mth:.1f} mo · ${b / 1000:.1f}k"
+                                           "</span>"
+                                           for x, mth, b in zip(ib.income_band, ib.median_buffer_months, ib.median_B)]))
     st.plotly_chart(fig)
-    st.caption("Monthly money in (I) bands. Under the judges' own EI twist the top band fails 16× as often as the "
-               "bottom; under the real 2026 cap almost all of it fails. Spending scales with income; the buffer doesn't.")
+    PL = portfolio_lines(P)
+    st.caption(f"Monthly money in (I) bands. Under the judges' own EI twist the top band fails "
+               f"{ib.fail_6mo_ei55_pct.iloc[-1] / ib.fail_6mo_ei55_pct.iloc[0]:.0f}× as often as the bottom; under the "
+               f"real 2026 cap almost all of it fails. {PL['cushion']}")
+    with st.expander("Show the numbers"):
+        st.dataframe(ib[["income_band", "accounts", "fail_6mo_ei55_pct", "fail_6mo_ei55_cap2026_pct", "median_B",
+                         "median_S", "median_buffer_months"]].rename(columns={
+                             "income_band": "money in / mo", "fail_6mo_ei55_pct": "% fail, judges' EI 55%",
+                             "fail_6mo_ei55_cap2026_pct": "% fail, 2026 EI cap", "median_B": "median buffer ($)",
+                             "median_S": "median spending ($/mo)", "median_buffer_months": "median buffer (months)"}),
+                     hide_index=True)
 
     col1, col2 = st.columns(2)
     with col1:
@@ -470,7 +482,9 @@ with tab_port:
         fig.update_xaxes(type="category")  # "6-8" etc. are bands, not dates
         st.plotly_chart(fig)
         st.caption("Accounts the judges' formula calls safe, re-run on each account's own typical half-year spending. "
-                   "Spending peaks in January and June, which a median month never sees.")
+                   "Spending is lumpy: a few costly months a year that a median month never sees.")
+        st.caption("Calendar caveat: here spending peaks in January and June, a pattern already in the original "
+                   "PKDD'99 Czech data before it was re-dated, so it says nothing about Canadian seasons.")
         st.caption(lines["s6"])
     with col2:
         st.markdown("#### 5 · Most failing customers are one moderate change away")
@@ -481,12 +495,16 @@ with tab_port:
                           xaxis_title="Monthly cut needed to get back to 6 months, as % of spending")
         fig.update_xaxes(type="category")
         st.plotly_chart(fig)
+        st.caption(f"{PL['quarter']} {PL['realistic_cuts']}")
 
-    st.markdown("#### 6 · Overdrawn before the loan → default, every time (in this data)")
+    st.markdown("#### 6 · Overdrawn before the loan: a red flag, built into the loan labels")
+    po = P["preloan_overdraft"].set_index("overdrawn_before_loan")
     st.dataframe(P["preloan_overdraft"], hide_index=True)
-    st.caption("27 of 27 borrowers who were overdrawn before their loan defaulted; none of the 606 who repaid or are "
-               "on track ever went below zero. Small sample, and loan status looks tied to overdraft by construction: "
-               "a red flag, not a rule.")
+    st.caption(f"{int(po.loc['yes', 'defaulted (B/D)'])} of {int(po.loc['yes'].sum())} borrowers who were overdrawn "
+               f"before their loan are labelled defaulted; none of the {int(po.loc['no', 'repaid or on track (A/C)'])} "
+               "who repaid or are on track was overdrawn before it. That is built into how this dataset labels loans "
+               "(CTU's published rule: if min(trans.balance) >= 0 then good else bad), so it is a red flag on the "
+               "customer card, not evidence.")
 
 # ============================================================ METHOD
 with tab_method:
@@ -498,7 +516,8 @@ Runway = (B − one-off) ÷ (spending after − income after), 0 if the buffer i
 no gap, capped at 120 and rounded to 1 decimal. EI 55% → income = 0.55 × I; bills +15% → spending = S + 0.15 × H.
 
 **Reality checks** (labelled, never replacing the judges' number): 2026 EI maximum $729/week ≈ $3,159/month
-(canada.ca) · one-week waiting period · pensions kept on job loss · typical half-year spending (median 6-month
+(canada.ca) · one-week waiting period (normal rule, once the waiver ends: waived for new claims until Oct 9, 2027,
+canada.ca) · pensions kept on job loss · typical half-year spending (median 6-month
 spend ÷ 6) · a month-by-month path from January using each account's own calendar-month spending ·
 household bills paid by standing order.
 

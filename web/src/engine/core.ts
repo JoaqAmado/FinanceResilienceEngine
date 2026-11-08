@@ -37,6 +37,13 @@ export const EI_2026_MAX_WEEKLY = 729;
 export const EI_2026_MAX_MONTHLY = (EI_2026_MAX_WEEKLY * 52) / 12; // 3,159.00
 export const WEEKS_PER_MONTH = 52 / 12;
 
+// The one-week EI waiting period is the normal rule, but it is waived for all new claims that start between
+// March 30, 2025 and October 9, 2027, so the waiting-week check is a post-waiver scenario, off by default.
+// Source: https://www.canada.ca/en/services/benefits/ei/temporary-measures-for-major-economic-conditions.html
+export const EI_WAITING_WEEK_WAIVED_UNTIL = '2027-10-09';
+export const WAITING_WEEK_LABEL =
+  'EI waiting week: normal rule, once the waiver ends (waived until Oct 9, 2027, canada.ca)';
+
 // ---------------------------------------------------------------- shocks
 
 const DEFAULT_SHOCK: Shock = {
@@ -571,7 +578,9 @@ export function accountFlags(acct: Account): Flag[] {
   if (acct.pre_loan_negative) {
     f.push([
       'pre_loan_overdraft',
-      'Overdrawn before taking the loan: in this data every such borrower (27 of 27) defaulted.',
+      'Overdrawn before taking the loan: a red flag, not evidence. Every such borrower here (27 of 27) is ' +
+        'labelled defaulted, but that is built into how this dataset labels loans (good only if the balance ' +
+        'never went below zero).',
     ]);
   } else if (acct.ever_negative) {
     f.push(['been_negative', 'Has gone below zero before.']);

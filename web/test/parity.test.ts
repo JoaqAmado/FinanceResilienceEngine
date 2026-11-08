@@ -23,6 +23,7 @@ import {
   DOUBLE_WHAMMY,
   EI_2026_MAX_MONTHLY,
   EI_2026_MAX_WEEKLY,
+  EI_WAITING_WEEK_WAIVED_UNTIL,
   FURNACE,
   INCOME_CV_CUT,
   LAID_OFF_EI,
@@ -38,6 +39,7 @@ import {
   RULES,
   RUNWAY_CAP_MONTHS,
   STALE,
+  WAITING_WEEK_LABEL,
   WEEKS_PER_MONTH,
   WINDOW_ROWS,
   accountFlags,
@@ -138,7 +140,7 @@ interface PyBackup {
 }
 interface Vectors {
   meta: { accounts: number; sample: number; story_accounts: number; edge_ids: number[]; counts: Record<string, number> };
-  constants: Record<string, number | string>;
+  constants: Record<string, number | string | number[]>;
   named_shocks: Record<string, Shock>;
   presets: Record<string, Shock>;
   shocks: Record<string, Shock>;
@@ -359,6 +361,8 @@ describe('parity with the Python engine', () => {
     c.same('EI_2026_MAX_WEEKLY', EI_2026_MAX_WEEKLY, V.constants.EI_2026_MAX_WEEKLY);
     c.same('WEEKS_PER_MONTH', WEEKS_PER_MONTH, V.constants.WEEKS_PER_MONTH);
     c.same('NO_SHORTFALL_LABEL', NO_SHORTFALL_LABEL, V.constants.NO_SHORTFALL_LABEL);
+    c.same('EI_WAITING_WEEK_WAIVED_UNTIL', EI_WAITING_WEEK_WAIVED_UNTIL, V.constants.EI_WAITING_WEEK_WAIVED_UNTIL);
+    c.same('WAITING_WEEK_LABEL', WAITING_WEEK_LABEL, V.constants.WAITING_WEEK_LABEL);
     const named: Record<string, Shock> = { BASELINE, LAID_OFF_EI, LAID_OFF_EI_CAPPED, FURNACE, DOUBLE_WHAMMY };
     for (const [k, s] of Object.entries(V.named_shocks)) c.deep(`named ${k}`, named[k], s);
     const presets: Record<string, Shock> = PRESETS;
@@ -547,6 +551,38 @@ describe('parity with the Python engine', () => {
     c.same('fail_6mo_double_whammy', fails(DOUBLE_WHAMMY), h.fail_6mo_double_whammy);
     c.same('ei_cap_monthly_2026', pyRound(EI_2026_MAX_MONTHLY, 2), h.ei_cap_monthly_2026);
     c.same('baseline is not a shock', fails(BASELINE) <= fails(LAID_OFF_EI), true);
+    c.done();
+  });
+
+  it('realistic cuts and dollar cushions recomputed from accounts.json = portfolio.json', () => {
+    const c = new Checker('realistic cuts + cushions');
+    // resilience/portfolio.py per_account: the EI 55% cut back to 6 months, as a share of S
+    const failing = accounts.filter((a) => {
+      const r = applyShock(a, LAID_OFF_EI);
+      return !r.noShortfall && (r.months as number) < 6 && a.B > 0;
+    });
+    const pct = failing.map((a) => (Math.max(a.S - 0.55 * a.I - a.B / 6, 0) / a.S) * 100);
+    const cuts = [...(V.constants.REALISTIC_CUT_PCTS as number[]), V.constants.QUARTER_CUT_PCT as number];
+    const rebuilt = cuts.map((k) => {
+      const n = pct.filter((p) => p <= k).length;
+      return { max_cut_pct: k, accounts: n, failing_with_buffer: failing.length,
+               share_pct: pyRound((n / failing.length) * 100, 1) };
+    });
+    c.deep('realistic_cuts = portfolio.json', rebuilt, portfolio.realistic_cuts);
+    c.deep('cuts tested', cuts, [13, 16, 25]);
+    // income bands (pd.cut on I, right=False): median buffer B and median spending S in dollars
+    const edges = [0, 2500, 5000, 7500, 10000, 15000, 20000, Infinity];
+    const median = (xs: number[]) => {
+      const s = [...xs].sort((x, y) => x - y);
+      const m = s.length >> 1;
+      return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+    };
+    portfolio.income_bands.forEach((b, i) => {
+      const inBand = accounts.filter((a) => a.I >= edges[i] && a.I < edges[i + 1]);
+      c.same(`${b.income_band} accounts`, inBand.length, b.accounts);
+      c.same(`${b.income_band} median_B`, npRound(median(inBand.map((a) => a.B)), 0), b.median_B);
+      c.same(`${b.income_band} median_S`, npRound(median(inBand.map((a) => a.S)), 0), b.median_S);
+    });
     c.done();
   });
 

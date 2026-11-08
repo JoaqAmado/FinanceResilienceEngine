@@ -210,7 +210,7 @@ One row per account. Engine columns are as defined above.
 | `runway_base` | judges' runway with no shock |
 | `runway_ei55` | judges' runway on the EI twist (`LAID_OFF_EI`) |
 | `runway_ei55_cap2026` | the EI twist with the EI cap (`LAID_OFF_EI_CAPPED`) |
-| `runway_ei55_cap2026_waitweek` | the capped EI twist plus the waiting week |
+| `runway_ei55_cap2026_waitweek` | the capped EI twist plus the waiting week (a post-waiver scenario: the waiting week is waived for now) |
 | `runway_ei55_pension_aware` | the EI twist with the pension kept |
 | `runway_ei55_S6` | the EI twist on half-year spending (`S6`) |
 | `runway_furnace` | judges' runway on the furnace twist (`FURNACE`) |
@@ -246,6 +246,8 @@ One row: the portfolio's headline counts.
 | `fail_6mo_ei55_cap2026_pct` | the same with the EI cap |
 | `median_buffer_months` | median of `buffer_months` |
 | `median_I` | median I |
+| `median_B` | median B, the buffer in dollars |
+| `median_S` | median S, monthly spending in dollars |
 
 ### `artifacts/s6_calibration.csv`
 
@@ -261,6 +263,17 @@ One row: the portfolio's headline counts.
 |---|---|
 | `cut_as_share_of_spending` | band of `ei55_min_cut_pct_of_S`, plus a row for the already overdrawn |
 | `accounts` | failing accounts in the band |
+
+### `artifacts/realistic_cuts.csv`
+
+Failing accounts with a positive buffer, at the cuts people who lose a job make and at a quarter of spending.
+
+| Column | Meaning |
+|---|---|
+| `max_cut_pct` | the largest cut allowed, in percent of S (`REALISTIC_CUT_PCTS`, then `QUARTER_CUT_PCT`) |
+| `accounts` | accounts whose `ei55_min_cut_pct_of_S` is at most that cut |
+| `failing_with_buffer` | failing accounts with a positive buffer |
+| `share_pct` | `accounts` as a percent of `failing_with_buffer` |
 
 ### `artifacts/preloan_overdraft.csv`
 

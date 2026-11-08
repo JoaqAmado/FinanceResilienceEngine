@@ -10,9 +10,11 @@ from resilience.core import (
     DOUBLE_WHAMMY,
     FURNACE,
     EI_2026_MAX_MONTHLY,
+    EI_WAITING_WEEK_WAIVED_UNTIL,
     LAID_OFF_EI,
     LAID_OFF_EI_CAPPED,
     NO_SHORTFALL_LABEL,
+    WAITING_WEEK_LABEL,
     Shock,
     apply_shock,
     backup_plan,
@@ -237,6 +239,16 @@ def test_waiting_week_costs_one_week_of_ei_and_only_on_job_loss():
     assert apply_shock(r, FURNACE.with_(waiting_week=True)).one_off == pytest.approx(r["S"])
 
 
+def test_waiting_week_is_labelled_the_post_waiver_rule_and_off_by_default():
+    # canada.ca: the waiting period is waived for new claims that start up to Oct 9, 2027
+    import datetime
+    d = datetime.date.fromisoformat(EI_WAITING_WEEK_WAIVED_UNTIL)
+    assert (d.year, d.month, d.day) == (2027, 10, 9)
+    assert WAITING_WEEK_LABEL == ("EI waiting week: normal rule, once the waiver ends "
+                                  f"(waived until {d:%b} {d.day}, {d.year}, canada.ca)")
+    assert Shock().waiting_week is False and LAID_OFF_EI.waiting_week is False
+
+
 def test_s6_basis_and_bills_fallback():
     r = row(S6=4500.0, H=0.0, H_SO=800.0)
     assert apply_shock(r, LAID_OFF_EI.with_(spending_basis="S6")).spending_after == pytest.approx(4500)
@@ -328,6 +340,10 @@ def test_pre_loan_overdraft_and_flags(full):
     lo = full[full.loan_status.notna()]
     bad = lo.loan_status.isin(["B", "D"])
     assert int((lo.pre_loan_negative & bad).sum()) == 27 and int((lo.pre_loan_negative & ~bad).sum()) == 0
+    text = dict(account_flags(full.loc[lo.index[lo.pre_loan_negative][0]]))["pre_loan_overdraft"]
+    assert text.startswith("Overdrawn before taking the loan: a red flag, not evidence.")
+    assert "(27 of 27) is labelled defaulted" in text and "built into how this dataset labels loans" in text
+    assert "predict" not in text.lower()
     codes = [c for c, _ in account_flags(full.loc[98952])]
     assert "pension" in codes
     assert any(c == "overdrawn" for c, _ in account_flags(full.loc[32078]))
@@ -348,6 +364,31 @@ def test_portfolio_tables_match_engine(full):
     bands = t["income_bands"].set_index("income_band")
     assert bands.loc["< $2.5k", "fail_6mo_ei55_pct"] == 4.8 and bands.loc[">= $20k", "fail_6mo_ei55_cap2026_pct"] == 99.8
     assert int(t["s6_calibration"]["accounts"].sum()) == int((t["accounts"].runway_ei55 >= 6).sum())
+    # the dollar cushion beside the months: buffers grow with money in, spending grows faster
+    assert tuple(bands.loc["< $2.5k", ["median_B", "median_S"]]) == (13943.0, 1433.0)
+    assert tuple(bands.loc[">= $20k", ["median_B", "median_S"]]) == (38869.0, 22952.0)
+
+
+@needs_data
+def test_realistic_cuts_and_the_lines_both_apps_show(full):
+    from resilience.portfolio import QUARTER_CUT_PCT, REALISTIC_CUT_PCTS, build_all, lines
+    t = build_all(full)
+    rc = t["realistic_cuts"]
+    assert list(rc.itertuples(index=False, name=None)) == [(13, 606, 1555, 39.0), (16, 778, 1555, 50.0),
+                                                           (25, 1192, 1555, 76.7)]
+    assert REALISTIC_CUT_PCTS == (13, 16) and QUARTER_CUT_PCT == 25
+    ch = t["cut_histogram"].set_index("cut_as_share_of_spending")["accounts"]
+    assert int(ch["<= 10%"] + ch["10-25%"]) == 1192  # the quarter row is the histogram's first two bins
+    assert int(ch.drop("already overdrawn (B <= 0)").sum()) == 1555
+    L = lines(t)
+    assert L["quarter"] == ("1,192 of 1,555 failing customers with a positive buffer get back to 6 months by "
+                            "cutting a quarter of spending or less.")
+    assert L["realistic_cuts"] == ("Studies of people who lost a job find they cut about 13–16% of spending. At "
+                                   "those cuts, 778 of 1,555 (50.0%) get back to 6 months with 16% or less, and 606 "
+                                   "(39.0%) with 13% or less.")
+    assert L["cushion"] == ("In dollars the cushion does grow with money in: the median buffer is $13.9k under $2.5k "
+                            "a month and $38.9k over $20k. Median monthly spending grows faster ($1.4k → $23.0k), "
+                            "so in months of spending the buffer shrinks (8.9 → 1.6).")
 
 
 # ------------------------------------------- regressions from the second review

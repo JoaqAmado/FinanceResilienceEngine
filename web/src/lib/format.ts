@@ -57,6 +57,11 @@ export function pctValue(v: number | null): string {
   return v === null ? 'n/a' : `${pyFixed(v, 1)}%`;
 }
 
+/** Dollars in thousands, one decimal: 13943 -> "$13.9k" (resilience.portfolio._k). */
+export function kMoney(x: number): string {
+  return `$${pyFixed(x / 1000, 1)}k`;
+}
+
 /** Whole number with thousands separators (Python f"{n:,}"). */
 export function count(n: number): string {
   return pyMoney0(n);

@@ -163,6 +163,35 @@ def test_portfolio_shows_the_2025_backtest_evidence():
                          "#### 2 · A second finding: irregular money in"]
 
 
+@needs_data
+def test_waiting_week_starts_off_and_is_labelled_the_post_waiver_rule():
+    from resilience.core import WAITING_WEEK_LABEL
+    app = _fresh()
+    ww = [t for t in app.toggle if t.key == "t_ww"][0]
+    assert ww.value is False and ww.label == WAITING_WEEK_LABEL
+    table = app.dataframe[[i for i, d in enumerate(app.dataframe) if "each check alone" in d.value.columns][0]].value
+    assert "2026 cap + waiting week, once the waiver ends" in list(table["each check alone"])
+
+
+@needs_data
+def test_portfolio_shows_realistic_cuts_dollar_cushions_and_the_reworded_caveats():
+    from resilience.portfolio import build_all, lines
+    app = _fresh()
+    assert not app.exception
+    want = lines(build_all())
+    captions = " ".join(c.value for c in app.caption)
+    assert f"{want['quarter']} {want['realistic_cuts']}" in captions
+    assert want["cushion"] in captions and "16× as often" in captions
+    assert "Spending is lumpy" in captions and "Calendar caveat: here spending peaks in January and June" in captions
+    assert "Spending peaks in January and June, which a median month never sees" not in captions
+    assert ("27 of 27 borrowers who were overdrawn before their loan are labelled defaulted; none of the 606 "
+            "who repaid or are on track was overdrawn before it. That is built into how this dataset labels loans"
+            ) in captions and "not evidence" in captions
+    heads = [m.value for m in app.markdown if m.value.startswith("#### ")]
+    assert "#### 6 · Overdrawn before the loan: a red flag, built into the loan labels" in heads
+    assert not any("every time" in h for h in heads)
+
+
 # --------------------------------------------- regressions from the re-verification pass
 
 @needs_data

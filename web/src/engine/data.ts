@@ -91,9 +91,16 @@ export interface PortfolioFile {
     fail_6mo_ei55_cap2026_pct: number | null;
     median_buffer_months: number | null;
     median_I: number | null;
+    /** median buffer B and median monthly spending S, in dollars */
+    median_B: number | null;
+    median_S: number | null;
   }[];
   s6_calibration: { judge_runway_months: string; accounts: number; fail_6mo_on_S6_pct: number | null }[];
   cut_histogram: { cut_as_share_of_spending: string; accounts: number }[];
+  /** failing accounts with a positive buffer that get back to 6 months with a cut of at most max_cut_pct */
+  realistic_cuts: { max_cut_pct: number; accounts: number; failing_with_buffer: number; share_pct: number }[];
+  /** resilience.portfolio.lines: the sentences both apps show beside the bands and the cut histogram */
+  lines: { quarter: string; realistic_cuts: string; cushion: string };
   preloan_overdraft: Record<string, string | number | null>[];
   runway_columns: string[];
   early_warning: EarlyWarningFile;

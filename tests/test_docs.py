@@ -24,6 +24,7 @@ from resilience.core import (
     LAID_OFF_EI,
     NO_SHORTFALL_LABEL,
     RUNWAY_CAP_MONTHS,
+    WAITING_WEEK_LABEL,
     WEEKS_PER_MONTH,
     Shock,
     account_flags,
@@ -36,7 +37,7 @@ from resilience.core import (
     portfolio_runway,
     runway,
 )
-from resilience.portfolio import INCOME_LABELS, build_all
+from resilience.portfolio import INCOME_LABELS, QUARTER_CUT_PCT, REALISTIC_CUT_PCTS, build_all
 
 ROOT = Path(__file__).resolve().parent.parent
 DOCS = ROOT / "docs"
@@ -88,7 +89,7 @@ def ladder_step_numbers() -> set[str]:
     return numbers(" ".join(x.step for x in lad.rungs))
 
 
-METHOD_DEFINITIONS = DEFINITIONS | ladder_step_numbers() | {
+METHOD_DEFINITIONS = DEFINITIONS | ladder_step_numbers() | numbers(WAITING_WEEK_LABEL) | {
     BILLS_PCT, f"{DOUBLE_WHAMMY.bills_increase_pct:g}", f"{FURNACE.one_off_multiple_of_S:g}",
     f"{RUNWAY_CAP_MONTHS:g}", f"{runway(0, 0, 1, 0).months:g}", str(W.WINDOW_ROWS), str(W.MAX_POINTS),
     *numbers(W.BACKTEST_SNAPSHOT + " " + W.BACKTEST_LABEL_YEAR),
@@ -129,6 +130,10 @@ def figures(m):
     quarter = int(cuts["<= 10%"] + cuts["10-25%"])
     positive = int((failing & (acc["B"] > 0)).sum())
     assert positive == int(cuts.drop("already overdrawn (B <= 0)").sum())
+    rc = t["realistic_cuts"].set_index("max_cut_pct")
+    assert int(rc.loc[QUARTER_CUT_PCT, "accounts"]) == quarter and set(rc["failing_with_buffer"]) == {positive}
+    lo_cut, hi_cut = (rc.loc[k] for k in REALISTIC_CUT_PCTS)
+    k = lambda x: f"${x / 1000:.1f}k"  # noqa: E731
     no_rung = sum(backup_ladder(m.loc[a], LAID_OFF_EI).first_sufficient is None for a in acc.index[failing])
 
     pre = t["preloan_overdraft"].set_index("overdrawn_before_loan")
@@ -168,12 +173,17 @@ def figures(m):
             f"{low['fail_6mo_ei55_pct']:.1f}% under {INCOME_LABELS[0][2:]} → "
             f"{high['fail_6mo_ei55_pct']:.1f}% over {INCOME_LABELS[-1][3:]}",
             f"Buffers: {low['median_buffer_months']:.1f} → {high['median_buffer_months']:.1f} months of spending",
+            f"median buffer {k(low['median_B'])} → {k(high['median_B'])}, median monthly spending "
+            f"{k(low['median_S'])} → {k(high['median_S'])}",
             f"(${EI_2026_MAX_WEEKLY:,.0f}/week ≈ ${EI_2026_MAX_MONTHLY:,.0f}/month) | {cap:,} ({cap / n:.1%})",
             f"{flips:,} of {int(safe.sum()):,} ({flips_both:,}, or 1 in {round(safe.sum() / flips_both)}, "
             f"with the same window on money in too)",
-            f"Spending peaks in {peaks}",
+            f"Calendar caveat: spending peaks in {peaks}",
             f"{round(4 * quarter / positive)} in 4 ({quarter:,} of {positive:,} with a positive buffer); "
             f"only {no_rung:,} can't cut their way there",
+            f"(about {REALISTIC_CUT_PCTS[0]}–{REALISTIC_CUT_PCTS[1]}% of spending)",
+            f"{REALISTIC_CUT_PCTS[1]}% or less: {int(hi_cut.accounts):,} of {positive:,} ({hi_cut.share_pct:.1f}%) · "
+            f"{REALISTIC_CUT_PCTS[0]}% or less: {int(lo_cut.accounts):,} ({lo_cut.share_pct:.1f}%)",
             f"{int(pre.loc['yes', 'defaulted (B/D)'])} of {int(pre.loc['yes'].sum())} in this data "
             f"(none of the {int(repaying.sum()):,} repaying borrowers ever went negative)",
             # the 2025 backtest (resilience/evidence.py)
@@ -204,6 +214,10 @@ def figures(m):
         ],
         "docs/model_card.md": [
             f"re-dated to {str(ms['month'].min())[:4]}–{DATA_END_MONTH[:4]}",
+            # at a glance: the backtest's time-based split and base rate (resilience/evidence.py)
+            f"every score uses only data up to the {es['snapshot']} snapshot",
+            f"**Base rate:** {es['went_overdrawn']} of {es['accounts']:,} accounts "
+            f"({es['went_overdrawn'] / es['accounts']:.1%}) first went overdrawn in {es['label_year']}.",
             f"on all {len(ms):,} rows",
             f"({ms['cash_deposits'].sum() / ms['money_in'].sum():.1%} cash deposits)",
             f"{ms['cash_withdrawals_genuine'].sum() / ms['money_out'].sum():.1%} of spending is cash",
@@ -259,6 +273,7 @@ def test_method_doc_matches_the_code(m):
         f"income = {LAID_OFF_EI.income_multiplier:g} × I", f"one-off = {FURNACE.one_off_multiple_of_S:g} × S",
         f"household bills +{BILLS_PCT}%, so spending = S + {DOUBLE_WHAMMY.bills_increase_pct:g} × H",
         f"(${EI_2026_MAX_WEEKLY:,.0f}/week, canada.ca)", f"0 to {W.MAX_POINTS} points",
+        f"until {WAITING_WEEK_LABEL.split('until ', 1)[1]}",  # the waiver end date, as both apps label it
         f"the rules taken at {W.BACKTEST_SNAPSHOT}", f"any day below zero in {W.BACKTEST_LABEL_YEAR}",
         f"RunwayResult(months={apply_shock(m.loc[20143], Shock(income_multiplier=0.55)).months:g}, ...)",
     ):

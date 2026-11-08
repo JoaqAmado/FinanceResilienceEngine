@@ -45,7 +45,10 @@ export function Method() {
         </h2>
         <ul className={s.list}>
           <li>2026 EI maximum: $729/week ≈ $3,159/month (canada.ca)</li>
-          <li>the one-week EI waiting period</li>
+          <li>
+            the one-week EI waiting period: the normal rule, once the waiver ends (waived for new claims until Oct 9,
+            2027, canada.ca)
+          </li>
           <li>pensions kept on a job loss</li>
           <li>typical half-year spending (median 6-month spend ÷ 6)</li>
           <li>a month-by-month path from January, using each account's own calendar-month spending</li>

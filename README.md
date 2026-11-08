@@ -53,11 +53,16 @@ More from the engine:
 
 - [Findings](docs/findings.md): what the data says, and how each figure is computed
 - [Method](docs/method.md): the judges' definitions, shocks and reality checks, plans, the early-warning light, CLI and Python examples
-- [Model card](docs/model_card.md): intended use, what it is not for, data and limits, wording
+- [Model card](docs/model_card.md): at a glance (data, label, time-based split, base rate, limits), intended use,
+  what it is not for, data and limits, wording
 - [Data dictionary](docs/data_dictionary.md): every column of `data/`, the engine and `artifacts/`
 - [Warehouse](docs/warehouse.md): the Snowflake and DuckDB layer and its settings
 - [Web app](web/README.md): running, testing and the TypeScript port
 
 ## Sources
-- PKDD'99 Discovery Challenge Financial dataset, CTU Prague Relational Dataset Repository: https://relational.fel.cvut.cz/dataset/Financial (provided by Tangerine for the track)
+- PKDD'99 Discovery Challenge Financial dataset, CTU Prague Relational Dataset Repository: https://relational.fel.cvut.cz/dataset/Financial (provided by Tangerine for the track; the page also notes the rule that separates good loans from bad)
 - Government of Canada, EI benefit amount (55%, $729/week maximum in 2026): https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit/benefit-amount.html
+- Government of Canada, temporary EI measures (waiting period waived for new claims until Oct 9, 2027): https://www.canada.ca/en/services/benefits/ei/temporary-measures-for-major-economic-conditions.html
+- JPMorgan Chase Institute (2016), Recovering from Job Loss: https://ir.jpmorganchase.com/content/dam/jpmc/jpmorgan-chase-and-co/institute/pdf/jpmc-institute-unemployment-insurance-report.pdf
+- Browning & Crossley, Unemployment insurance benefit levels and consumption changes (abstract): https://ideas.repec.org/p/kud/kuiedp/9611.html
+- Miksovsky et al. (1999), Financial Data Challenge, and Pijls (1999), Discovery Challenge, Financial Data (PKDD'99 papers on the original data): https://web.archive.org/web/20070614032012/http://lisp.vse.cz/pkdd99/Challenge/miksovsp.zip · https://web.archive.org/web/20051026172811/http://lisp.vse.cz:80/pkdd99/Challenge/pijls.zip

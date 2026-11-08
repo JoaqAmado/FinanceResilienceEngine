@@ -42,7 +42,7 @@ off by default, so the defaults reproduce the judges' answers.
 | `Shock` option | Reality check |
 |---|---|
 | `income_cap_monthly` | the 2026 EI cap ($729/week, canada.ca) on the EI part of income |
-| `waiting_week` | the one-week EI waiting period: one week of EI becomes a one-off cost |
+| `waiting_week` | the one-week EI waiting period: one week of EI becomes a one-off cost. It is the normal rule, once the waiver ends (waived for new claims until Oct 9, 2027, canada.ca), so both apps leave it off by default |
 | `pension_aware` | a job loss doesn't cut pension income (`Pn` is kept in full) |
 | `spending_basis="S6"` | typical half-year spending (`S6`) instead of the median month |
 | `bills_fallback` | household bills paid by standing order: max(H, `H_SO`) when H misses them |

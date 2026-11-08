@@ -1,5 +1,15 @@
 # Model card: Twin Runway engine
 
+## At a glance
+
+- **Data:** the PKDD'99 Czech bank dataset (CTU Prague), provided by Tangerine, re-dated to 2020–2025 and in CAD.
+- **Label:** the early-warning backtest scores a first overdraft (any day below zero), a stand-in for financial
+  stress. It is not loan default, and no output is a probability.
+- **Time-based split:** every score uses only data up to the 2024-12 snapshot; the outcome is the year after.
+- **Base rate:** 75 of 3,847 accounts (1.9%) first went overdrawn in 2025.
+- **Limits:** few events; Czech bank behaviour from the original data, re-dated; loan labels are built from
+  overdraft; money in is all inflows, not wages.
+
 ## What it is
 
 A deterministic calculator, not a trained model. For any account it answers: **how many months does this customer
@@ -20,8 +30,9 @@ from the customer's own numbers. No LLM computes a number.
 ## Out of scope
 
 - **Not a credit decision and not a default model.** The engine gives no probabilities and no scores.
-- **The overdraft-before-loan figure is a flag, not a model.** It is shown on the customer card as a fact about
-  this data.
+- **The overdraft-before-loan figure is a red flag, not evidence.** It is built into how this dataset labels loans:
+  the CTU repository notes that `if min(trans.balance) >= 0 then good else bad` separates good loans from bad
+  perfectly. It is shown on the customer card as a flag.
 - **The early-warning light is a watch flag, not a credit score.** It never changes the judges' runway.
 - **The 2026 EI cap view is a stress test, not a forecast** of anyone's EI benefit (see the limits below).
 

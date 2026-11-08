@@ -4,6 +4,7 @@
  */
 import {
   EI_2026_MAX_MONTHLY,
+  WAITING_WEEK_LABEL,
   applyShock,
   backupLadder,
   calendarPath,
@@ -107,7 +108,7 @@ export function buildLive(acct: Account, s: Scenario): LiveModel {
     },
     {
       key: 'ww',
-      label: 'EI waiting week',
+      label: WAITING_WEEK_LABEL,
       help: 'No EI for the first week of the claim',
       enabled: can.ww,
       reason: can.ww ? null : notEI,
